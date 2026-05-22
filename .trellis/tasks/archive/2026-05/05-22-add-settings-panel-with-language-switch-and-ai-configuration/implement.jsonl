@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Settings dialog uses shadcn/ui Dialog/Tabs/Input/Button/Label — need component patterns and composition conventions"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "New SettingsDialog, GeneralSettingsTab, AISettingsTab components — need to place them correctly per project structure"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Adding settingsDialogOpen to Zustand store — need state management patterns"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Reusing useAIConfig/useUpdateAIConfig hooks — need hook patterns"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Form validation with zod/react-hook-form — need type safety patterns"}
