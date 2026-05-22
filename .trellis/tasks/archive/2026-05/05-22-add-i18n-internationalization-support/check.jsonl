@@ -1,0 +1,4 @@
+{"file": ".trellis/tasks/05-22-add-i18n-internationalization-support/prd.md", "reason": "PRD with acceptance criteria to verify against"}
+{"file": ".trellis/tasks/05-22-add-i18n-internationalization-support/research/i18n-integration-patterns.md", "reason": "Zod, shadcn/ui, date formatting integration patterns to verify correctness"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality standards to check against"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component conventions — verify t() usage follows patterns"}
