@@ -105,3 +105,35 @@ Replaced react-resizable-panels with CSS flex fixed-width layout (sidebar 256px,
 ### Next Steps
 
 - None - task complete
+
+## Session 4: Add settings dialog with language switch and AI configuration
+
+**Date**: 2026-05-22
+**Task**: Add settings dialog with language switch and AI configuration
+**Branch**: `Feat/sidebar-settings-and-ai-config`
+
+### Summary
+
+Implemented a unified settings dialog (Dialog + Tabs) replacing sidebar language dropdown and standalone /settings/ai page. Sidebar bottom now has a Settings gear button opening a modal with General (language switch) and AI (API config + test connection) tabs. Removed /settings/ai route and AISettings.tsx page. Added settingsDialogOpen to Zustand store.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d5329d2` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

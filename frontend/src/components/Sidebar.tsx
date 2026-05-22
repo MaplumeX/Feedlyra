@@ -8,7 +8,7 @@ import {
   Trash2,
   ChevronDown,
   MoreHorizontal,
-  Languages,
+  Settings,
   PanelLeftClose,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -24,17 +24,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AddFeedDialog } from "@/components/AddFeedDialog";
+import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import { useFeeds, useDeleteFeed, useRefreshFeed, useStarredCount } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
-  const { t, i18n } = useTranslation("reader");
+  const { t } = useTranslation("reader");
 
-  const languages = [
-    { code: "en" as const, name: "English" },
-    { code: "zh-CN" as const, name: "简体中文" },
-  ];
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const { selectedFeedId, articleListFilter, set: setReader } = useReaderStore();
   const { data: feeds = [] } = useFeeds();
@@ -191,28 +188,17 @@ export function Sidebar() {
       <Separator />
 
       <div className="px-2 py-1.5">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground">
-              <Languages className="h-4 w-4" />
-              <span>{languages.find((l) => l.code === i18n.language)?.name ?? i18n.language}</span>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side="right" align="start">
-            {languages.map((lang) => (
-              <DropdownMenuItem
-                key={lang.code}
-                onClick={() => i18n.changeLanguage(lang.code)}
-                className={i18n.language === lang.code ? "bg-accent" : ""}
-              >
-                {lang.name}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <button
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+          onClick={() => setReader({ settingsDialogOpen: true })}
+        >
+          <Settings className="h-4 w-4" />
+          <span>{t("settings", { ns: "settings" })}</span>
+        </button>
       </div>
 
       <AddFeedDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
+      <SettingsDialog />
     </div>
   );
 }

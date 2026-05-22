@@ -1,4 +1,7 @@
 {
+  "settings": "Settings",
+  "settingsDescription": "Manage your preferences and configuration.",
+  "general": "General",
   "aiSettings": "AI Settings",
   "byokConfiguration": "BYOK Configuration",
   "byokDescription": "Configure your own OpenAI-compatible API endpoint. Supports OpenAI, Ollama, DeepSeek, Groq, Together AI, and any OpenAI-compatible provider.",
