@@ -8,6 +8,7 @@ import {
   Trash2,
   ChevronDown,
   MoreHorizontal,
+  PanelLeftClose,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -73,9 +74,14 @@ export function Sidebar() {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-3 py-2">
         <span className="text-sm font-semibold">Feeds</span>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAddDialogOpen(true)}>
-          <Plus className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setReader({ sidebarCollapsed: true })} title="Collapse sidebar (Shift+S)">
+            <PanelLeftClose className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAddDialogOpen(true)}>
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <Separator />

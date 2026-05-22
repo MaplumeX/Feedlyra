@@ -38,3 +38,37 @@ Implemented complete AI-enhanced RSS reader: backend (FastAPI + SQLAlchemy + Ale
 ### Next Steps
 
 - None - task complete
+
+
+## Session 2: Replace resizable sidebar with fixed-width layout
+
+**Date**: 2026-05-22
+**Task**: Replace resizable sidebar with fixed-width layout
+**Branch**: `Feat/fix-sidebar-display`
+
+### Summary
+
+Replaced react-resizable-panels with CSS flex fixed-width layout (sidebar 256px, article list 360px, detail flex-1). Added collapse/expand affordance with PanelLeft/PanelLeftClose icons. Deleted dead resizable.tsx wrapper. Updated frontend component spec with layout convention.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d72b94a` | (see git log) |
+| `c984a78` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
