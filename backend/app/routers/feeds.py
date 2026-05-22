@@ -1,0 +1,223 @@
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from sqlalchemy import delete, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.dependencies import get_current_user, get_db
+from app.models.article import Article, ReadStatus
+from app.models.feed import Feed
+from app.models.user import User
+from app.schemas.feed import (
+    DiscoveredFeed,
+    FeedCreate,
+    FeedDiscoveryRequest,
+    FeedResponse,
+    FeedUpdate,
+    FeedWithUnread,
+    OPMLExportResponse,
+)
+from app.services.feed_fetcher import (
+    discover_feed_urls,
+    fetch_and_store_feed,
+    generate_opml,
+    parse_opml,
+)
+
+router = APIRouter(prefix="/api/feeds", tags=["feeds"])
+
+
+@router.post("", response_model=FeedResponse, status_code=status.HTTP_201_CREATED)
+async def add_feed(
+    body: FeedCreate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Feed:
+    result = await db.execute(select(Feed).where(Feed.user_id == user.id, Feed.url == body.url))
+    if result.scalar_one_or_none() is not None:
+        raise HTTPException(status_code=409, detail="Feed already exists")
+
+    feed = Feed(
+        id=str(uuid.uuid4()),
+        user_id=user.id,
+        title="",
+        url=body.url,
+    )
+    db.add(feed)
+    await db.commit()
+    await db.refresh(feed)
+
+    try:
+        await fetch_and_store_feed(feed, db)
+        await db.refresh(feed)
+    except Exception:
+        pass
+
+    if not feed.title:
+        feed.title = body.url
+        await db.commit()
+        await db.refresh(feed)
+
+    return feed
+
+
+@router.get("", response_model=list[FeedWithUnread])
+async def list_feeds(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[dict]:
+    result = await db.execute(
+        select(Feed).where(Feed.user_id == user.id).order_by(Feed.title)
+    )
+    feeds = result.scalars().all()
+
+    feed_ids = [f.id for f in feeds]
+    unread_counts: dict[str, int] = {}
+    if feed_ids:
+        count_result = await db.execute(
+            select(Article.feed_id, func.count(Article.id))
+            .outerjoin(
+                ReadStatus,
+                (ReadStatus.article_id == Article.id) & (ReadStatus.user_id == user.id),
+            )
+            .where(Article.feed_id.in_(feed_ids), ReadStatus.article_id.is_(None))
+            .group_by(Article.feed_id)
+        )
+        unread_counts = {row[0]: row[1] for row in count_result.all()}
+
+    return [
+        {**FeedResponse.model_validate(f).model_dump(), "unread_count": unread_counts.get(f.id, 0)}
+        for f in feeds
+    ]
+
+
+@router.get("/{feed_id}", response_model=FeedResponse)
+async def get_feed(
+    feed_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Feed:
+    result = await db.execute(select(Feed).where(Feed.id == feed_id, Feed.user_id == user.id))
+    feed = result.scalar_one_or_none()
+    if feed is None:
+        raise HTTPException(status_code=404, detail="Feed not found")
+    return feed
+
+
+@router.put("/{feed_id}", response_model=FeedResponse)
+async def update_feed(
+    feed_id: str,
+    body: FeedUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Feed:
+    result = await db.execute(select(Feed).where(Feed.id == feed_id, Feed.user_id == user.id))
+    feed = result.scalar_one_or_none()
+    if feed is None:
+        raise HTTPException(status_code=404, detail="Feed not found")
+
+    if body.title is not None:
+        feed.title = body.title
+    await db.commit()
+    await db.refresh(feed)
+    return feed
+
+
+@router.delete("/{feed_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_feed(
+    feed_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> None:
+    result = await db.execute(select(Feed).where(Feed.id == feed_id, Feed.user_id == user.id))
+    feed = result.scalar_one_or_none()
+    if feed is None:
+        raise HTTPException(status_code=404, detail="Feed not found")
+
+    await db.execute(delete(Feed).where(Feed.id == feed_id))
+    await db.commit()
+
+
+@router.post("/{feed_id}/refresh", response_model=FeedResponse)
+async def refresh_feed(
+    feed_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Feed:
+    result = await db.execute(select(Feed).where(Feed.id == feed_id, Feed.user_id == user.id))
+    feed = result.scalar_one_or_none()
+    if feed is None:
+        raise HTTPException(status_code=404, detail="Feed not found")
+
+    try:
+        await fetch_and_store_feed(feed, db)
+        await db.refresh(feed)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to refresh feed: {e}")
+
+    return feed
+
+
+@router.post("/import/opml", response_model=list[FeedResponse], status_code=status.HTTP_201_CREATED)
+async def import_opml(
+    file: UploadFile,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[Feed]:
+    content = await file.read()
+    try:
+        parsed_feeds = parse_opml(content.decode("utf-8"))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid OPML file")
+
+    result = await db.execute(select(Feed.url).where(Feed.user_id == user.id))
+    existing_urls = {row[0] for row in result.all()}
+
+    created: list[Feed] = []
+    for pf in parsed_feeds:
+        url = pf.get("url", "")
+        if not url or url in existing_urls:
+            continue
+
+        feed = Feed(
+            id=str(uuid.uuid4()),
+            user_id=user.id,
+            title=pf.get("title") or url,
+            url=url,
+            site_url=pf.get("site_url"),
+        )
+        db.add(feed)
+        created.append(feed)
+        existing_urls.add(url)
+
+    await db.commit()
+    for feed in created:
+        await db.refresh(feed)
+
+    return created
+
+
+@router.get("/export/opml", response_model=OPMLExportResponse)
+async def export_opml(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    result = await db.execute(select(Feed).where(Feed.user_id == user.id).order_by(Feed.title))
+    feeds = result.scalars().all()
+    return {"xml": generate_opml(feeds)}
+
+
+@router.post("/discover", response_model=list[DiscoveredFeed])
+async def discover_feeds(body: FeedDiscoveryRequest) -> list[dict]:
+    try:
+        feeds = await discover_feed_urls(body.url)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to discover feeds: {e}")
+
+    if not feeds:
+        raise HTTPException(status_code=404, detail="No feeds found at this URL")
+
+    return feeds

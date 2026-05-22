@@ -1,0 +1,6 @@
+{"file": ".trellis/tasks/05-22-ai-rss/prd.md", "reason": "Core PRD with requirements, tech stack, architecture decisions, and implementation plan"}
+{"file": ".trellis/tasks/05-22-ai-rss/research/ai-llm-integration.md", "reason": "LLM API patterns: summarization, translation, chat Q&A, SSE streaming, BYOK, cost estimates, DB schema for AI data"}
+{"file": ".trellis/tasks/05-22-ai-rss/research/rss-parsing.md", "reason": "feedparser+httpx async pattern, trafilatura full-text extraction, Miniflux error handling/backoff, HTTP caching with ETag"}
+{"file": ".trellis/tasks/05-22-ai-rss/research/frontend-architecture.md", "reason": "3-pane layout with ResizablePanelGroup, shadcn/ui components, TanStack Query + Zustand, react-virtuoso, react-hotkeys-hook, SSE client pattern"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec index — coding conventions for Python/FastAPI layer"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec index — coding conventions for React/TypeScript layer"}

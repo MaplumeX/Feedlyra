@@ -1,0 +1,219 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "./client";
+import type { AIConfig, Article, ArticleListResponse, ChatHistory, DiscoveredFeed, Feed } from "./types";
+
+const queryKeys = {
+  feeds: {
+    all: ["feeds"] as const,
+    list: () => [...queryKeys.feeds.all, "list"] as const,
+  },
+  articles: {
+    all: ["articles"] as const,
+    list: (params: ArticleListParams) => [...queryKeys.articles.all, params] as const,
+    detail: (id: string) => [...queryKeys.articles.all, "detail", id] as const,
+  },
+  ai: {
+    config: ["ai", "config"] as const,
+  },
+} as const;
+
+export { queryKeys };
+
+// --- Feed hooks ---
+
+export function useFeeds() {
+  return useQuery({
+    queryKey: queryKeys.feeds.list(),
+    queryFn: () => api.get<Feed[]>("/api/feeds"),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useAddFeed() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (url: string) => api.post<Feed>("/api/feeds", { url }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+    },
+  });
+}
+
+export function useDeleteFeed() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (feedId: string) => api.delete(`/api/feeds/${feedId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}
+
+export function useRefreshFeed() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (feedId: string) => api.post<Feed>(`/api/feeds/${feedId}/refresh`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}
+
+export function useDiscoverFeeds() {
+  return useMutation({
+    mutationFn: (url: string) => api.post<DiscoveredFeed[]>("/api/feeds/discover", { url }),
+  });
+}
+
+export function useImportOPML() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => api.upload<Feed[]>("/api/feeds/import/opml", file),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+    },
+  });
+}
+
+// --- Article hooks ---
+
+interface ArticleListParams {
+  feed_id?: string;
+  read_status?: string;
+  starred?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+export function useArticles(params: ArticleListParams = {}) {
+  const searchParams = new URLSearchParams();
+  if (params.feed_id) searchParams.set("feed_id", params.feed_id);
+  if (params.read_status) searchParams.set("read_status", params.read_status);
+  if (params.starred !== undefined) searchParams.set("starred", String(params.starred));
+  if (params.page) searchParams.set("page", String(params.page));
+  if (params.limit) searchParams.set("limit", String(params.limit));
+
+  const qs = searchParams.toString();
+  const path = `/api/articles${qs ? `?${qs}` : ""}`;
+
+  return useQuery({
+    queryKey: queryKeys.articles.list(params),
+    queryFn: () => api.get<ArticleListResponse>(path),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useArticle(articleId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.articles.detail(articleId ?? ""),
+    queryFn: () => api.get<Article>(`/api/articles/${articleId}`),
+    enabled: !!articleId,
+  });
+}
+
+export function useToggleRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ articleId, read }: { articleId: string; read: boolean }) =>
+      api.put<Article>(`/api/articles/${articleId}/read`, { read }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+    },
+  });
+}
+
+export function useToggleStar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ articleId, starred }: { articleId: string; starred: boolean }) =>
+      api.put<Article>(`/api/articles/${articleId}/star`, { starred }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}
+
+export function useMarkAllRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ feedId }: { feedId?: string }) =>
+      api.put<{ marked_count: number }>("/api/articles/mark-all-read", { feed_id: feedId ?? null }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+    },
+  });
+}
+
+export function useStarredCount() {
+  const { data } = useArticles({ starred: true, limit: 1 });
+  return data?.total ?? 0;
+}
+
+// --- AI hooks ---
+
+export function useAIConfig() {
+  return useQuery({
+    queryKey: queryKeys.ai.config,
+    queryFn: () => api.get<AIConfig>("/api/ai/config"),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useUpdateAIConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { base_url?: string | null; api_key?: string | null; model?: string | null }) =>
+      api.put<AIConfig>("/api/ai/config", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.ai.config });
+    },
+  });
+}
+
+interface SummarizeResponse {
+  summary: string;
+  model: string;
+}
+
+export function useSummarize() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (articleId: string) =>
+      api.post<SummarizeResponse>(`/api/ai/articles/${articleId}/summarize`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}
+
+interface TranslateResponse {
+  translated_title: string;
+  translated_content: string;
+  model: string;
+  lang: string;
+}
+
+export function useTranslate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ articleId, targetLang }: { articleId: string; targetLang?: string }) =>
+      api.post<TranslateResponse>(`/api/ai/articles/${articleId}/translate`, {
+        target_lang: targetLang ?? "zh",
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}
+
+export function useChatHistory(articleId: string | null) {
+  return useQuery({
+    queryKey: [...queryKeys.articles.all, "chat", articleId],
+    queryFn: () => api.get<ChatHistory>(`/api/ai/articles/${articleId}/chat/history`),
+    enabled: !!articleId,
+  });
+}
