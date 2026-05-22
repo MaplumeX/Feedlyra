@@ -19,7 +19,7 @@ export function Home() {
         {/* Sidebar */}
         <div
           className="shrink-0 border-r border-border transition-all duration-200 overflow-hidden"
-          style={{ width: sidebarCollapsed ? 40 : 256 }}
+          style={{ width: sidebarCollapsed ? 40 : 192 }}
         >
           {sidebarCollapsed ? (
             <div className="flex h-full flex-col items-center pt-2">
@@ -39,7 +39,7 @@ export function Home() {
         </div>
 
         {/* Article list */}
-        <div className="w-[360px] shrink-0 border-r border-border">
+        <div className="w-[280px] shrink-0 border-r border-border">
           <ArticleList />
         </div>
 
