@@ -12,7 +12,6 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
   CommandDialog,
@@ -30,7 +29,6 @@ export function CommandPalette() {
   const { t } = useTranslation("reader");
   const { commandPaletteOpen, set: setReader, selectedArticleId, sidebarCollapsed, selectedFeedId } = useReaderStore();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const markAllRead = useMarkAllRead();
   const summarize = useSummarize();
   const translateMut = useTranslate();
@@ -92,7 +90,7 @@ export function CommandPalette() {
             <PanelLeftClose className="mr-2 h-4 w-4" />
             {t("toggleSidebar")}
           </CommandItem>
-          <CommandItem onSelect={() => runAndClose(() => navigate("/settings/ai"))}>
+          <CommandItem onSelect={() => runAndClose(() => setReader({ settingsDialogOpen: true }))}>
             <Settings className="mr-2 h-4 w-4" />
             {t("aiSettings")}
           </CommandItem>

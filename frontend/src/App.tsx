@@ -4,7 +4,6 @@ import { HotkeysProvider } from "react-hotkeys-hook";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { RegisterPage } from "@/pages/auth/RegisterPage";
 import { Home } from "@/pages/Home";
-import { AISettings } from "@/pages/AISettings";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient({
@@ -26,7 +25,6 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<Home />} />
-              <Route path="/settings/ai" element={<AISettings />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

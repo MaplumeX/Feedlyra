@@ -8,6 +8,7 @@ interface ReaderState {
   sidebarCollapsed: boolean;
   chatPanelOpen: boolean;
   commandPaletteOpen: boolean;
+  settingsDialogOpen: boolean;
   set: (partial: Partial<ReaderState>) => void;
 }
 
@@ -20,6 +21,7 @@ export const useReaderStore = create<ReaderState>()(
       sidebarCollapsed: false,
       chatPanelOpen: false,
       commandPaletteOpen: false,
+      settingsDialogOpen: false,
       set: (partial) => set(partial),
     }),
     { name: "feedlyra-reader", partialize: (state) => ({ sidebarCollapsed: state.sidebarCollapsed }) }
