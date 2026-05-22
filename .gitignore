@@ -23,5 +23,9 @@ frontend/dist/
 .DS_Store
 Thumbs.db
 
-# Trellis runtime
-.trellis/workspace/
+# Trellis runtime (track tasks/, specs/, workspace/index; ignore caches/backups)
+.trellis/.backup-*
+.trellis/worktrees/
+.trellis/.template-hashes.json
+.trellis/.runtime/
+.trellis/.cache/
