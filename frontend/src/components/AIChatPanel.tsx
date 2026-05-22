@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, X, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -30,6 +31,7 @@ function updateLastAssistant(messages: ChatMessage[], content: string): ChatMess
 }
 
 export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
+  const { t } = useTranslation("reader");
   const { data: chatHistory, isLoading } = useChatHistory(articleId);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -113,7 +115,7 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
   return (
     <div className="flex h-full w-80 flex-col border-l bg-background">
       <div className="flex items-center gap-2 px-3 py-2">
-        <h3 className="flex-1 truncate text-sm font-medium">AI Chat</h3>
+        <h3 className="flex-1 truncate text-sm font-medium">{t("aiChat")}</h3>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClose}>
           <X className="h-4 w-4" />
         </Button>
@@ -130,7 +132,7 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
           </div>
         ) : messages.length === 0 ? (
           <p className="text-center text-xs text-muted-foreground py-4">
-            Ask questions about this article
+            {t("askQuestions")}
           </p>
         ) : (
           messages.map((msg) => (
@@ -160,7 +162,7 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
               handleSend();
             }
           }}
-          placeholder="Ask about this article..."
+          placeholder={t("askAboutArticle")}
           className="h-8 text-sm"
           disabled={isStreaming}
         />

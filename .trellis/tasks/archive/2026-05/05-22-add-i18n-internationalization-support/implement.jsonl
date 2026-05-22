@@ -1,0 +1,7 @@
+{"file": ".trellis/tasks/05-22-add-i18n-internationalization-support/prd.md", "reason": "PRD with requirements, tech approach, and decisions for i18n implementation"}
+{"file": ".trellis/tasks/05-22-add-i18n-internationalization-support/research/react-i18n-libraries.md", "reason": "Library comparison research — react-i18next chosen with rationale"}
+{"file": ".trellis/tasks/05-22-add-i18n-internationalization-support/research/i18n-integration-patterns.md", "reason": "Integration patterns for Zod, shadcn/ui, Zustand, date formatting"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Frontend component conventions to follow when wrapping strings with t()"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Where to place i18n config and translation files"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand patterns — language state should NOT be in Zustand per PRD decision"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "TypeScript patterns for typed i18n keys if applicable"}

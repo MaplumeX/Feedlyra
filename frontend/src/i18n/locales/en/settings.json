@@ -1,0 +1,13 @@
+{
+  "aiSettings": "AI Settings",
+  "byokConfiguration": "BYOK Configuration",
+  "byokDescription": "Configure your own OpenAI-compatible API endpoint. Supports OpenAI, Ollama, DeepSeek, Groq, Together AI, and any OpenAI-compatible provider.",
+  "baseUrl": "Base URL",
+  "apiKey": "API Key",
+  "model": "Model",
+  "apiKeyConfigured": "API key is already configured",
+  "testConnection": "Test Connection",
+  "connectionFailed": "Connection failed",
+  "invalidUrl": "Invalid URL",
+  "modelRequired": "Model is required"
+}

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { z } from "@/lib/i18n-zod";
 import { Loader2, ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,14 +13,15 @@ import { useAIConfig, useUpdateAIConfig } from "@/api/hooks";
 import { useNavigate } from "react-router";
 
 const aiConfigSchema = z.object({
-  base_url: z.string().url("Invalid URL").or(z.literal("")),
+  base_url: z.string().url().or(z.literal("")),
   api_key: z.string().or(z.literal("")),
-  model: z.string().min(1, "Model is required"),
+  model: z.string().min(1),
 });
 
 type AIConfigForm = z.infer<typeof aiConfigSchema>;
 
 export function AISettings() {
+  const { t } = useTranslation("settings");
   const { data: config, isLoading } = useAIConfig();
   const updateConfig = useUpdateAIConfig();
   const navigate = useNavigate();
@@ -61,15 +63,15 @@ export function AISettings() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({ detail: "Connection failed" }));
+        const data = await res.json().catch(() => ({ detail: t("connectionFailed") }));
         setTestStatus("error");
-        setTestError(data.detail ?? "Connection failed");
+        setTestError(data.detail ?? t("connectionFailed"));
         return;
       }
       setTestStatus("success");
     } catch {
       setTestStatus("error");
-      setTestError("Connection failed");
+      setTestError(t("connectionFailed"));
     }
   };
 
@@ -87,21 +89,20 @@ export function AISettings() {
         <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-xl font-bold">AI Settings</h1>
+        <h1 className="text-xl font-bold">{t("aiSettings")}</h1>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>BYOK Configuration</CardTitle>
+          <CardTitle>{t("byokConfiguration")}</CardTitle>
           <CardDescription>
-            Configure your own OpenAI-compatible API endpoint. Supports OpenAI, Ollama, DeepSeek,
-            Groq, Together AI, and any OpenAI-compatible provider.
+            {t("byokDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="base_url">Base URL</Label>
+              <Label htmlFor="base_url">{t("baseUrl")}</Label>
               <Input
                 id="base_url"
                 placeholder="https://api.openai.com/v1"
@@ -113,7 +114,7 @@ export function AISettings() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="api_key">API Key</Label>
+              <Label htmlFor="api_key">{t("apiKey")}</Label>
               <Input
                 id="api_key"
                 type="password"
@@ -124,12 +125,12 @@ export function AISettings() {
                 <p className="text-xs text-destructive">{errors.api_key.message}</p>
               )}
               {config?.has_api_key && (
-                <p className="text-xs text-muted-foreground">API key is already configured</p>
+                <p className="text-xs text-muted-foreground">{t("apiKeyConfigured")}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="model">Model</Label>
+              <Label htmlFor="model">{t("model")}</Label>
               <Input
                 id="model"
                 placeholder="gpt-4o-mini"
@@ -145,15 +146,15 @@ export function AISettings() {
             <div className="flex items-center gap-3">
               <Button type="submit" disabled={updateConfig.isPending || !isDirty}>
                 {updateConfig.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save
+                {t("save", { ns: "common" })}
               </Button>
               <Button type="button" variant="outline" onClick={handleTest} disabled={testStatus === "testing"}>
                 {testStatus === "testing" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Test Connection
+                {t("testConnection")}
               </Button>
               {testStatus === "success" && (
                 <span className="flex items-center gap-1 text-sm text-green-600">
-                  <CheckCircle2 className="h-4 w-4" /> OK
+                  <CheckCircle2 className="h-4 w-4" /> {t("ok", { ns: "common" })}
                 </span>
               )}
               {testStatus === "error" && (

@@ -1,5 +1,6 @@
 import DOMPurify from "dompurify";
 import { ExternalLink, Star, BookOpen, RotateCcw, Sparkles, Languages, MessageSquare } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,15 +31,17 @@ function ArticleDetailSkeleton() {
 }
 
 function EmptyState() {
+  const { t } = useTranslation("reader");
   return (
     <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
       <BookOpen className="h-12 w-12" />
-      <p className="text-sm">Select an article to read</p>
+      <p className="text-sm">{t("selectArticle")}</p>
     </div>
   );
 }
 
 export function ArticleDetail() {
+  const { t, i18n } = useTranslation("reader");
   const { selectedArticleId, chatPanelOpen } = useReaderStore();
   const { data: article, isLoading } = useArticle(selectedArticleId);
   const toggleRead = useToggleRead();
@@ -107,7 +110,7 @@ export function ArticleDetail() {
           className="h-8 w-8"
           disabled={summarize.isPending}
           onClick={() => summarize.mutate(article.id)}
-          title="AI Summarize"
+          title={t("aiSummarize")}
         >
           <Sparkles className={cn("h-4 w-4", summarize.isPending && "animate-spin")} />
         </Button>
@@ -123,7 +126,7 @@ export function ArticleDetail() {
               translateMut.mutate({ articleId: article.id });
             }
           }}
-          title={hasTranslation ? (showTranslation ? "Show Original" : "Show Translation") : "AI Translate"}
+          title={hasTranslation ? (showTranslation ? t("showOriginal") : t("showTranslation")) : t("aiTranslate")}
         >
           <Languages className={cn("h-4 w-4", translateMut.isPending && "animate-spin")} />
         </Button>
@@ -132,7 +135,7 @@ export function ArticleDetail() {
           size="icon"
           className="h-8 w-8"
           onClick={() => setReader({ chatPanelOpen: !chatPanelOpen })}
-          title="AI Chat"
+          title={t("aiChat")}
         >
           <MessageSquare className={cn("h-4 w-4", chatPanelOpen && "text-primary")} />
         </Button>
@@ -151,10 +154,10 @@ export function ArticleDetail() {
 
             <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
               {article.feed_title && <span>{article.feed_title}</span>}
-              {article.author && <span>by {article.author}</span>}
+              {article.author && <span>{t("by", { author: article.author })}</span>}
               {article.published_at && (
                 <time dateTime={article.published_at}>
-                  {new Date(article.published_at).toLocaleDateString(undefined, {
+                  {new Date(article.published_at).toLocaleDateString(i18n.language, {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
@@ -166,10 +169,10 @@ export function ArticleDetail() {
             {hasTranslation && (
               <div className="mt-2 flex items-center gap-2">
                 <Badge variant={showTranslation ? "default" : "outline"} className="cursor-pointer text-xs" onClick={() => setShowTranslation(false)}>
-                  Original
+                  {t("original")}
                 </Badge>
                 <Badge variant={showTranslation ? "outline" : "default"} className="cursor-pointer text-xs" onClick={() => setShowTranslation(true)}>
-                  {article.translation_lang?.toUpperCase() ?? "Translation"}
+                  {article.translation_lang?.toUpperCase() ?? t("translation")}
                 </Badge>
               </div>
             )}
@@ -180,7 +183,7 @@ export function ArticleDetail() {
               <div className="mb-4 rounded-md border bg-muted/50 p-4">
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <Sparkles className="h-3.5 w-3.5" />
-                  AI Summary
+                  {t("aiSummary")}
                   {article.summary_model && (
                     <span className="text-xs font-normal">({article.summary_model})</span>
                   )}
@@ -198,14 +201,14 @@ export function ArticleDetail() {
               <p className="text-sm text-muted-foreground">{article.content_snippet}</p>
             ) : (
               <p className="text-sm text-muted-foreground">
-                No content available.{" "}
+                {t("noContent")}{" "}
                 <a
                   href={article.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary underline"
                 >
-                  Read on original site
+                  {t("readOnOriginalSite")}
                 </a>
               </p>
             )}
