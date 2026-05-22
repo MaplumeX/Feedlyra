@@ -1,0 +1,6 @@
+{"file": ".trellis/tasks/05-22-ai-rss/prd.md", "reason": "PRD acceptance criteria and out-of-scope boundaries for quality verification"}
+{"file": ".trellis/tasks/05-22-ai-rss/research/ai-llm-integration.md", "reason": "Verify AI feature implementation matches researched patterns: SSE streaming, BYOK, summary caching, chat history schema"}
+{"file": ".trellis/tasks/05-22-ai-rss/research/rss-parsing.md", "reason": "Verify feed parsing follows async pattern (httpx+feedparser), error handling with backoff, ETag caching"}
+{"file": ".trellis/tasks/05-22-ai-rss/research/frontend-architecture.md", "reason": "Verify frontend matches: 3-pane layout, TanStack Query + Zustand state management, react-virtuoso, keyboard shortcuts"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend quality checks: type hints, testing, linting standards"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend quality checks: TypeScript, testing, linting standards"}

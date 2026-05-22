@@ -1,0 +1,31 @@
+# Backend
+backend/.venv/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/*.egg-info/
+backend/feedlyra_backend.egg-info/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Environment
+.env
+*.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Trellis runtime (track tasks/, specs/, workspace/index; ignore caches/backups)
+.trellis/.backup-*
+.trellis/worktrees/
+.trellis/.template-hashes.json
+.trellis/.runtime/
+.trellis/.cache/
