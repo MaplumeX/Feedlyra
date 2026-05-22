@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/api/articles", tags=["articles"])
 
 @router.get("", response_model=ArticleListResponse)
 async def list_articles(
-    feed_id: str | None = Query(None),
+    feed_id: UUID | None = Query(None),
     read_status: str | None = Query(None),
     starred: bool | None = Query(None),
     page: int = Query(1, ge=1),
@@ -64,9 +65,9 @@ async def list_articles(
 
     article_ids = [row[0].id for row in rows]
 
-    read_ids: set[str] = set()
-    starred_ids: set[str] = set()
-    ai_data_map: dict[str, ArticleAIData] = {}
+    read_ids: set[UUID] = set()
+    starred_ids: set[UUID] = set()
+    ai_data_map: dict[UUID, ArticleAIData] = {}
     if article_ids:
         read_result = await db.execute(
             select(ReadStatus.article_id).where(
@@ -146,7 +147,7 @@ async def mark_all_read(
 
 @router.get("/{article_id}", response_model=ArticleResponse)
 async def get_article(
-    article_id: str,
+    article_id: UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
@@ -195,7 +196,7 @@ async def get_article(
 
 @router.put("/{article_id}/read", response_model=ArticleResponse)
 async def toggle_read(
-    article_id: str,
+    article_id: UUID,
     body: ReadToggle,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -242,7 +243,7 @@ async def toggle_read(
 
 @router.put("/{article_id}/star", response_model=ArticleResponse)
 async def toggle_star(
-    article_id: str,
+    article_id: UUID,
     body: StarToggle,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),

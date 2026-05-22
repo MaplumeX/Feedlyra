@@ -4,6 +4,7 @@ import json
 import logging
 import uuid
 from datetime import datetime, timezone
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -97,7 +98,7 @@ async def test_ai_connection(
 
 @router.post("/articles/{article_id}/summarize", response_model=SummarizeResponse)
 async def summarize_article(
-    article_id: str,
+    article_id: UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
@@ -153,7 +154,7 @@ async def summarize_article(
 
 @router.post("/articles/{article_id}/translate", response_model=TranslateResponse)
 async def translate_article_endpoint(
-    article_id: str,
+    article_id: UUID,
     body: TranslateRequest,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -231,7 +232,7 @@ async def translate_article_endpoint(
 
 @router.post("/articles/{article_id}/chat")
 async def chat_with_article(
-    article_id: str,
+    article_id: UUID,
     body: ChatRequest,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -261,7 +262,7 @@ async def chat_with_article(
 
     if chat is None:
         chat = ArticleChat(
-            id=str(uuid.uuid4()),
+            id=uuid.uuid4(),
             article_id=article_id,
             user_id=user.id,
             model=model,
@@ -273,7 +274,7 @@ async def chat_with_article(
 
     # Store user message
     user_msg = ChatMessage(
-        id=str(uuid.uuid4()),
+        id=uuid.uuid4(),
         chat_id=chat.id,
         role="user",
         content=body.message,
@@ -289,6 +290,8 @@ async def chat_with_article(
         .order_by(ChatMessage.created_at)
     )
     history_msgs = history_result.scalars().all()
+    if history_msgs and history_msgs[-1].id == user_msg.id:
+        history_msgs = history_msgs[:-1]
     chat_history = [{"role": m.role, "content": m.content} for m in history_msgs]
 
     # Build messages for LLM
@@ -324,7 +327,7 @@ async def chat_with_article(
         if full_response:
             async with async_session() as store_db:
                 assistant_msg = ChatMessage(
-                    id=str(uuid.uuid4()),
+                    id=uuid.uuid4(),
                     chat_id=chat_id,
                     role="assistant",
                     content=full_response,
@@ -338,7 +341,7 @@ async def chat_with_article(
 
 @router.get("/articles/{article_id}/chat/history", response_model=ChatHistoryResponse)
 async def get_chat_history(
-    article_id: str,
+    article_id: UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
@@ -371,7 +374,7 @@ async def get_chat_history(
     messages = messages_result.scalars().all()
 
     return {
-        "chat_id": chat.id,
+        "chat_id": str(chat.id),
         "messages": [
             {
                 "id": m.id,

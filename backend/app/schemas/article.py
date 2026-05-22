@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel
 
 
 class ArticleResponse(BaseModel):
-    id: str
-    feed_id: str
+    id: UUID
+    feed_id: UUID
     title: str
     url: str
     content: str | None
@@ -43,4 +44,4 @@ class StarToggle(BaseModel):
 
 
 class MarkAllRead(BaseModel):
-    feed_id: str | None = None
+    feed_id: UUID | None = None

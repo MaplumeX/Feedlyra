@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -14,7 +15,7 @@ class FeedUpdate(BaseModel):
 
 
 class FeedResponse(BaseModel):
-    id: str
+    id: UUID
     title: str
     url: str
     site_url: str | None

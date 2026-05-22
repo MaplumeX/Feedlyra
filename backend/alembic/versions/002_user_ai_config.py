@@ -16,7 +16,7 @@ depends_on = None
 
 def upgrade() -> None:
     op.add_column("users", sa.Column("ai_base_url", sa.String(500), nullable=True))
-    op.add_column("users", sa.Column("ai_api_key", sa.String(255), nullable=True))
+    op.add_column("users", sa.Column("ai_api_key", sa.Text(), nullable=True))
     op.add_column("users", sa.Column("ai_model", sa.String(100), nullable=True))
 
 

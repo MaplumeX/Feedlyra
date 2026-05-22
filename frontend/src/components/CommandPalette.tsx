@@ -12,6 +12,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 import {
   CommandDialog,
   CommandEmpty,
@@ -27,6 +28,7 @@ import { queryKeys, useMarkAllRead, useSummarize, useTranslate } from "@/api/hoo
 export function CommandPalette() {
   const { commandPaletteOpen, set: setReader, selectedArticleId, sidebarCollapsed, selectedFeedId } = useReaderStore();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const markAllRead = useMarkAllRead();
   const summarize = useSummarize();
   const translateMut = useTranslate();
@@ -88,7 +90,7 @@ export function CommandPalette() {
             <PanelLeftClose className="mr-2 h-4 w-4" />
             Toggle Sidebar
           </CommandItem>
-          <CommandItem onSelect={() => runAndClose(() => setReader({ chatPanelOpen: true }))}>
+          <CommandItem onSelect={() => runAndClose(() => navigate("/settings/ai"))}>
             <Settings className="mr-2 h-4 w-4" />
             AI Settings
           </CommandItem>

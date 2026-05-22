@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from uuid import UUID
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -20,19 +21,19 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(user_id: str) -> str:
+def create_access_token(user_id: str | UUID) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return _create_token(user_id, expire)
 
 
-def create_refresh_token(user_id: str) -> str:
+def create_refresh_token(user_id: str | UUID) -> str:
     expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     return _create_token(user_id, expire, token_type="refresh")
 
 
-def _create_token(user_id: str, expire: datetime, token_type: str = "access") -> str:
+def _create_token(user_id: str | UUID, expire: datetime, token_type: str = "access") -> str:
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "exp": expire,
         "type": token_type,
     }

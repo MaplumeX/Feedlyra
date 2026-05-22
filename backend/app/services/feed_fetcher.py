@@ -20,7 +20,6 @@ from app.models.feed import Feed
 logger = logging.getLogger(__name__)
 
 HTTP_TIMEOUT = 30
-MAX_CONCURRENT_FETCHES = 10
 DEFAULT_CHECK_INTERVAL = timedelta(minutes=15)
 MAX_BACKOFF = timedelta(hours=24)
 USER_AGENT = "Feedlyra/0.1 (RSS Reader)"
@@ -265,20 +264,15 @@ async def refresh_all_due_feeds(db: AsyncSession) -> None:
     )
     feeds = result.scalars().all()
 
-    sem = asyncio.Semaphore(MAX_CONCURRENT_FETCHES)
-
-    async def _fetch_with_sem(feed: Feed) -> None:
-        async with sem:
-            try:
-                await fetch_and_store_feed(feed, db)
-            except Exception:
-                feed.parsing_error_count += 1
-                feed.parsing_error_message = "Unexpected fetch error"
-                feed.checked_at = now
-                feed.next_check_at = _compute_next_check(feed)
-                await db.commit()
-
-    await asyncio.gather(*[_fetch_with_sem(f) for f in feeds])
+    for feed in feeds:
+        try:
+            await fetch_and_store_feed(feed, db)
+        except Exception:
+            feed.parsing_error_count += 1
+            feed.parsing_error_message = "Unexpected fetch error"
+            feed.checked_at = now
+            feed.next_check_at = _compute_next_check(feed)
+            await db.commit()
 
 
 def generate_opml(feeds: list[Feed]) -> str:

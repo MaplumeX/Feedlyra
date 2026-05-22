@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID as PyUUID, uuid4
 
 from sqlalchemy import DateTime, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -12,8 +13,8 @@ from app.models.base import Base
 class Article(Base):
     __tablename__ = "articles"
 
-    id: Mapped[str] = mapped_column(UUID(as_uuid=True), primary_key=True)
-    feed_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("feeds.id", ondelete="CASCADE"), nullable=False)
+    id: Mapped[PyUUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    feed_id: Mapped[PyUUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("feeds.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(1000), nullable=False)
     url: Mapped[str] = mapped_column(String(2048), nullable=False)
     content: Mapped[str | None] = mapped_column(Text)
@@ -32,11 +33,11 @@ class Article(Base):
 class ReadStatus(Base):
     __tablename__ = "read_status"
 
-    user_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    user_id: Mapped[PyUUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
-    article_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("articles.id", ondelete="CASCADE"), primary_key=True
+    article_id: Mapped[PyUUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("articles.id", ondelete="CASCADE"), primary_key=True
     )
     read_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
@@ -44,10 +45,10 @@ class ReadStatus(Base):
 class StarredArticle(Base):
     __tablename__ = "starred_articles"
 
-    user_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    user_id: Mapped[PyUUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
-    article_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("articles.id", ondelete="CASCADE"), primary_key=True
+    article_id: Mapped[PyUUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("articles.id", ondelete="CASCADE"), primary_key=True
     )
     starred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

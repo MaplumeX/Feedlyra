@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID as PyUUID, uuid4
 
 from sqlalchemy import DateTime, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -12,8 +13,8 @@ from app.models.base import Base
 class ArticleAIData(Base):
     __tablename__ = "article_ai_data"
 
-    article_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("articles.id", ondelete="CASCADE"), primary_key=True
+    article_id: Mapped[PyUUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("articles.id", ondelete="CASCADE"), primary_key=True
     )
     summary: Mapped[str | None] = mapped_column(Text)
     summary_model: Mapped[str | None] = mapped_column(String(50))
@@ -30,9 +31,9 @@ class ArticleAIData(Base):
 class ArticleChat(Base):
     __tablename__ = "article_chats"
 
-    id: Mapped[str] = mapped_column(UUID(as_uuid=True), primary_key=True)
-    article_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("articles.id", ondelete="CASCADE"), nullable=False)
-    user_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    id: Mapped[PyUUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    article_id: Mapped[PyUUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("articles.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[PyUUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     model: Mapped[str | None] = mapped_column(String(50))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
@@ -42,8 +43,8 @@ class ArticleChat(Base):
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
-    id: Mapped[str] = mapped_column(UUID(as_uuid=True), primary_key=True)
-    chat_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("article_chats.id", ondelete="CASCADE"), nullable=False)
+    id: Mapped[PyUUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    chat_id: Mapped[PyUUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("article_chats.id", ondelete="CASCADE"), nullable=False)
     role: Mapped[str] = mapped_column(String(10), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

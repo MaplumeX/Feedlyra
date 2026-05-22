@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID as PyUUID, uuid4
 
 from sqlalchemy import DateTime, ForeignKey, String, Text, Integer
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -12,8 +13,8 @@ from app.models.base import Base, TimestampMixin
 class Feed(TimestampMixin, Base):
     __tablename__ = "feeds"
 
-    id: Mapped[str] = mapped_column(UUID(as_uuid=True), primary_key=True)
-    user_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    id: Mapped[PyUUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    user_id: Mapped[PyUUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     url: Mapped[str] = mapped_column(String(2048), nullable=False)
     site_url: Mapped[str | None] = mapped_column(String(2048))

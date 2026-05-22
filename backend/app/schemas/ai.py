@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -26,7 +27,7 @@ class ChatRequest(BaseModel):
 
 
 class ChatMessageResponse(BaseModel):
-    id: str
+    id: UUID
     role: str
     content: str
     created_at: datetime

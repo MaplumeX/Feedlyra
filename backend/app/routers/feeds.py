@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import uuid
 from datetime import datetime, timezone
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from sqlalchemy import delete, func, select
@@ -40,12 +40,7 @@ async def add_feed(
     if result.scalar_one_or_none() is not None:
         raise HTTPException(status_code=409, detail="Feed already exists")
 
-    feed = Feed(
-        id=str(uuid.uuid4()),
-        user_id=user.id,
-        title="",
-        url=body.url,
-    )
+    feed = Feed(user_id=user.id, title="", url=body.url)
     db.add(feed)
     await db.commit()
     await db.refresh(feed)
@@ -96,7 +91,7 @@ async def list_feeds(
 
 @router.get("/{feed_id}", response_model=FeedResponse)
 async def get_feed(
-    feed_id: str,
+    feed_id: UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Feed:
@@ -109,7 +104,7 @@ async def get_feed(
 
 @router.put("/{feed_id}", response_model=FeedResponse)
 async def update_feed(
-    feed_id: str,
+    feed_id: UUID,
     body: FeedUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -128,7 +123,7 @@ async def update_feed(
 
 @router.delete("/{feed_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_feed(
-    feed_id: str,
+    feed_id: UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> None:
@@ -143,7 +138,7 @@ async def delete_feed(
 
 @router.post("/{feed_id}/refresh", response_model=FeedResponse)
 async def refresh_feed(
-    feed_id: str,
+    feed_id: UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Feed:
@@ -183,7 +178,6 @@ async def import_opml(
             continue
 
         feed = Feed(
-            id=str(uuid.uuid4()),
             user_id=user.id,
             title=pf.get("title") or url,
             url=url,
