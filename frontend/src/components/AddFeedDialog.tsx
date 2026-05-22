@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAddFeed, useDiscoverFeeds } from "@/api/hooks";
+import { useTranslation } from "react-i18next";
 import type { DiscoveredFeed } from "@/api/types";
 
 interface AddFeedDialogProps {
@@ -18,6 +19,7 @@ interface AddFeedDialogProps {
 }
 
 export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
+  const { t } = useTranslation("reader");
   const [feedUrl, setFeedUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [discoveredFeeds, setDiscoveredFeeds] = useState<DiscoveredFeed[]>([]);
@@ -58,14 +60,14 @@ export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Feed</DialogTitle>
-          <DialogDescription>Add an RSS/Atom feed by URL or discover feeds from a website.</DialogDescription>
+          <DialogTitle>{t("addFeed")}</DialogTitle>
+          <DialogDescription>{t("addFeedDescription")}</DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="url">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="url">Feed URL</TabsTrigger>
-            <TabsTrigger value="discover">Discover</TabsTrigger>
+            <TabsTrigger value="url">{t("feedUrl")}</TabsTrigger>
+            <TabsTrigger value="discover">{t("discover")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="url" className="space-y-4">
@@ -77,7 +79,7 @@ export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
                 onKeyDown={(e) => e.key === "Enter" && handleAddFeed()}
               />
               <Button onClick={handleAddFeed} disabled={addFeed.isPending || !feedUrl.trim()}>
-                Add
+                {t("add", { ns: "common" })}
               </Button>
             </div>
             {addFeed.isError && (
@@ -94,7 +96,7 @@ export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
                 onKeyDown={(e) => e.key === "Enter" && handleDiscover()}
               />
               <Button onClick={handleDiscover} disabled={discoverFeeds.isPending || !websiteUrl.trim()}>
-                Find
+                {t("find", { ns: "common" })}
               </Button>
             </div>
 
@@ -119,7 +121,7 @@ export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
             )}
 
             {discoveredFeeds.length === 0 && !discoverFeeds.isPending && websiteUrl && (
-              <p className="text-sm text-muted-foreground">No feeds discovered.</p>
+              <p className="text-sm text-muted-foreground">{t("noFeedsDiscovered")}</p>
             )}
           </TabsContent>
         </Tabs>

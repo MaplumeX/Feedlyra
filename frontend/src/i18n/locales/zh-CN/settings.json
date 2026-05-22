@@ -1,0 +1,13 @@
+{
+  "aiSettings": "AI 设置",
+  "byokConfiguration": "BYOK 配置",
+  "byokDescription": "配置你自己的 OpenAI 兼容 API 端点。支持 OpenAI、Ollama、DeepSeek、Groq、Together AI 及任何 OpenAI 兼容的提供商。",
+  "baseUrl": "Base URL",
+  "apiKey": "API Key",
+  "model": "模型",
+  "apiKeyConfigured": "API 密钥已配置",
+  "testConnection": "测试连接",
+  "connectionFailed": "连接失败",
+  "invalidUrl": "URL 格式不正确",
+  "modelRequired": "模型为必填项"
+}

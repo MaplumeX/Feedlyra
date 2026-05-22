@@ -8,7 +8,9 @@ import {
   Trash2,
   ChevronDown,
   MoreHorizontal,
+  Languages,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +28,12 @@ import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
+  const { t, i18n } = useTranslation("reader");
+
+  const languages = [
+    { code: "en" as const, name: "English" },
+    { code: "zh-CN" as const, name: "简体中文" },
+  ];
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const { selectedFeedId, articleListFilter, set: setReader } = useReaderStore();
   const { data: feeds = [] } = useFeeds();
@@ -38,21 +46,21 @@ export function Sidebar() {
   const virtualFolders = [
     {
       id: "__all__",
-      label: "All Feeds",
+      label: t("allFeeds"),
       icon: <Rss className="h-4 w-4" />,
       count: totalUnread,
       filter: "all" as const,
     },
     {
       id: "__unread__",
-      label: "Unread",
+      label: t("unread"),
       icon: <Clock className="h-4 w-4" />,
       count: totalUnread,
       filter: "unread" as const,
     },
     {
       id: "__starred__",
-      label: "Starred",
+      label: t("starred"),
       icon: <Star className="h-4 w-4" />,
       count: totalStarred,
       filter: "starred" as const,
@@ -72,7 +80,7 @@ export function Sidebar() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-3 py-2">
-        <span className="text-sm font-semibold">Feeds</span>
+        <span className="text-sm font-semibold">{t("feeds")}</span>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAddDialogOpen(true)}>
           <Plus className="h-4 w-4" />
         </Button>
@@ -107,14 +115,14 @@ export function Sidebar() {
             <CollapsibleTrigger asChild>
               <button className="flex w-full items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent">
                 <ChevronDown className="h-3 w-3" />
-                Subscriptions
+                {t("subscriptions")}
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="mt-1 space-y-0.5">
                 {feeds.length === 0 && (
                   <p className="px-2 py-4 text-center text-xs text-muted-foreground">
-                    No feeds yet. Click + to add one.
+                    {t("noFeedsYet")}
                   </p>
                 )}
                 {feeds.map((feed) => (
@@ -152,7 +160,7 @@ export function Sidebar() {
                           }}
                         >
                           <RefreshCw className="mr-2 h-4 w-4" />
-                          Refresh
+                          {t("refresh", { ns: "common" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive"
@@ -162,7 +170,7 @@ export function Sidebar() {
                           }}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          {t("delete", { ns: "common" })}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -173,6 +181,30 @@ export function Sidebar() {
           </Collapsible>
         </div>
       </ScrollArea>
+
+      <Separator />
+
+      <div className="px-2 py-1.5">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground">
+              <Languages className="h-4 w-4" />
+              <span>{languages.find((l) => l.code === i18n.language)?.name ?? i18n.language}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="right" align="start">
+            {languages.map((lang) => (
+              <DropdownMenuItem
+                key={lang.code}
+                onClick={() => i18n.changeLanguage(lang.code)}
+                className={i18n.language === lang.code ? "bg-accent" : ""}
+              >
+                {lang.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <AddFeedDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
     </div>

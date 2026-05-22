@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { Star, CheckCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -13,22 +15,22 @@ type FlatItem =
   | { type: "header"; label: string }
   | { type: "article"; article: Article };
 
-function formatDate(dateStr: string | null): string {
+function formatDate(dateStr: string | null, lng: string): string {
   if (!dateStr) return "";
   const date = new Date(dateStr);
   const now = new Date();
   const diffDays = Math.floor(
     (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
   );
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (diffDays === 0) return i18next.t("common:today");
+  if (diffDays === 1) return i18next.t("common:yesterday");
+  return date.toLocaleDateString(lng, { month: "short", day: "numeric" });
 }
 
-function groupByDate(articles: Article[]): { label: string; articles: Article[] }[] {
+function groupByDate(articles: Article[], lng: string): { label: string; articles: Article[] }[] {
   const groups: Map<string, Article[]> = new Map();
   for (const article of articles) {
-    const label = formatDate(article.published_at);
+    const label = formatDate(article.published_at, lng);
     const existing = groups.get(label);
     if (existing) {
       existing.push(article);
@@ -48,6 +50,7 @@ function ArticleRow({
   isSelected: boolean;
   onSelect: () => void;
 }) {
+  const { t, i18n } = useTranslation("reader");
   const toggleStar = useToggleStar();
 
   return (
@@ -78,9 +81,9 @@ function ArticleRow({
       </div>
       <div className="flex items-center gap-2 pl-4 text-xs text-muted-foreground">
         {article.feed_title && <span className="truncate">{article.feed_title}</span>}
-        {article.author && <span>by {article.author}</span>}
+        {article.author && <span>{t("by", { author: article.author })}</span>}
         {article.published_at && (
-          <span>{new Date(article.published_at).toLocaleDateString()}</span>
+          <span>{new Date(article.published_at).toLocaleDateString(i18n.language)}</span>
         )}
       </div>
     </div>
@@ -101,6 +104,7 @@ function ArticleListSkeleton() {
 }
 
 export function ArticleList() {
+  const { t, i18n } = useTranslation("reader");
   const { selectedFeedId, selectedArticleId, articleListFilter, set: setReader } = useReaderStore();
 
   const queryParams = useMemo(() => {
@@ -117,7 +121,7 @@ export function ArticleList() {
 
   const articles = data?.items ?? [];
   const hasUnread = articles.some((a) => !a.is_read);
-  const grouped = groupByDate(articles);
+  const grouped = groupByDate(articles, i18n.language);
 
   const flatItems: FlatItem[] = useMemo(() => {
     const items: FlatItem[] = [];
@@ -147,9 +151,9 @@ export function ArticleList() {
           }
         >
           <TabsList className="h-8">
-            <TabsTrigger value="all" className="text-xs px-2">All</TabsTrigger>
-            <TabsTrigger value="unread" className="text-xs px-2">Unread</TabsTrigger>
-            <TabsTrigger value="starred" className="text-xs px-2">Starred</TabsTrigger>
+            <TabsTrigger value="all" className="text-xs px-2">{t("all")}</TabsTrigger>
+            <TabsTrigger value="unread" className="text-xs px-2">{t("unread")}</TabsTrigger>
+            <TabsTrigger value="starred" className="text-xs px-2">{t("starred")}</TabsTrigger>
           </TabsList>
         </Tabs>
         {hasUnread && (
@@ -161,7 +165,7 @@ export function ArticleList() {
             onClick={() => markAllRead.mutate({ feedId: selectedFeedId ?? undefined })}
           >
             <CheckCheck className="mr-1 h-3.5 w-3.5" />
-            Mark All Read
+            {t("markAllRead")}
           </Button>
         )}
       </div>
@@ -170,7 +174,7 @@ export function ArticleList() {
         <ArticleListSkeleton />
       ) : flatItems.length === 0 ? (
         <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-          No articles
+          {t("noArticles")}
         </div>
       ) : (
         <Virtuoso

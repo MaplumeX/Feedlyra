@@ -1,7 +1,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { z } from "@/lib/i18n-zod";
 import { useNavigate, Link } from "react-router";
+import { useTranslation } from "react-i18next";
 import { api } from "@/api/client";
 import { useAuthStore } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
@@ -11,19 +12,20 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 const registerSchema = z
   .object({
-    email: z.string().email("Invalid email"),
-    username: z.string().min(3, "Username must be at least 3 characters").regex(/^[a-zA-Z0-9_]+$/, "Only letters, numbers, and underscores"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    email: z.string().email(),
+    username: z.string().min(3).regex(/^[a-zA-Z0-9_]+$/),
+    password: z.string().min(8),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
+    params: { i18n: "passwordsDoNotMatch" },
     path: ["confirmPassword"],
   });
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
 export function RegisterPage() {
+  const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const { setTokens, setUser } = useAuthStore();
   const {
@@ -49,38 +51,38 @@ export function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Register</CardTitle>
-          <CardDescription>Create a new Feedlyra account</CardDescription>
+          <CardTitle>{t("register")}</CardTitle>
+          <CardDescription>{t("createAccountTitle")}</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("email")}</Label>
               <Input id="email" type="email" {...register("email")} />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">{t("username")}</Label>
               <Input id="username" {...register("username")} />
               {errors.username && <p className="text-sm text-destructive">{errors.username.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("password")}</Label>
               <Input id="password" type="password" {...register("password")} />
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">{t("confirmPassword")}</Label>
               <Input id="confirmPassword" type="password" {...register("confirmPassword")} />
               {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-2">
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Creating account..." : "Create account"}
+              {isSubmitting ? t("creatingAccount") : t("createAccount")}
             </Button>
             <p className="text-sm text-muted-foreground">
-              Already have an account? <Link to="/login" className="text-primary underline">Login</Link>
+              {t("alreadyHaveAccount")} <Link to="/login" className="text-primary underline">{t("login")}</Link>
             </p>
           </CardFooter>
         </form>

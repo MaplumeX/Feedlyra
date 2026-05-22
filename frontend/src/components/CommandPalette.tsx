@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import {
   CommandDialog,
   CommandEmpty,
@@ -26,6 +27,7 @@ import { useReaderStore } from "@/stores/reader";
 import { queryKeys, useMarkAllRead, useSummarize, useTranslate } from "@/api/hooks";
 
 export function CommandPalette() {
+  const { t } = useTranslation("reader");
   const { commandPaletteOpen, set: setReader, selectedArticleId, sidebarCollapsed, selectedFeedId } = useReaderStore();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -53,70 +55,70 @@ export function CommandPalette() {
 
   return (
     <CommandDialog open={commandPaletteOpen} onOpenChange={setOpen}>
-      <CommandInput placeholder="Search articles, feeds, actions..." />
+      <CommandInput placeholder={t("searchPlaceholder")} />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandEmpty>{t("noResultsFound", { ns: "common" })}</CommandEmpty>
 
-        <CommandGroup heading="Navigation">
+        <CommandGroup heading={t("navigation")}>
           <CommandItem onSelect={() => runAndClose(() => setReader({ selectedFeedId: null, articleListFilter: "all", selectedArticleId: null }))}>
             <Rss className="mr-2 h-4 w-4" />
-            All Feeds
+            {t("allFeeds")}
           </CommandItem>
           <CommandItem onSelect={() => runAndClose(() => setReader({ selectedFeedId: null, articleListFilter: "unread", selectedArticleId: null }))}>
             <Clock className="mr-2 h-4 w-4" />
-            Unread
+            {t("unread")}
           </CommandItem>
           <CommandItem onSelect={() => runAndClose(() => setReader({ selectedFeedId: null, articleListFilter: "starred", selectedArticleId: null }))}>
             <Star className="mr-2 h-4 w-4" />
-            Starred
+            {t("starred")}
           </CommandItem>
         </CommandGroup>
 
         <CommandSeparator />
 
-        <CommandGroup heading="Actions">
+        <CommandGroup heading={t("actions")}>
           <CommandItem
             disabled={markAllRead.isPending}
             onSelect={() => runAndClose(() => markAllRead.mutate({ feedId: selectedFeedId ?? undefined }))}
           >
             <CheckCheck className="mr-2 h-4 w-4" />
-            Mark All as Read
+            {t("markAllAsRead")}
           </CommandItem>
           <CommandItem onSelect={() => runAndClose(refreshFeeds)}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh Feeds
+            {t("refreshFeeds")}
           </CommandItem>
           <CommandItem onSelect={() => runAndClose(() => setReader({ sidebarCollapsed: !sidebarCollapsed }))}>
             <PanelLeftClose className="mr-2 h-4 w-4" />
-            Toggle Sidebar
+            {t("toggleSidebar")}
           </CommandItem>
           <CommandItem onSelect={() => runAndClose(() => navigate("/settings/ai"))}>
             <Settings className="mr-2 h-4 w-4" />
-            AI Settings
+            {t("aiSettings")}
           </CommandItem>
         </CommandGroup>
 
         {selectedArticleId && (
           <>
             <CommandSeparator />
-            <CommandGroup heading="AI">
+            <CommandGroup heading={t("ai")}>
               <CommandItem
                 disabled={summarize.isPending}
                 onSelect={() => runAndClose(() => summarize.mutate(selectedArticleId))}
               >
                 <Sparkles className="mr-2 h-4 w-4" />
-                Summarize Current Article
+                {t("summarizeCurrentArticle")}
               </CommandItem>
               <CommandItem
                 disabled={translateMut.isPending}
                 onSelect={() => runAndClose(() => translateMut.mutate({ articleId: selectedArticleId }))}
               >
                 <Languages className="mr-2 h-4 w-4" />
-                Translate Current Article
+                {t("translateCurrentArticle")}
               </CommandItem>
               <CommandItem onSelect={() => runAndClose(() => setReader({ chatPanelOpen: true }))}>
                 <MessageSquare className="mr-2 h-4 w-4" />
-                Open AI Chat
+                {t("openAiChat")}
               </CommandItem>
             </CommandGroup>
           </>
