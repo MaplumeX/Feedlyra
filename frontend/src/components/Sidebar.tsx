@@ -45,21 +45,21 @@ export function Sidebar() {
     {
       id: "__all__",
       label: t("allFeeds"),
-      icon: <Rss className="h-4 w-4" />,
+      icon: <Rss className="h-4 w-4 shrink-0" />,
       count: totalUnread,
       filter: "all" as const,
     },
     {
       id: "__unread__",
       label: t("unread"),
-      icon: <Clock className="h-4 w-4" />,
+      icon: <Clock className="h-4 w-4 shrink-0" />,
       count: totalUnread,
       filter: "unread" as const,
     },
     {
       id: "__starred__",
       label: t("starred"),
-      icon: <Star className="h-4 w-4" />,
+      icon: <Star className="h-4 w-4 shrink-0" />,
       count: totalStarred,
       filter: "starred" as const,
     },
@@ -76,10 +76,10 @@ export function Sidebar() {
   const isVirtualSelected = !selectedFeedId;
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between px-3 py-2">
-        <span className="text-sm font-semibold">{t("feeds")}</span>
-        <div className="flex items-center gap-0.5">
+    <div className="flex h-full min-w-0 flex-col overflow-hidden">
+      <div className="flex min-w-0 items-center justify-between gap-2 px-3 py-2">
+        <span className="min-w-0 truncate text-sm font-semibold">{t("feeds")}</span>
+        <div className="flex shrink-0 items-center gap-0.5">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setReader({ sidebarCollapsed: true })} title="Collapse sidebar (Shift+S)">
             <PanelLeftClose className="h-4 w-4" />
           </Button>
@@ -91,21 +91,21 @@ export function Sidebar() {
 
       <Separator />
 
-      <ScrollArea className="flex-1">
-        <div className="p-2 space-y-1">
+      <ScrollArea className="min-w-0 flex-1">
+        <div className="min-w-0 space-y-1 p-2">
           {virtualFolders.map((vf) => (
             <button
               key={vf.id}
               className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent",
+                "flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm hover:bg-accent",
                 isVirtualSelected && articleListFilter === vf.filter && "bg-accent font-medium"
               )}
               onClick={() => selectVirtualFolder(vf.filter)}
             >
               {vf.icon}
-              <span className="flex-1 text-left">{vf.label}</span>
+              <span className="min-w-0 flex-1 truncate text-left">{vf.label}</span>
               {vf.count > 0 && (
-                <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1 text-[10px]">
+                <Badge variant="secondary" className="h-5 min-w-5 max-w-14 shrink-0 justify-center truncate px-1 text-[10px]">
                   {vf.count}
                 </Badge>
               )}
@@ -116,9 +116,9 @@ export function Sidebar() {
 
           <Collapsible defaultOpen>
             <CollapsibleTrigger asChild>
-              <button className="flex w-full items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent">
-                <ChevronDown className="h-3 w-3" />
-                {t("subscriptions")}
+              <button className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent">
+                <ChevronDown className="h-3 w-3 shrink-0" />
+                <span className="min-w-0 truncate">{t("subscriptions")}</span>
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -132,15 +132,15 @@ export function Sidebar() {
                   <div
                     key={feed.id}
                     className={cn(
-                      "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent cursor-pointer",
+                      "group flex w-full min-w-0 cursor-pointer items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm hover:bg-accent",
                       selectedFeedId === feed.id && "bg-accent font-medium"
                     )}
                     onClick={() => selectFeed(feed.id)}
                   >
                     <Rss className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <span className="flex-1 truncate">{feed.title}</span>
+                    <span className="min-w-0 flex-1 truncate">{feed.title}</span>
                     {(feed.unread_count ?? 0) > 0 && (
-                      <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1 text-[10px]">
+                      <Badge variant="secondary" className="h-5 min-w-5 max-w-14 shrink-0 justify-center truncate px-1 text-[10px]">
                         {feed.unread_count}
                       </Badge>
                     )}
@@ -189,11 +189,11 @@ export function Sidebar() {
 
       <div className="px-2 py-1.5">
         <button
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
           onClick={() => setReader({ settingsDialogOpen: true })}
         >
-          <Settings className="h-4 w-4" />
-          <span>{t("settings", { ns: "settings" })}</span>
+          <Settings className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 truncate">{t("settings", { ns: "settings" })}</span>
         </button>
       </div>
 

@@ -59,6 +59,29 @@ div.flex.h-full
 
 > **Warning**: Do not re-introduce `react-resizable-panels` for the sidebar. The resizable pattern is inappropriate when panel content (feed list, article titles) needs a predictable minimum width to remain readable.
 
+### ScrollArea in Fixed-Width Panels
+
+Radix ScrollArea inserts an internal content wrapper with `display: table`. In fixed-width panels such as the sidebar, that wrapper can expand to the max-content width of long feed titles and make rows overflow horizontally.
+
+The shared ScrollArea primitive must force that internal wrapper back to block layout:
+
+```tsx
+<ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit] [&>div]:!block">
+  {children}
+</ScrollAreaPrimitive.Viewport>
+```
+
+Rows inside fixed-width ScrollArea panels should also constrain every flex layer:
+
+```tsx
+<div className="flex w-full min-w-0 overflow-hidden">
+  <span className="min-w-0 flex-1 truncate">Long text</span>
+  <Badge className="shrink-0 truncate">123</Badge>
+</div>
+```
+
+**Why**: `truncate` only works when the flex item is allowed to shrink (`min-w-0`) and the row has a concrete width (`w-full`). The ScrollArea wrapper fix prevents the scroll viewport from using max-content width as that concrete width.
+
 ---
 
 ## Accessibility
@@ -72,3 +95,4 @@ div.flex.h-full
 ## Common Mistakes
 
 - **Using resizable panels for fixed-content sidebars** — `react-resizable-panels` lets users shrink panels below readable widths. For content that needs predictable sizing (feed lists, navigation), use fixed-width CSS flex layout instead.
+- **Relying on `truncate` alone in ScrollArea sidebars** — long text can still expand the Radix internal wrapper or the flex row. Use `[&>div]:!block` on the shared ScrollArea viewport plus `w-full min-w-0 overflow-hidden` on rows and `min-w-0 flex-1 truncate` on text.
