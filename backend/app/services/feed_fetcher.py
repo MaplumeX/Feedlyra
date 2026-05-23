@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
 from time import mktime
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import feedparser
 import httpx
@@ -117,6 +117,62 @@ def _parse_published(entry: feedparser.FeedParserDict) -> datetime | None:
         return None
 
 
+def _extract_feed_icon(parsed: feedparser.FeedParserDict) -> str | None:
+    """Extract icon URL from feedparser result. Priority: icon > image."""
+    icon = parsed.feed.get("icon")
+    if isinstance(icon, dict):
+        icon_url = icon.get("href") or icon.get("url")
+        if icon_url and isinstance(icon_url, str):
+            return icon_url
+    elif isinstance(icon, str):
+        return icon
+
+    image = parsed.feed.get("image")
+    if isinstance(image, dict):
+        icon_url = image.get("href") or image.get("url")
+        if icon_url and isinstance(icon_url, str):
+            return icon_url
+    elif isinstance(image, str):
+        return image
+
+    return None
+
+
+async def _discover_favicon(site_url: str) -> str | None:
+    """Best-effort favicon discovery from site URL.
+
+    Tries /favicon.ico first, then parses HTML for <link rel="icon">.
+    """
+    try:
+        favicon_url = urljoin(site_url, "/favicon.ico")
+        async with httpx.AsyncClient(
+            timeout=10, follow_redirects=True, headers={"User-Agent": USER_AGENT}
+        ) as client:
+            resp = await client.head(favicon_url)
+            if resp.status_code < 400:
+                return str(resp.url)
+    except Exception:
+        logger.warning("Favicon HEAD request failed for %s", site_url)
+
+    try:
+        async with httpx.AsyncClient(
+            timeout=10, follow_redirects=True, headers={"User-Agent": USER_AGENT}
+        ) as client:
+            resp = await client.get(site_url)
+            if resp.status_code >= 400:
+                return None
+            soup = BeautifulSoup(resp.text, "lxml")
+            link = soup.find("link", rel=lambda r: r and "icon" in r)
+            if link and link.get("href"):
+                href = link["href"]
+                if isinstance(href, str):
+                    return urljoin(site_url, href)
+    except Exception:
+        logger.warning("Favicon HTML discovery failed for %s", site_url)
+
+    return None
+
+
 async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
     now = datetime.now(timezone.utc)
     status_code, content, etag, last_modified = await _fetch_feed_content(
@@ -166,6 +222,15 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
         feed.site_url = parsed.feed.get("link")
     if not feed.description and parsed.feed.get("subtitle"):
         feed.description = parsed.feed.get("subtitle")
+
+    if not feed.icon_url:
+        icon_url = _extract_feed_icon(parsed)
+        if icon_url:
+            feed.icon_url = icon_url
+        elif feed.site_url:
+            favicon = await _discover_favicon(feed.site_url)
+            if favicon:
+                feed.icon_url = favicon
 
     if etag:
         feed.etag_header = etag

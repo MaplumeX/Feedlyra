@@ -19,6 +19,7 @@ class FeedResponse(BaseModel):
     title: str
     url: str
     site_url: str | None
+    icon_url: str | None = None
     description: str | None
     parsing_error_count: int
     parsing_error_message: str | None

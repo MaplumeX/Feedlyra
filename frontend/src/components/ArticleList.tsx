@@ -6,7 +6,8 @@ import i18next from "i18next";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useArticles, useToggleRead, useToggleStar, useMarkAllRead } from "@/api/hooks";
+import { FeedIcon } from "@/components/FeedIcon";
+import { useArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
 import type { Article } from "@/api/types";
@@ -43,10 +44,12 @@ function groupByDate(articles: Article[], lng: string): { label: string; article
 
 function ArticleRow({
   article,
+  feedIconUrl,
   isSelected,
   onSelect,
 }: {
   article: Article;
+  feedIconUrl: string | null;
   isSelected: boolean;
   onSelect: () => void;
 }) {
@@ -80,7 +83,12 @@ function ArticleRow({
         </button>
       </div>
       <div className="flex items-center gap-2 pl-4 text-xs text-muted-foreground">
-        {article.feed_title && <span className="truncate">{article.feed_title}</span>}
+        {article.feed_title && (
+          <>
+            <FeedIcon iconUrl={feedIconUrl} className="h-3 w-3" />
+            <span className="truncate">{article.feed_title}</span>
+          </>
+        )}
         {article.author && <span>{t("by", { author: article.author })}</span>}
         {article.published_at && (
           <span>{new Date(article.published_at).toLocaleDateString(i18n.language)}</span>
@@ -116,8 +124,17 @@ export function ArticleList() {
   }, [selectedFeedId, articleListFilter]);
 
   const { data, isLoading } = useArticles(queryParams);
+  const { data: feeds = [] } = useFeeds();
   const toggleRead = useToggleRead();
   const markAllRead = useMarkAllRead();
+
+  const feedIconMap = useMemo(() => {
+    const map = new Map<string, string | null>();
+    for (const feed of feeds) {
+      map.set(feed.id, feed.icon_url);
+    }
+    return map;
+  }, [feeds]);
 
   const articles = data?.items ?? [];
   const hasUnread = articles.some((a) => !a.is_read);
@@ -191,6 +208,7 @@ export function ArticleList() {
             return (
               <ArticleRow
                 article={item.article}
+                feedIconUrl={feedIconMap.get(item.article.feed_id) ?? null}
                 isSelected={selectedArticleId === item.article.id}
                 onSelect={() => selectArticle(item.article)}
               />
