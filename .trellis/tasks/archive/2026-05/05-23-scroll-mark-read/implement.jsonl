@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand store patterns, persist config, partialize — needed for scrollMarkRead setting in reader store"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Mutation hook patterns, query key factory, invalidation — needed for useBatchRead hook"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns and styling conventions — needed for ArticleList modifications"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Code standards and forbidden patterns — check during implementation"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "SQLAlchemy async patterns, ReadStatus model conventions — needed for batch-read API"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Error handling patterns for new batch-read endpoint"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Frontend-backend data flow consistency — batch-read API + React Query invalidation"}
+{"file": ".trellis/tasks/05-23-scroll-mark-read/prd.md", "reason": "Task PRD with requirements, decisions, and technical approach"}
