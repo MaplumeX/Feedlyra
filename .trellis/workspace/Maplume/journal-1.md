@@ -170,3 +170,36 @@ Populated all .trellis/spec/ backend and frontend guideline files with real conv
 ### Next Steps
 
 - None - task complete
+
+
+## Session 6: Optimize content display UI
+
+**Date**: 2026-05-23
+**Task**: Optimize content display UI
+**Branch**: `Feat/optimize-content-view`
+
+### Summary
+
+Install @tailwindcss/typography for prose styling, add image lightbox with zoom-in cursor and ESC/close dismissal, add three-level font size toggle (sm/md/lg) persisted to localStorage
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d13ebab` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
