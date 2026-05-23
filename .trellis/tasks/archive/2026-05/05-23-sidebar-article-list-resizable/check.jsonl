@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify component patterns and conventions are followed"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify Zustand persistence pattern is correctly applied"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify quality standards are met"}
+{"file": ".trellis/tasks/05-23-sidebar-article-list-resizable/prd.md", "reason": "Check implementation against PRD requirements and acceptance criteria"}

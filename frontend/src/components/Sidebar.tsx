@@ -22,6 +22,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AddFeedDialog } from "@/components/AddFeedDialog";
 import { FeedSettingsDialog } from "@/components/FeedSettingsDialog";
@@ -133,64 +139,97 @@ export function Sidebar() {
                   </p>
                 )}
                 {feeds.map((feed) => (
-                  <div
-                    key={feed.id}
-                    className={cn(
-                      "group flex w-full min-w-0 cursor-pointer items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm hover:bg-accent",
-                      selectedFeedId === feed.id && "bg-accent font-medium"
-                    )}
-                    onClick={() => selectFeed(feed.id)}
-                  >
-                    <FeedIcon iconUrl={feed.icon_url} className="h-3.5 w-3.5" />
-                    <span className="min-w-0 flex-1 truncate">{feed.title}</span>
-                    {(feed.unread_count ?? 0) > 0 && (
-                      <Badge variant="secondary" className="h-5 min-w-5 max-w-14 shrink-0 justify-center truncate px-1 text-[10px]">
-                        {feed.unread_count}
-                      </Badge>
-                    )}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <MoreHorizontal className="h-3.5 w-3.5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            refreshFeed.mutate(feed.id);
-                          }}
-                        >
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          {t("refresh", { ns: "common" })}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setFeedSettingsFeed(feed);
-                          }}
-                        >
-                          <Settings className="mr-2 h-4 w-4" />
-                          {t("feedSettings")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteFeed.mutate(feed.id);
-                          }}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          {t("delete", { ns: "common" })}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                  <ContextMenu key={feed.id}>
+                    <ContextMenuTrigger asChild>
+                      <div
+                        className={cn(
+                          "group flex w-full min-w-0 cursor-pointer items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm hover:bg-accent",
+                          selectedFeedId === feed.id && "bg-accent font-medium"
+                        )}
+                        onClick={() => selectFeed(feed.id)}
+                      >
+                        <FeedIcon iconUrl={feed.icon_url} className="h-3.5 w-3.5" />
+                        <span className="min-w-0 flex-1 truncate">{feed.title}</span>
+                        {(feed.unread_count ?? 0) > 0 && (
+                          <Badge variant="secondary" className="h-5 min-w-5 max-w-14 shrink-0 justify-center truncate px-1 text-[10px]">
+                            {feed.unread_count}
+                          </Badge>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreHorizontal className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                refreshFeed.mutate(feed.id);
+                              }}
+                            >
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              {t("refresh", { ns: "common" })}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFeedSettingsFeed(feed);
+                              }}
+                            >
+                              <Settings className="mr-2 h-4 w-4" />
+                              {t("feedSettings")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteFeed.mutate(feed.id);
+                              }}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              {t("delete", { ns: "common" })}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent>
+                      <ContextMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          refreshFeed.mutate(feed.id);
+                        }}
+                      >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        {t("refresh", { ns: "common" })}
+                      </ContextMenuItem>
+                      <ContextMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFeedSettingsFeed(feed);
+                        }}
+                      >
+                        <Settings className="mr-2 h-4 w-4" />
+                        {t("feedSettings")}
+                      </ContextMenuItem>
+                      <ContextMenuItem
+                        className="text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteFeed.mutate(feed.id);
+                        }}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {t("delete", { ns: "common" })}
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
                 ))}
               </div>
             </CollapsibleContent>

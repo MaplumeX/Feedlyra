@@ -316,3 +316,70 @@ Added OPML import/export frontend UI: SubscriptionsTab in SettingsDialog, useExp
 ### Next Steps
 
 - None - task complete
+
+
+## Session 10: Add right-click context menu for feed items
+
+**Date**: 2026-05-23
+**Task**: Add right-click context menu for feed items
+**Branch**: `Feat/feed-dropdown-right-click`
+
+### Summary
+
+Added ContextMenu (shadcn/ui) to feed items in Sidebar, enabling right-click to open Refresh/Delete menu alongside the existing three-dot DropdownMenu button. Updated component-guidelines spec with dual-trigger context menu pattern.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cf23e32` | (see git log) |
+| `3120730` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 11: Resizable sidebar and article list panels
+
+**Date**: 2026-05-23
+**Task**: Resizable sidebar and article list panels
+**Branch**: `Feat/draggable-sidebar-article-width`
+
+### Summary
+
+Replace fixed-width flex layout with react-resizable-panels v4. Sidebar: 120-280px (default 192px), collapsible at 40px. ArticleList: 180-400px (default 280px). Layout persisted to localStorage. Double-click separator resets defaults. Updated component-guidelines spec.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `35981d1` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
