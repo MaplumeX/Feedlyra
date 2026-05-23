@@ -41,5 +41,7 @@
   "fontSize": "Font Size",
   "fontSizeSmall": "Small",
   "fontSizeMedium": "Medium",
-  "fontSizeLarge": "Large"
+  "fontSizeLarge": "Large",
+  "exportOPML": "Export OPML",
+  "importOPML": "Import OPML"
 }

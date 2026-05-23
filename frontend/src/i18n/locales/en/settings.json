@@ -3,6 +3,7 @@
   "settingsDescription": "Manage your preferences and configuration.",
   "general": "General",
   "aiSettings": "AI Settings",
+  "subscriptions": "Subscriptions",
   "byokConfiguration": "BYOK Configuration",
   "byokDescription": "Configure your own OpenAI-compatible API endpoint. Supports OpenAI, Ollama, DeepSeek, Groq, Together AI, and any OpenAI-compatible provider.",
   "baseUrl": "Base URL",
@@ -13,5 +14,17 @@
   "connectionFailed": "Connection failed",
   "invalidUrl": "Invalid URL",
   "modelRequired": "Model is required",
-  "scrollMarkRead": "Mark as read on scroll"
+  "scrollMarkRead": "Mark as read on scroll",
+  "opmlExport": "Export Subscriptions",
+  "opmlExportDescription": "Download all your feed subscriptions as an OPML file.",
+  "opmlExportButton": "Export OPML",
+  "opmlExportSuccess": "OPML exported successfully",
+  "opmlExportFailed": "Failed to export OPML",
+  "opmlImport": "Import Subscriptions",
+  "opmlImportDescription": "Import feed subscriptions from an OPML file.",
+  "opmlImportSuccess": "Successfully imported {{count}} feed(s)",
+  "opmlImportFailed": "Failed to import OPML",
+  "opmlInvalidFile": "Please select an .opml or .xml file",
+  "opmlDropOrClick": "Drop an OPML file here or click to browse",
+  "opmlImporting": "Importing..."
 }

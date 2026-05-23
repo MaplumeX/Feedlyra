@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 8
+- **Total Sessions**: 9
 - **Last Active**: 2026-05-23
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~251 | Active |
+| `journal-1.md` | ~300 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 9 | 2026-05-23 | OPML import/export UI | `e586f56` | `Feat/opml-import-export` |
 | 8 | 2026-05-23 | feat: scroll mark read with batch API and settings toggle | `dbd2892`, `3ea521c` | `Feat/scroll-mark-read` |
 | 7 | 2026-05-23 | Optimize content display UI | `d13ebab` | `Feat/optimize-content-view` |
 | 6 | 2026-05-23 | fix: auto-refresh token on 401 response | `309273e` | `Feat/fix-invalid-token-after-backend-restart` |

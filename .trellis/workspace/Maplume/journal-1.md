@@ -249,3 +249,36 @@ Implemented scroll-to-mark-read: Virtuoso rangeChanged detects articles leaving 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 9: OPML import/export UI
+
+**Date**: 2026-05-23
+**Task**: OPML import/export UI
+**Branch**: `Feat/opml-import-export`
+
+### Summary
+
+Added OPML import/export frontend UI: SubscriptionsTab in SettingsDialog, useExportOPML hook, CommandPalette commands, i18n (en+zh-CN). Backend already had the endpoints.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e586f56` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
