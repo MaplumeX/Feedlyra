@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { Star, CheckCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { FeedIcon } from "@/components/FeedIcon";
-import { useArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead } from "@/api/hooks";
+import { useArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
 import type { Article } from "@/api/types";
@@ -113,7 +113,7 @@ function ArticleListSkeleton() {
 
 export function ArticleList() {
   const { t, i18n } = useTranslation("reader");
-  const { selectedFeedId, selectedArticleId, articleListFilter, set: setReader } = useReaderStore();
+  const { selectedFeedId, selectedArticleId, articleListFilter, scrollMarkRead, set: setReader } = useReaderStore();
 
   const queryParams = useMemo(() => {
     const params: { feed_id?: string; read_status?: string; starred?: boolean } = {};
@@ -127,6 +127,7 @@ export function ArticleList() {
   const { data: feeds = [] } = useFeeds();
   const toggleRead = useToggleRead();
   const markAllRead = useMarkAllRead();
+  const batchRead = useBatchRead();
 
   const feedIconMap = useMemo(() => {
     const map = new Map<string, string | null>();
@@ -150,6 +151,74 @@ export function ArticleList() {
     }
     return items;
   }, [grouped]);
+
+  // Scroll mark read state
+  const prevRangeRef = useRef<{ startIndex: number; endIndex: number } | null>(null);
+  const isStableRef = useRef(false);
+  const pendingIdsRef = useRef<Set<string>>(new Set());
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reset scroll tracking when feed/filter changes to avoid stale range
+  useEffect(() => {
+    isStableRef.current = false;
+    prevRangeRef.current = null;
+  }, [selectedFeedId, articleListFilter]);
+
+  const flushPendingIds = useCallback(() => {
+    const ids = Array.from(pendingIdsRef.current);
+    pendingIdsRef.current.clear();
+    debounceTimerRef.current = null;
+    if (ids.length > 0) {
+      batchRead.mutate({ articleIds: ids });
+    }
+  }, [batchRead]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  const rangeChanged = useCallback(
+    (range: { startIndex: number; endIndex: number }) => {
+      if (!scrollMarkRead) return;
+
+      // Skip the initial range change to avoid marking on mount/resize
+      if (!isStableRef.current) {
+        isStableRef.current = true;
+        prevRangeRef.current = range;
+        return;
+      }
+
+      const prev = prevRangeRef.current;
+      prevRangeRef.current = range;
+
+      if (!prev) return;
+
+      // Only trigger when scrolling down: startIndex increases
+      // (items above the viewport have been scrolled past)
+      if (range.startIndex <= prev.startIndex) return;
+
+      // Collect unread article IDs that were scrolled past (between prev.startIndex and range.startIndex - 1)
+      for (let i = prev.startIndex; i < range.startIndex; i++) {
+        const item = flatItems[i];
+        if (item && item.type === "article" && !item.article.is_read) {
+          pendingIdsRef.current.add(item.article.id);
+        }
+      }
+
+      if (pendingIdsRef.current.size > 0) {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        debounceTimerRef.current = setTimeout(flushPendingIds, 300);
+      }
+    },
+    [scrollMarkRead, flatItems, flushPendingIds]
+  );
 
   function selectArticle(article: Article) {
     setReader({ selectedArticleId: article.id });
@@ -197,6 +266,8 @@ export function ArticleList() {
         <Virtuoso
           className="flex-1"
           data={flatItems}
+          rangeChanged={rangeChanged}
+          followOutput={articleListFilter === "unread" ? "smooth" : undefined}
           itemContent={(_index, item) => {
             if (item.type === "header") {
               return (

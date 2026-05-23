@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
-import type { AIConfig, Article, ArticleListResponse, ChatHistory, DiscoveredFeed, Feed } from "./types";
+import type { AIConfig, Article, ArticleListResponse, ChatHistory, DiscoveredFeed, Feed, OPMLExportResponse } from "./types";
 
 const queryKeys = {
   feeds: {
@@ -77,6 +77,12 @@ export function useImportOPML() {
   });
 }
 
+export function useExportOPML() {
+  return useMutation({
+    mutationFn: () => api.get<OPMLExportResponse>("/api/feeds/export/opml"),
+  });
+}
+
 // --- Article hooks ---
 
 interface ArticleListParams {
@@ -141,6 +147,18 @@ export function useMarkAllRead() {
   return useMutation({
     mutationFn: ({ feedId }: { feedId?: string }) =>
       api.put<{ marked_count: number }>("/api/articles/mark-all-read", { feed_id: feedId ?? null }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+    },
+  });
+}
+
+export function useBatchRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ articleIds }: { articleIds: string[] }) =>
+      api.put<{ marked_count: number }>("/api/articles/batch-read", { article_ids: articleIds }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.articles.all });
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });

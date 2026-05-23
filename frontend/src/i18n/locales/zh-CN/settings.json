@@ -3,6 +3,7 @@
   "settingsDescription": "管理你的偏好和配置。",
   "general": "通用",
   "aiSettings": "AI 设置",
+  "subscriptions": "订阅管理",
   "byokConfiguration": "BYOK 配置",
   "byokDescription": "配置你自己的 OpenAI 兼容 API 端点。支持 OpenAI、Ollama、DeepSeek、Groq、Together AI 及任何 OpenAI 兼容的提供商。",
   "baseUrl": "Base URL",
@@ -12,5 +13,18 @@
   "testConnection": "测试连接",
   "connectionFailed": "连接失败",
   "invalidUrl": "URL 格式不正确",
-  "modelRequired": "模型为必填项"
+  "modelRequired": "模型为必填项",
+  "scrollMarkRead": "滚动标记已读",
+  "opmlExport": "导出订阅",
+  "opmlExportDescription": "将所有订阅源下载为 OPML 文件。",
+  "opmlExportButton": "导出 OPML",
+  "opmlExportSuccess": "OPML 导出成功",
+  "opmlExportFailed": "OPML 导出失败",
+  "opmlImport": "导入订阅",
+  "opmlImportDescription": "从 OPML 文件导入订阅源。",
+  "opmlImportSuccess": "成功导入 {{count}} 个订阅源",
+  "opmlImportFailed": "OPML 导入失败",
+  "opmlInvalidFile": "请选择 .opml 或 .xml 文件",
+  "opmlDropOrClick": "将 OPML 文件拖放到此处，或点击浏览",
+  "opmlImporting": "正在导入..."
 }

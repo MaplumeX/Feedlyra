@@ -39,6 +39,31 @@ function App() {
 }
 ```
 
+### Don't: Virtuoso rangeChanged without stability guard
+
+```tsx
+// Bad — fires on mount, resize, and data changes, not just user scroll
+<Virtuoso rangeChanged={(range) => {
+  markArticlesRead(range);
+}} />
+```
+
+**Why**: Virtuoso emits `rangeChanged` on initialization, window resize, and data replacement — not only on user scroll. Without an `isStable` guard, these non-user events trigger false positives (e.g., marking articles read on page load).
+
+**Instead**: Use an `isStableRef` that becomes true after the first rangeChanged, and reset it when the data source changes (feed/filter switch).
+
+### Don't: Forget debounce cleanup in scroll handlers
+
+```tsx
+// Bad — timer fires after component unmount
+const timer = setTimeout(flushPending, 300);
+// no cleanup
+```
+
+**Why**: Scroll-triggered debounced operations (mark-as-read, analytics) can fire after the component unmounts, causing state updates on unmounted components.
+
+**Instead**: Always return a cleanup function from `useEffect` that clears the timer.
+
 ---
 
 ## Required Patterns

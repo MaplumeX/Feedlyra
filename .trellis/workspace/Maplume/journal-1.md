@@ -217,15 +217,15 @@ Install @tailwindcss/typography for prose styling, add image lightbox with zoom-
 - None - task complete
 
 
-## Session 8: Parse feed title and icon
+## Session 8: feat: scroll mark read with batch API and settings toggle
 
 **Date**: 2026-05-23
-**Task**: Parse feed title and icon
-**Branch**: `Feat/parse-feed-title-and-icon`
+**Task**: feat: scroll mark read with batch API and settings toggle
+**Branch**: `Feat/scroll-mark-read`
 
 ### Summary
 
-Added icon_url to feeds: parse from feed XML icon/image with favicon fallback, store in DB, expose via API, display in sidebar/article list with onerror fallback to RSS icon
+Implemented scroll-to-mark-read: Virtuoso rangeChanged detects articles leaving viewport top, debounced batch-read API marks them read. Added backend PUT /api/articles/batch-read with user ownership validation, frontend useBatchRead hook, scrollMarkRead setting toggle (default on, persisted), and Virtuoso stability guards. Updated specs for batch API security and Virtuoso scroll patterns.
 
 ### Main Changes
 
@@ -235,8 +235,41 @@ Added icon_url to feeds: parse from feed XML icon/image with favicon fallback, s
 
 | Hash | Message |
 |------|---------|
-| `8b3c8db` | (see git log) |
-| `6d5a0a2` | (see git log) |
+| `dbd2892` | (see git log) |
+| `3ea521c` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 9: OPML import/export UI
+
+**Date**: 2026-05-23
+**Task**: OPML import/export UI
+**Branch**: `Feat/opml-import-export`
+
+### Summary
+
+Added OPML import/export frontend UI: SubscriptionsTab in SettingsDialog, useExportOPML hook, CommandPalette commands, i18n (en+zh-CN). Backend already had the endpoints.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e586f56` | (see git log) |
 
 ### Testing
 

@@ -12,7 +12,7 @@ from app.models.article import Article, ReadStatus, StarredArticle
 from app.models.ai import ArticleAIData
 from app.models.feed import Feed
 from app.models.user import User
-from app.schemas.article import ArticleListResponse, ArticleResponse, MarkAllRead, ReadToggle, StarToggle
+from app.schemas.article import ArticleListResponse, ArticleResponse, BatchRead, MarkAllRead, ReadToggle, StarToggle
 
 router = APIRouter(prefix="/api/articles", tags=["articles"])
 
@@ -135,6 +135,41 @@ async def mark_all_read(
     )
     already_read_ids = {row[0] for row in existing_read.all()}
     new_ids = [aid for aid in article_ids if aid not in already_read_ids]
+
+    now = datetime.now(timezone.utc)
+    for aid in new_ids:
+        db.add(ReadStatus(user_id=user.id, article_id=aid, read_at=now))
+
+    await db.commit()
+
+    return {"marked_count": len(new_ids)}
+
+
+@router.put("/batch-read")
+async def batch_read(
+    body: BatchRead,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    if not body.article_ids:
+        return {"marked_count": 0}
+
+    # Only allow marking articles that belong to the user's feeds
+    valid_result = await db.execute(
+        select(Article.id).join(Feed, Feed.id == Article.feed_id).where(
+            Feed.user_id == user.id, Article.id.in_(body.article_ids),
+        )
+    )
+    valid_ids = {row[0] for row in valid_result.all()}
+
+    existing_read = await db.execute(
+        select(ReadStatus.article_id).where(
+            ReadStatus.user_id == user.id,
+            ReadStatus.article_id.in_(valid_ids),
+        )
+    )
+    already_read_ids = {row[0] for row in existing_read.all()}
+    new_ids = [aid for aid in valid_ids if aid not in already_read_ids]
 
     now = datetime.now(timezone.utc)
     for aid in new_ids:

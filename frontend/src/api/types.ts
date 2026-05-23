@@ -57,6 +57,10 @@ export interface ChatMessage {
   created_at: string;
 }
 
+export interface OPMLExportResponse {
+  xml: string;
+}
+
 export interface ChatHistory {
   chat_id: string;
   messages: ChatMessage[];
