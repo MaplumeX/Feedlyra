@@ -282,3 +282,37 @@ Added OPML import/export frontend UI: SubscriptionsTab in SettingsDialog, useExp
 ### Next Steps
 
 - None - task complete
+
+
+## Session 10: Add right-click context menu for feed items
+
+**Date**: 2026-05-23
+**Task**: Add right-click context menu for feed items
+**Branch**: `Feat/feed-dropdown-right-click`
+
+### Summary
+
+Added ContextMenu (shadcn/ui) to feed items in Sidebar, enabling right-click to open Refresh/Delete menu alongside the existing three-dot DropdownMenu button. Updated component-guidelines spec with dual-trigger context menu pattern.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cf23e32` | (see git log) |
+| `3120730` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
