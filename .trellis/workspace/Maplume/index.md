@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 10
+- **Total Sessions**: 11
 - **Last Active**: 2026-05-23
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~317 | Active |
+| `journal-1.md` | ~355 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,7 +29,8 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
-| 10 | 2026-05-23 | Resizable sidebar and article list panels | `35981d1` | `Feat/draggable-sidebar-article-width` |
+| 10 | 2026-05-23 | Add right-click context menu for feed items | `cf23e32`, `3120730` | `Feat/feed-dropdown-right-click` |
+| 11 | 2026-05-23 | Resizable sidebar and article list panels | `35981d1` | `Feat/draggable-sidebar-article-width` |
 | 9 | 2026-05-23 | OPML import/export UI | `e586f56` | `Feat/opml-import-export` |
 | 8 | 2026-05-23 | feat: scroll mark read with batch API and settings toggle | `dbd2892`, `3ea521c` | `Feat/scroll-mark-read` |
 | 8 | 2026-05-23 | Parse feed title and icon | `8b3c8db`, `6d5a0a2` | `Feat/parse-feed-title-and-icon` |

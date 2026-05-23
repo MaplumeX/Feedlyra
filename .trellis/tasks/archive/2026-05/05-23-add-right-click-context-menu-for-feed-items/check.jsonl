@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify ContextMenu follows component conventions (named exports, styling patterns, accessibility)"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Verify frontend stack conventions are respected"}

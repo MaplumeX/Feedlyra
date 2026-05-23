@@ -232,3 +232,36 @@ if (range.startIndex > prevRange.startIndex) {
      .slice(start, end + 1)
      .filter((item) => item.type === "article");
    ```
+
+### Dual-Trigger Context Menu on List Items
+
+When list items need a context menu, provide both right-click (`ContextMenu`) and a visible button (`DropdownMenu`) so touch-screen and power users each have an entry point:
+
+```tsx
+<ContextMenu>
+  <ContextMenuTrigger asChild>
+    <div className="group ..." onClick={() => selectFeed(feed.id)}>
+      {/* item content */}
+
+      {/* Visible three-dot button (appears on hover) */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon"
+            className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
+            onClick={(e) => e.stopPropagation()}>
+            <MoreHorizontal className="h-3.5 w-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {/* same menu items */}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  </ContextMenuTrigger>
+  <ContextMenuContent>
+    {/* same menu items as DropdownMenu */}
+  </ContextMenuContent>
+</ContextMenu>
+```
+
+**Why**: `ContextMenuTrigger asChild` makes the existing `<div>` the trigger without adding extra DOM nodes. React `onClick` only fires on left-click, so right-click opens the context menu without also selecting the item. The `key` prop must be on the outermost `<ContextMenu>` (the list root element), not on inner children.
