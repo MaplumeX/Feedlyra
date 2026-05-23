@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "验证 SubscriptionsTab 组件符合规范"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "验证 useExportOPML hook 符合规范"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "验证 mutation 和 cache invalidation 模式正确"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "验证类型定义完整"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量检查"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "验证前后端 API 对接一致性"}

@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "SubscriptionsTab 组件需要遵循组件规范"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "useExportOPML hook 需要遵循 hook 规范"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "涉及 queryClient invalidate 和 mutation 模式"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "OPML 导出响应类型定义"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "新组件文件放置位置"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量标准"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "前后端 API 对接需遵循跨层规范"}
