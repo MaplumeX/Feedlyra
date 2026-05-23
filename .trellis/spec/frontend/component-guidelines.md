@@ -89,22 +89,26 @@ interface AddFeedDialogProps {
 - Class merging: `cn()` from `src/lib/utils.ts` (combines `clsx` + `tailwind-merge`)
 - shadcn/ui primitives use `class-variance-authority` (cva) for variant styling
 
-### Layout Convention: Three-Panel Fixed Layout
+### Layout Convention: Three-Panel Resizable Layout
 
-The main reader layout uses a **fixed-width CSS flex** three-panel structure — NOT `react-resizable-panels`.
+The main reader layout uses `react-resizable-panels` v4 (Group/Panel/Separator) with pixel-based width constraints.
 
-**Why**: Resizable panels caused the sidebar to render too narrow and the drag handle was unwanted. Fixed widths ensure consistent content display.
+**Why fixed widths**: Unconstrained resizable panels let users shrink panels below readable widths. Pixel constraints (`minSize`/`maxSize`) prevent this while still allowing layout customization.
 
 ```
-div.flex.h-full
-  ├── Sidebar wrapper:   w-64 (256px), shrink-0, collapsible (sidebarCollapsed state)
-  ├── Article list:      w-[360px], shrink-0, border-r border-border
-  └── Article detail:    flex-1 min-w-0
+Group (orientation="horizontal")
+  ├── Panel#sidebar:        minSize=120, maxSize=280, defaultSize=192, collapsible, collapsedSize=40
+  ├── Separator
+  ├── Panel#article-list:   minSize=180, maxSize=400, defaultSize=280
+  ├── Separator
+  └── Panel#article-detail: (flexible, takes remaining space)
 ```
 
-**Collapse behavior**: When `sidebarCollapsed` is true, the sidebar wrapper shrinks to 40px and shows a `PanelLeft` icon button to re-expand. Controlled by Zustand store (`sidebarCollapsed`), toggled via Shift+S shortcut and Command Palette.
+**Collapse behavior**: When `sidebarCollapsed` is true, the sidebar Panel collapses to 40px via `collapsible` + `collapsedSize={40}`. Controlled by Zustand store (`sidebarCollapsed`), toggled via Shift+S shortcut and Command Palette.
 
-> **Warning**: Do not re-introduce `react-resizable-panels` for the sidebar. The resizable pattern is inappropriate when panel content (feed list, article titles) needs a predictable minimum width to remain readable.
+**Persistence**: Layout saved to localStorage via `onLayoutChanged` callback; restored via `defaultLayout` prop on mount.
+
+> **Note**: `react-resizable-panels` v4 uses `Group`/`Panel`/`Separator` naming (not v3's `PanelGroup`/`Panel`/`PanelResizeHandle`). v4 supports pixel values directly for `minSize`/`maxSize`/`defaultSize`.
 
 ### ScrollArea in Fixed-Width Panels
 
@@ -145,7 +149,7 @@ Rows inside fixed-width ScrollArea panels should also constrain every flex layer
 
 ## Common Mistakes
 
-- **Using resizable panels for fixed-content sidebars** — `react-resizable-panels` lets users shrink panels below readable widths. Use fixed-width CSS flex layout instead.
+- **Unconstrained resizable panels** — `react-resizable-panels` without `minSize`/`maxSize` lets users shrink panels below readable widths. Always set pixel constraints that keep content readable (e.g., sidebar min 120px, article list min 180px).
 - **Relying on `truncate` alone in ScrollArea sidebars** — long text can still expand the Radix internal wrapper or the flex row. Use `[&>div]:!block` on the shared ScrollArea viewport plus `w-full min-w-0 overflow-hidden` on rows and `min-w-0 flex-1 truncate` on text.
 
 ---
