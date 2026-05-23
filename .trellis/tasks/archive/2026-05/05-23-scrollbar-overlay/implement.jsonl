@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "确认组件替换模式——ScrollArea → 原生 div 的变更是否符合项目组件规范"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "确认移除 CSS 和替换组件后需满足的质量标准"}
