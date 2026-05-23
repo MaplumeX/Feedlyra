@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify Zustand store usage follows spec — getState() for non-React context, persist middleware correctness"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Lint/typecheck/pass quality bar"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Verify any hook changes follow conventions"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify frontend refresh call matches backend /api/auth/refresh contract"}
