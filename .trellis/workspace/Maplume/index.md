@@ -31,6 +31,7 @@
 |---|------|-------|---------|--------|
 | 9 | 2026-05-23 | OPML import/export UI | `e586f56` | `Feat/opml-import-export` |
 | 8 | 2026-05-23 | feat: scroll mark read with batch API and settings toggle | `dbd2892`, `3ea521c` | `Feat/scroll-mark-read` |
+| 8 | 2026-05-23 | Parse feed title and icon | `8b3c8db`, `6d5a0a2` | `Feat/parse-feed-title-and-icon` |
 | 7 | 2026-05-23 | Optimize content display UI | `d13ebab` | `Feat/optimize-content-view` |
 | 6 | 2026-05-23 | fix: auto-refresh token on 401 response | `309273e` | `Feat/fix-invalid-token-after-backend-restart` |
 | 5 | 2026-05-23 | Bootstrap spec guidelines | `b7a83ac` | `Feat/complete-bootstrap-task` |

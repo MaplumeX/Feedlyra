@@ -21,6 +21,7 @@ class Feed(TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(Text)
     etag_header: Mapped[str | None] = mapped_column(String(500))
     last_modified_header: Mapped[str | None] = mapped_column(String(500))
+    icon_url: Mapped[str | None] = mapped_column(String(2048))
     parsing_error_count: Mapped[int] = mapped_column(Integer, default=0)
     parsing_error_message: Mapped[str | None] = mapped_column(Text)
     checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AddFeedDialog } from "@/components/AddFeedDialog";
+import { FeedIcon } from "@/components/FeedIcon";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import { useFeeds, useDeleteFeed, useRefreshFeed, useStarredCount } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
@@ -137,7 +138,7 @@ export function Sidebar() {
                     )}
                     onClick={() => selectFeed(feed.id)}
                   >
-                    <Rss className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <FeedIcon iconUrl={feed.icon_url} className="h-3.5 w-3.5" />
                     <span className="min-w-0 flex-1 truncate">{feed.title}</span>
                     {(feed.unread_count ?? 0) > 0 && (
                       <Badge variant="secondary" className="h-5 min-w-5 max-w-14 shrink-0 justify-center truncate px-1 text-[10px]">

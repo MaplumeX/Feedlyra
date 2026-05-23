@@ -3,6 +3,7 @@ export interface Feed {
   title: string;
   url: string;
   site_url: string | null;
+  icon_url: string | null;
   description: string | null;
   parsing_error_count: number;
   parsing_error_message: string | null;

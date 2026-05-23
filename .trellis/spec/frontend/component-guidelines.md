@@ -150,7 +150,39 @@ Rows inside fixed-width ScrollArea panels should also constrain every flex layer
 
 ---
 
-## Virtuoso Scroll-Based Detection Pattern
+## Patterns
+
+### External Image with onerror Fallback
+
+When rendering external image URLs (favicons, avatars, etc.) that may be broken or slow:
+
+```tsx
+interface FeedIconProps {
+  iconUrl: string | null;
+  className?: string;
+}
+
+export function FeedIcon({ iconUrl, className }: FeedIconProps) {
+  const [failed, setFailed] = useState(false);
+
+  if (iconUrl && !failed) {
+    return (
+      <img
+        src={iconUrl}
+        alt=""
+        className={cn("shrink-0 rounded-sm object-contain", className)}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return <Rss className={cn("shrink-0 text-muted-foreground", className)} />;
+}
+```
+
+**Why**: External URLs can 404 or be blocked by CORS. The `useState` + `onError` pattern switches to a fallback icon once, without repeated re-renders. The `className` prop allows different sizing contexts (sidebar vs article list).
+
+### Virtuoso Scroll-Based Detection Pattern
 
 When using `react-virtuoso`'s `rangeChanged` callback for scroll-triggered logic (e.g., mark-as-read on scroll):
 

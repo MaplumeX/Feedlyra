@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend architecture and conventions for feed model/schema/service changes"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "DB migration conventions: UUID PKs, Mapped[] syntax, nullable columns, Alembic sequential IDs"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Error handling patterns for favicon fetch failures (network, 404, timeout)"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Logging conventions for favicon fetch warnings/errors"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend quality checks: async patterns, type annotations"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend conventions for adding icon_url to Feed type and displaying images"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns for icon rendering with fallback"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Type safety rules for nullable icon_url field"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer data flow: DB model → schema → API → frontend type → component"}
+{"file": ".trellis/tasks/05-23-parse-feed-title-and-icon/prd.md", "reason": "Task PRD with requirements, decisions, and acceptance criteria"}
