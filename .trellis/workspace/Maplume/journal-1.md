@@ -215,3 +215,37 @@ Install @tailwindcss/typography for prose styling, add image lightbox with zoom-
 ### Next Steps
 
 - None - task complete
+
+
+## Session 8: Parse feed title and icon
+
+**Date**: 2026-05-23
+**Task**: Parse feed title and icon
+**Branch**: `Feat/parse-feed-title-and-icon`
+
+### Summary
+
+Added icon_url to feeds: parse from feed XML icon/image with favicon fallback, store in DB, expose via API, display in sidebar/article list with onerror fallback to RSS icon
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8b3c8db` | (see git log) |
+| `6d5a0a2` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
