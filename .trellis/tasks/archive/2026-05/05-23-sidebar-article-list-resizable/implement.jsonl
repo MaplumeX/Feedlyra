@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Frontend component conventions for implementing resizable layout components"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand store patterns for persisting panel widths and collapse state"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality standards for the implementation"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Ensure frontend layout changes don't break backend API contracts"}
+{"file": ".trellis/tasks/05-23-sidebar-article-list-resizable/prd.md", "reason": "Task PRD with requirements, constraints, and acceptance criteria"}
