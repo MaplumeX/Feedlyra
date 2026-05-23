@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns, styling conventions, layout structure — implement agent needs to follow component export style, Tailwind patterns, and accessibility guidelines"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand store patterns and partialize for persist — fontSize preference must be persisted correctly, follow existing reader store pattern"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Required patterns for Zustand partialize — ensure fontSize is included in partialize allowlist, temporary state excluded"}

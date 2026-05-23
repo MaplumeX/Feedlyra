@@ -182,6 +182,17 @@ Populated all .trellis/spec/ backend and frontend guideline files with real conv
 
 添加前端 401 拦截器，自动使用 refreshToken 调用 /api/auth/refresh 刷新 token 并重试原请求；并发去重；refresh 失败时 toast 提示 + logout + 跳转登录页；SSE streaming 请求同样处理 401
 
+
+## Session 7: Optimize content display UI
+
+**Date**: 2026-05-23
+**Task**: Optimize content display UI
+**Branch**: `Feat/optimize-content-view`
+
+### Summary
+
+Install @tailwindcss/typography for prose styling, add image lightbox with zoom-in cursor and ESC/close dismissal, add three-level font size toggle (sm/md/lg) persisted to localStorage
+
 ### Main Changes
 
 (Add details)
@@ -191,6 +202,7 @@ Populated all .trellis/spec/ backend and frontend guideline files with real conv
 | Hash | Message |
 |------|---------|
 | `309273e` | (see git log) |
+| `d13ebab` | (see git log) |
 
 ### Testing
 

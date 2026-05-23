@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify component follows export patterns, styling conventions, accessibility requirements"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify Zustand store changes follow persist/partialize pattern correctly"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Check that partialize correctly includes fontSize in persisted state"}
