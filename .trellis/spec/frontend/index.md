@@ -6,7 +6,7 @@
 
 ## Overview
 
-This directory contains guidelines for frontend development. Fill in each file with your project's specific conventions.
+This directory contains guidelines for frontend development in the Feedlyra project. Each file documents real conventions derived from the codebase.
 
 ---
 
@@ -14,25 +14,23 @@ This directory contains guidelines for frontend development. Fill in each file w
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Component Guidelines](./component-guidelines.md) | Component patterns, props, composition | To fill |
-| [Hook Guidelines](./hook-guidelines.md) | Custom hooks, data fetching patterns | To fill |
-| [State Management](./state-management.md) | Local state, global state, server state | To fill |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Type Safety](./type-safety.md) | Type patterns, validation | To fill |
+| [Directory Structure](./directory-structure.md) | Module organization and file layout | Done |
+| [Component Guidelines](./component-guidelines.md) | Component patterns, props, composition, styling | Done |
+| [Hook Guidelines](./hook-guidelines.md) | Custom hooks, data fetching, SSE streaming | Done |
+| [State Management](./state-management.md) | Zustand, React Query, state categories | Done |
+| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | Done |
+| [Type Safety](./type-safety.md) | TypeScript, Zod, type organization | Done |
 
 ---
 
-## How to Fill These Guidelines
+## Key Conventions
 
-For each guideline file:
-
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
-
-The goal is to help AI assistants and new team members understand how YOUR project works.
+- **React 19** + TypeScript (strict mode) + Vite
+- **UI library**: shadcn/ui (Radix primitives) + Tailwind CSS v3
+- **State split**: Zustand for UI/auth state, React Query for server data — no overlap
+- **i18n**: i18next with `en`/`zh-CN` locales, Zod i18n integration
+- **Forms**: react-hook-form + Zod validation
+- **No tests** — currently not configured
 
 ---
 

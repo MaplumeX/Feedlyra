@@ -6,33 +6,78 @@
 
 ## Overview
 
-<!--
-Document your project's component conventions here.
-
-Questions to answer:
-- What component patterns do you use?
-- How are props defined?
-- How do you handle composition?
-- What accessibility standards apply?
--->
-
-(To be filled by the team)
+All components are functional components using `export function` declarations. shadcn/ui for primitives, Tailwind CSS for styling. No CSS modules, no styled-components.
 
 ---
 
 ## Component Structure
 
-<!-- Standard structure of a component file -->
+```tsx
+// Standard feature component
+export function Sidebar() {
+  const { t } = useTranslation("reader");
+  const { data } = useFeeds();
+  // ...
 
-(To be filled by the team)
+  return (
+    <aside className="...">
+      {/* ... */}
+    </aside>
+  );
+}
+```
+
+- Named exports (not default exports) for most components
+- `App.tsx` is the single exception: `export default function App()`
+- Internal/helper components in the same file use `function` without export:
+
+```tsx
+function ArticleRow({ article, isSelected, onSelect }: {
+  article: Article;
+  isSelected: boolean;
+  onSelect: () => void;
+}) { /* ... */ }
+
+function EmptyState() { /* ... */ }
+
+export function ArticleList() {
+  // uses ArticleRow and EmptyState internally
+}
+```
 
 ---
 
 ## Props Conventions
 
-<!-- How props should be defined and typed -->
+**Simple props** — inline object type in function signature:
 
-(To be filled by the team)
+```tsx
+function ArticleRow({ article, isSelected, onSelect }: {
+  article: Article;
+  isSelected: boolean;
+  onSelect: () => void;
+})
+```
+
+**Complex props** — named interface above the component:
+
+```tsx
+interface AIChatPanelProps {
+  articleId: string;
+  articleTitle: string;
+}
+
+export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps)
+```
+
+**Dialog components** — follow shadcn pattern with `open`/`onOpenChange`:
+
+```tsx
+interface AddFeedDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+```
 
 ---
 
@@ -41,6 +86,8 @@ Questions to answer:
 - **Tailwind utility classes** inline in JSX (no CSS modules, no styled-components)
 - Theme via CSS custom properties in `index.css` (`:root` / `.dark`), mapped through `tailwind.config.ts`
 - shadcn/ui components for primitives (Button, Badge, DropdownMenu, etc.)
+- Class merging: `cn()` from `src/lib/utils.ts` (combines `clsx` + `tailwind-merge`)
+- shadcn/ui primitives use `class-variance-authority` (cva) for variant styling
 
 ### Layout Convention: Three-Panel Fixed Layout
 
@@ -55,7 +102,7 @@ div.flex.h-full
   └── Article detail:    flex-1 min-w-0
 ```
 
-**Collapse behavior**: When `sidebarCollapsed` is true, the sidebar wrapper shrinks to 40px and shows a `PanelLeft` icon button to re-expand. Controlled by zustand store (`sidebarCollapsed`), toggled via Shift+S shortcut and Command Palette.
+**Collapse behavior**: When `sidebarCollapsed` is true, the sidebar wrapper shrinks to 40px and shows a `PanelLeft` icon button to re-expand. Controlled by Zustand store (`sidebarCollapsed`), toggled via Shift+S shortcut and Command Palette.
 
 > **Warning**: Do not re-introduce `react-resizable-panels` for the sidebar. The resizable pattern is inappropriate when panel content (feed list, article titles) needs a predictable minimum width to remain readable.
 
@@ -86,13 +133,17 @@ Rows inside fixed-width ScrollArea panels should also constrain every flex layer
 
 ## Accessibility
 
-<!-- A11y requirements and patterns -->
-
-(To be filled by the team)
+- `sr-only` span for close button labels in Dialog
+- Semantic `<article>` element in ArticleDetail
+- `<time>` element with `dateTime` attribute
+- `html[lang="en"]` in index.html
+- `rel="noopener noreferrer"` on external links
+- `title` attributes on icon-only buttons for tooltip text
+- **Gap**: Many interactive elements use `<div onClick>` without ARIA roles — should use `<button>` or add appropriate ARIA attributes
 
 ---
 
 ## Common Mistakes
 
-- **Using resizable panels for fixed-content sidebars** — `react-resizable-panels` lets users shrink panels below readable widths. For content that needs predictable sizing (feed lists, navigation), use fixed-width CSS flex layout instead.
+- **Using resizable panels for fixed-content sidebars** — `react-resizable-panels` lets users shrink panels below readable widths. Use fixed-width CSS flex layout instead.
 - **Relying on `truncate` alone in ScrollArea sidebars** — long text can still expand the Radix internal wrapper or the flex row. Use `[&>div]:!block` on the shared ScrollArea viewport plus `w-full min-w-0 overflow-hidden` on rows and `min-w-0 flex-1 truncate` on text.
