@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 5
+- **Total Sessions**: 6
 - **Last Active**: 2026-05-23
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~172 | Active |
+| `journal-1.md` | ~205 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 6 | 2026-05-23 | fix: auto-refresh token on 401 response | `309273e` | `Feat/fix-invalid-token-after-backend-restart` |
 | 5 | 2026-05-23 | Bootstrap spec guidelines | `b7a83ac` | `Feat/complete-bootstrap-task` |
 | 4 | 2026-05-22 | Add settings dialog with language switch and AI configuration | `d5329d2` | `Feat/sidebar-settings-and-ai-config` |
 | 2 | 2026-05-22 | Add i18n internationalization support | `ce255be` | `Feat/support-i18n` |

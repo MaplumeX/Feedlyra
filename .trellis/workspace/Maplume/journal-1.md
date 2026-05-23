@@ -170,3 +170,36 @@ Populated all .trellis/spec/ backend and frontend guideline files with real conv
 ### Next Steps
 
 - None - task complete
+
+
+## Session 6: fix: auto-refresh token on 401 response
+
+**Date**: 2026-05-23
+**Task**: fix: auto-refresh token on 401 response
+**Branch**: `Feat/fix-invalid-token-after-backend-restart`
+
+### Summary
+
+添加前端 401 拦截器，自动使用 refreshToken 调用 /api/auth/refresh 刷新 token 并重试原请求；并发去重；refresh 失败时 toast 提示 + logout + 跳转登录页；SSE streaming 请求同样处理 401
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `309273e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
