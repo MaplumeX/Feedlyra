@@ -282,3 +282,37 @@ Added OPML import/export frontend UI: SubscriptionsTab in SettingsDialog, useExp
 ### Next Steps
 
 - None - task complete
+
+
+## Session 10: Add feed settings dialog
+
+**Date**: 2026-05-23
+**Task**: Add feed settings dialog
+**Branch**: `Feat/sidebar-show-feed-title-instead-of-url`
+
+### Summary
+
+为订阅源添加设置 dialog，支持编辑标题，只读展示 URL/site_url/description。新增 useUpdateFeed hook，Sidebar DropdownMenu 添加 Settings 菜单项。更新 hook-guidelines spec 记录跨实体 invalidation 规则。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0da50d6` | (see git log) |
+| `e36435a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
