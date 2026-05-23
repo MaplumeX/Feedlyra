@@ -1,4 +1,45 @@
+import { refreshTokenIfNeeded } from "./client";
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+
+async function createChatFetch(
+  articleId: string,
+  message: string,
+  signal: AbortSignal,
+): Promise<Response> {
+  const token = localStorage.getItem("access_token");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  let res = await fetch(`${API_BASE}/api/ai/articles/${articleId}/chat`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ message }),
+    signal,
+  });
+
+  if (res.status === 401) {
+    const newToken = await refreshTokenIfNeeded();
+    if (!newToken) throw new Error("Session expired");
+
+    const retryHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${newToken}`,
+    };
+    res = await fetch(`${API_BASE}/api/ai/articles/${articleId}/chat`, {
+      method: "POST",
+      headers: retryHeaders,
+      body: JSON.stringify({ message }),
+      signal,
+    });
+  }
+
+  return res;
+}
 
 export async function streamChat(
   articleId: string,
@@ -8,21 +49,9 @@ export async function streamChat(
   onError: (error: Error) => void,
 ): Promise<AbortController> {
   const controller = new AbortController();
-  const token = localStorage.getItem("access_token");
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
 
   try {
-    const res = await fetch(`${API_BASE}/api/ai/articles/${articleId}/chat`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ message }),
-      signal: controller.signal,
-    });
+    const res = await createChatFetch(articleId, message, controller.signal);
 
     if (!res.ok) {
       const error = await res.json().catch(() => ({ detail: res.statusText }));

@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand store patterns — implement agent needs to know how to access store outside React (getState) for the 401 interceptor"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Hook patterns and conventions for the frontend layer"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component conventions — toast/redirect patterns"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend quality bar — typecheck, lint requirements"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Type safety conventions for the API client changes"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer data flow — frontend auth token ↔ backend refresh endpoint contract"}
