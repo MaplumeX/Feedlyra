@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import {
   Rss,
   Clock,
@@ -10,9 +10,12 @@ import {
   Sparkles,
   Languages,
   MessageSquare,
+  Download,
+  Upload,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import {
   CommandDialog,
   CommandEmpty,
@@ -23,7 +26,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { useReaderStore } from "@/stores/reader";
-import { queryKeys, useMarkAllRead, useSummarize, useTranslate } from "@/api/hooks";
+import { queryKeys, useMarkAllRead, useSummarize, useTranslate, useExportOPML, useImportOPML } from "@/api/hooks";
 
 export function CommandPalette() {
   const { t } = useTranslation("reader");
@@ -32,6 +35,9 @@ export function CommandPalette() {
   const markAllRead = useMarkAllRead();
   const summarize = useSummarize();
   const translateMut = useTranslate();
+  const exportOPML = useExportOPML();
+  const importOPML = useImportOPML();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const setOpen = useCallback(
     (open: boolean) => setReader({ commandPaletteOpen: open }),
@@ -50,6 +56,18 @@ export function CommandPalette() {
     queryClient.invalidateQueries({ queryKey: queryKeys.feeds.list() });
     queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
   }, [queryClient]);
+
+  const handleImportFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    try {
+      const feeds = await importOPML.mutateAsync(file);
+      toast.success(t("opmlImportSuccess", { ns: "settings", count: feeds.length }));
+    } catch {
+      toast.error(t("opmlImportFailed", { ns: "settings" }));
+    }
+  }, [importOPML, t]);
 
   return (
     <CommandDialog open={commandPaletteOpen} onOpenChange={setOpen}>
@@ -90,6 +108,35 @@ export function CommandPalette() {
             <PanelLeftClose className="mr-2 h-4 w-4" />
             {t("toggleSidebar")}
           </CommandItem>
+          <CommandItem
+            disabled={exportOPML.isPending}
+            onSelect={() => runAndClose(async () => {
+              try {
+                const result = await exportOPML.mutateAsync();
+                const blob = new Blob([result.xml], { type: "application/xml" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "feeds.opml";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                toast.success(t("opmlExportSuccess", { ns: "settings" }));
+              } catch {
+                toast.error(t("opmlExportFailed", { ns: "settings" }));
+              }
+            })}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {t("exportOPML")}
+          </CommandItem>
+          <CommandItem
+            onSelect={() => runAndClose(() => fileInputRef.current?.click())}
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            {t("importOPML")}
+          </CommandItem>
           <CommandItem onSelect={() => runAndClose(() => setReader({ settingsDialogOpen: true }))}>
             <Settings className="mr-2 h-4 w-4" />
             {t("aiSettings")}
@@ -122,6 +169,7 @@ export function CommandPalette() {
           </>
         )}
       </CommandList>
+      <input ref={fileInputRef} type="file" accept=".opml,.xml" className="hidden" onChange={handleImportFile} />
     </CommandDialog>
   );
 }
