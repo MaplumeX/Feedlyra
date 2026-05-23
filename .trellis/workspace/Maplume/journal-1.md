@@ -282,3 +282,36 @@ Added OPML import/export frontend UI: SubscriptionsTab in SettingsDialog, useExp
 ### Next Steps
 
 - None - task complete
+
+
+## Session 10: Resizable sidebar and article list panels
+
+**Date**: 2026-05-23
+**Task**: Resizable sidebar and article list panels
+**Branch**: `Feat/draggable-sidebar-article-width`
+
+### Summary
+
+Replace fixed-width flex layout with react-resizable-panels v4. Sidebar: 120-280px (default 192px), collapsible at 40px. ArticleList: 180-400px (default 280px). Layout persisted to localStorage. Double-click separator resets defaults. Updated component-guidelines spec.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `35981d1` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
