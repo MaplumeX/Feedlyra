@@ -383,3 +383,37 @@ Replace fixed-width flex layout with react-resizable-panels v4. Sidebar: 120-280
 ### Next Steps
 
 - None - task complete
+
+
+## Session 13: Use native overlay scrollbar to fix layout misalignment
+
+**Date**: 2026-05-23
+**Task**: Use native overlay scrollbar to fix layout misalignment
+**Branch**: `Feat/article-list-scrollbar-independent-area`
+
+### Summary
+
+Removed custom ::-webkit-scrollbar CSS and replaced Radix ScrollArea with overflow-y-auto in Sidebar and ArticleDetail. Native overlay scrollbars no longer reserve layout space, fixing the visual misalignment between headers and scrollable content.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `70ce731` | (see git log) |
+| `08b5b1e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
