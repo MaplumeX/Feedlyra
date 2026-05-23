@@ -6,7 +6,7 @@
 
 ## Overview
 
-This directory contains guidelines for backend development. Fill in each file with your project's specific conventions.
+This directory contains guidelines for backend development in the Feedlyra project. Each file documents real conventions derived from the codebase.
 
 ---
 
@@ -14,24 +14,25 @@ This directory contains guidelines for backend development. Fill in each file wi
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Database Guidelines](./database-guidelines.md) | ORM patterns, queries, migrations | To fill |
-| [Error Handling](./error-handling.md) | Error types, handling strategies | To fill |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Logging Guidelines](./logging-guidelines.md) | Structured logging, log levels | To fill |
+| [Directory Structure](./directory-structure.md) | Module organization and file layout | Done |
+| [Database Guidelines](./database-guidelines.md) | ORM patterns, queries, migrations | Done |
+| [Error Handling](./error-handling.md) | Error types, handling strategies | Done |
+| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | Done |
+| [Logging Guidelines](./logging-guidelines.md) | Log levels, patterns | Done |
 
 ---
 
-## How to Fill These Guidelines
+## Key Conventions
 
-For each guideline file:
-
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
-
-The goal is to help AI assistants and new team members understand how YOUR project works.
+- **File header**: Every `.py` file starts with `from __future__ import annotations`
+- **Type annotations**: Full `Mapped[]` style on models; `str | None` union syntax (Python 3.10+ style, not `Optional`)
+- **Config**: `pydantic-settings` with `.env` file loading. Module-level singleton: `settings = Settings()`
+- **Async-first**: Everything is async — database, HTTP client, LLM calls all use async/await
+- **UUID primary keys**: All PKs are PostgreSQL UUIDs with `default=uuid4`
+- **Pydantic schemas**: Separate schema files per domain. `model_config = {"from_attributes": True}` for ORM compatibility
+- **No repository pattern**: Routers and services both write SQL directly
+- **Encryption of secrets**: User AI API keys are encrypted at rest with Fernet (key derived from `SECRET_KEY` via SHA256)
+- **No tests, no linting, no CI** — currently not configured
 
 ---
 

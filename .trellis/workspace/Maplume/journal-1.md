@@ -137,3 +137,36 @@ Implemented a unified settings dialog (Dialog + Tabs) replacing sidebar language
 ### Next Steps
 
 - None - task complete
+
+
+## Session 5: Bootstrap spec guidelines
+
+**Date**: 2026-05-23
+**Task**: Bootstrap spec guidelines
+**Branch**: `Feat/complete-bootstrap-task`
+
+### Summary
+
+Populated all .trellis/spec/ backend and frontend guideline files with real conventions from codebase analysis. Archived 00-bootstrap-guidelines task.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b7a83ac` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
