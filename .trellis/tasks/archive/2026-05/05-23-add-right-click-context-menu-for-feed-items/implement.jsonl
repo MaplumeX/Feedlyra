@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "shadcn/ui component patterns, props conventions, styling — ContextMenu component must follow these"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend stack overview: shadcn/ui + Radix + Tailwind conventions"}
