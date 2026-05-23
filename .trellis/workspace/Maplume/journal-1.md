@@ -316,3 +316,36 @@ Added ContextMenu (shadcn/ui) to feed items in Sidebar, enabling right-click to 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 11: Resizable sidebar and article list panels
+
+**Date**: 2026-05-23
+**Task**: Resizable sidebar and article list panels
+**Branch**: `Feat/draggable-sidebar-article-width`
+
+### Summary
+
+Replace fixed-width flex layout with react-resizable-panels v4. Sidebar: 120-280px (default 192px), collapsible at 40px. ArticleList: 180-400px (default 280px). Layout persisted to localStorage. Double-click separator resets defaults. Updated component-guidelines spec.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `35981d1` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
