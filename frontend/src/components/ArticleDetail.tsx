@@ -1,5 +1,5 @@
 import DOMPurify from "dompurify";
-import { ExternalLink, Star, BookOpen, RotateCcw, Sparkles, Languages, MessageSquare } from "lucide-react";
+import { ExternalLink, Star, BookOpen, RotateCcw, Sparkles, Languages, MessageSquare, Type } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,15 @@ import { useArticle, useToggleRead, useToggleStar, useSummarize, useTranslate } 
 import { useReaderStore } from "@/stores/reader";
 import { AIChatPanel } from "@/components/AIChatPanel";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+const FONT_SIZE_CYCLE: Array<"sm" | "md" | "lg"> = ["sm", "md", "lg"];
+
+const FONT_SIZE_CLASS: Record<"sm" | "md" | "lg", string> = {
+  sm: "prose-sm",
+  md: "prose",
+  lg: "prose-lg",
+};
 
 function ArticleDetailSkeleton() {
   return (
@@ -42,7 +50,7 @@ function EmptyState() {
 
 export function ArticleDetail() {
   const { t, i18n } = useTranslation("reader");
-  const { selectedArticleId, chatPanelOpen } = useReaderStore();
+  const { selectedArticleId, chatPanelOpen, fontSize } = useReaderStore();
   const { data: article, isLoading } = useArticle(selectedArticleId);
   const toggleRead = useToggleRead();
   const toggleStar = useToggleStar();
@@ -50,6 +58,34 @@ export function ArticleDetail() {
   const translateMut = useTranslate();
   const { set: setReader } = useReaderStore();
   const [showTranslation, setShowTranslation] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [lightboxAlt, setLightboxAlt] = useState("");
+
+  const handleProseClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target instanceof HTMLImageElement) {
+      setLightboxSrc(e.target.src);
+      setLightboxAlt(e.target.alt ?? "");
+    }
+  }, []);
+
+  const closeLightbox = useCallback(() => {
+    setLightboxSrc(null);
+  }, []);
+
+  useEffect(() => {
+    if (!lightboxSrc) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLightbox();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxSrc, closeLightbox]);
+
+  const cycleFontSize = useCallback(() => {
+    const idx = FONT_SIZE_CYCLE.indexOf(fontSize);
+    const next = FONT_SIZE_CYCLE[(idx + 1) % FONT_SIZE_CYCLE.length];
+    setReader({ fontSize: next });
+  }, [fontSize, setReader]);
 
   // Reset translation view when switching articles
   useEffect(() => {
@@ -139,6 +175,19 @@ export function ArticleDetail() {
         >
           <MessageSquare className={cn("h-4 w-4", chatPanelOpen && "text-primary")} />
         </Button>
+        <Separator orientation="vertical" className="h-5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={cycleFontSize}
+          title={t("fontSize")}
+        >
+          <Type className="h-4 w-4" />
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          {fontSize === "sm" ? t("fontSizeSmall") : fontSize === "lg" ? t("fontSizeLarge") : t("fontSizeMedium")}
+        </span>
         <div className="flex-1" />
         <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
           <a href={article.url} target="_blank" rel="noopener noreferrer">
@@ -194,7 +243,12 @@ export function ArticleDetail() {
 
             {sanitizedContent ? (
               <div
-                className="prose prose-slate max-w-none dark:prose-invert"
+                className={cn(
+                  "prose prose-slate max-w-none dark:prose-invert",
+                  FONT_SIZE_CLASS[fontSize],
+                  "[&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_img]:cursor-zoom-in"
+                )}
+                onClick={handleProseClick}
                 dangerouslySetInnerHTML={{ __html: sanitizedContent }}
               />
             ) : article.content_snippet ? (
@@ -219,6 +273,20 @@ export function ArticleDetail() {
           <AIChatPanel articleId={selectedArticleId} articleTitle={article.title} />
         )}
       </div>
+
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={closeLightbox}
+        >
+          <img
+            src={lightboxSrc}
+            alt={lightboxAlt}
+            className="max-h-[90vh] max-w-[90vw] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

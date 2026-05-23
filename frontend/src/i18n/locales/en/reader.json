@@ -37,5 +37,9 @@
   "summarizeCurrentArticle": "Summarize Current Article",
   "translateCurrentArticle": "Translate Current Article",
   "openAiChat": "Open AI Chat",
-  "ai": "AI"
+  "ai": "AI",
+  "fontSize": "Font Size",
+  "fontSizeSmall": "Small",
+  "fontSizeMedium": "Medium",
+  "fontSizeLarge": "Large"
 }

@@ -37,5 +37,9 @@
   "summarizeCurrentArticle": "摘要当前文章",
   "translateCurrentArticle": "翻译当前文章",
   "openAiChat": "打开 AI 对话",
-  "ai": "AI"
+  "ai": "AI",
+  "fontSize": "字体大小",
+  "fontSizeSmall": "小",
+  "fontSizeMedium": "中",
+  "fontSizeLarge": "大"
 }
