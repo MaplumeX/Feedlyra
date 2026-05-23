@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 7
+- **Total Sessions**: 8
 - **Last Active**: 2026-05-23
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~205 | Active |
+| `journal-1.md` | ~250 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 8 | 2026-05-23 | OPML import/export UI | `e586f56` | `Feat/opml-import-export` |
 | 7 | 2026-05-23 | Optimize content display UI | `d13ebab` | `Feat/optimize-content-view` |
 | 6 | 2026-05-23 | fix: auto-refresh token on 401 response | `309273e` | `Feat/fix-invalid-token-after-backend-restart` |
 | 5 | 2026-05-23 | Bootstrap spec guidelines | `b7a83ac` | `Feat/complete-bootstrap-task` |

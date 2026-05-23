@@ -41,5 +41,7 @@
   "fontSize": "字体大小",
   "fontSizeSmall": "小",
   "fontSizeMedium": "中",
-  "fontSizeLarge": "大"
+  "fontSizeLarge": "大",
+  "exportOPML": "导出 OPML",
+  "importOPML": "导入 OPML"
 }

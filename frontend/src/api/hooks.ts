@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
-import type { AIConfig, Article, ArticleListResponse, ChatHistory, DiscoveredFeed, Feed } from "./types";
+import type { AIConfig, Article, ArticleListResponse, ChatHistory, DiscoveredFeed, Feed, OPMLExportResponse } from "./types";
 
 const queryKeys = {
   feeds: {
@@ -74,6 +74,12 @@ export function useImportOPML() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
     },
+  });
+}
+
+export function useExportOPML() {
+  return useMutation({
+    mutationFn: () => api.get<OPMLExportResponse>("/api/feeds/export/opml"),
   });
 }
 

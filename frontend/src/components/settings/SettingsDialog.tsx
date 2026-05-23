@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useReaderStore } from "@/stores/reader";
 import { GeneralSettingsTab } from "./GeneralSettingsTab";
 import { AISettingsTab } from "./AISettingsTab";
+import { SubscriptionsTab } from "./SubscriptionsTab";
 
 export function SettingsDialog() {
   const { t } = useTranslation("settings");
@@ -26,12 +27,16 @@ export function SettingsDialog() {
           <TabsList className="w-full">
             <TabsTrigger value="general" className="flex-1">{t("general")}</TabsTrigger>
             <TabsTrigger value="ai" className="flex-1">{t("aiSettings")}</TabsTrigger>
+            <TabsTrigger value="subscriptions" className="flex-1">{t("subscriptions")}</TabsTrigger>
           </TabsList>
           <TabsContent value="general" className="mt-4">
             <GeneralSettingsTab />
           </TabsContent>
           <TabsContent value="ai" className="mt-4">
             <AISettingsTab />
+          </TabsContent>
+          <TabsContent value="subscriptions" className="mt-4">
+            <SubscriptionsTab />
           </TabsContent>
         </Tabs>
       </DialogContent>
