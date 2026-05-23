@@ -116,6 +116,46 @@ class AIConfigResponse(BaseModel):
 
 ---
 
+### Don't: Assume feedparser returns simple strings for icon/image
+
+```python
+# Bad — icon/image can be FeedParserDict (dict subclass), not just str
+icon_url = parsed.feed.get("icon")
+return icon_url  # might be a dict!
+```
+
+**Why**: feedparser's `icon` and `image` fields may return a `FeedParserDict` (dict subclass with `href`/`url` keys) instead of a plain string, depending on the feed format.
+
+**Instead**:
+```python
+icon = parsed.feed.get("icon")
+if isinstance(icon, dict):
+    icon_url = icon.get("href") or icon.get("url")
+elif isinstance(icon, str):
+    icon_url = icon
+```
+
+---
+
+### Gotcha: Return `resp.url` after redirect, not the constructed URL
+
+```python
+# Bad — if server redirects /favicon.ico to a CDN, the constructed URL doesn't match the actual resource
+favicon_url = urljoin(site_url, "/favicon.ico")
+resp = await client.head(favicon_url)
+if resp.status_code < 400:
+    return favicon_url  # may 404 when loaded later
+```
+
+**Why**: CDN-hosted favicons may redirect `/favicon.ico` to a different domain. Returning the pre-redirect URL means the browser loads a URL that no longer serves the resource.
+
+**Instead**:
+```python
+return str(resp.url)  # the final URL after all redirects
+```
+
+---
+
 ## Testing Requirements
 
 - SSE streaming endpoints must test with independent DB sessions
@@ -131,3 +171,4 @@ class AIConfigResponse(BaseModel):
 - [ ] Fernet key derivation uses SHA256, not string manipulation
 - [ ] API key fields in responses are boolean indicators, not plaintext
 - [ ] No bare `except: pass` — use specific exception types with logging
+- [ ] feedparser `icon`/`image` fields may be dict or str — always check type before accessing

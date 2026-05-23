@@ -147,3 +147,37 @@ Rows inside fixed-width ScrollArea panels should also constrain every flex layer
 
 - **Using resizable panels for fixed-content sidebars** — `react-resizable-panels` lets users shrink panels below readable widths. Use fixed-width CSS flex layout instead.
 - **Relying on `truncate` alone in ScrollArea sidebars** — long text can still expand the Radix internal wrapper or the flex row. Use `[&>div]:!block` on the shared ScrollArea viewport plus `w-full min-w-0 overflow-hidden` on rows and `min-w-0 flex-1 truncate` on text.
+
+---
+
+## Patterns
+
+### External Image with onerror Fallback
+
+When rendering external image URLs (favicons, avatars, etc.) that may be broken or slow:
+
+```tsx
+interface FeedIconProps {
+  iconUrl: string | null;
+  className?: string;
+}
+
+export function FeedIcon({ iconUrl, className }: FeedIconProps) {
+  const [failed, setFailed] = useState(false);
+
+  if (iconUrl && !failed) {
+    return (
+      <img
+        src={iconUrl}
+        alt=""
+        className={cn("shrink-0 rounded-sm object-contain", className)}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return <Rss className={cn("shrink-0 text-muted-foreground", className)} />;
+}
+```
+
+**Why**: External URLs can 404 or be blocked by CORS. The `useState` + `onError` pattern switches to a fallback icon once, without repeated re-renders. The `className` prop allows different sizing contexts (sidebar vs article list).
