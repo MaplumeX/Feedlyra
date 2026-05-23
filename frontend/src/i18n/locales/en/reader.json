@@ -47,5 +47,17 @@
   "feedSettings": "Feed Settings",
   "feedSettingsDescription": "View and edit feed properties.",
   "feedTitle": "Title",
-  "feedSiteUrl": "Site URL"
+  "feedSiteUrl": "Site URL",
+  "category": "Category",
+  "categories": "Categories",
+  "uncategorized": "Uncategorized",
+  "createCategory": "Create Category",
+  "renameCategory": "Rename Category",
+  "deleteCategory": "Delete Category",
+  "moveToCategory": "Move to Category",
+  "newCategory": "New Category",
+  "categoryName": "Category Name",
+  "categoryDeleted": "Category deleted",
+  "deleteCategoryConfirm": "Delete this category? Feeds in it will move to Uncategorized.",
+  "selectCategory": "Select Category"
 }

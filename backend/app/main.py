@@ -11,6 +11,7 @@ from app.config import settings
 from app.database import async_session
 from app.routers.articles import router as articles_router
 from app.routers.auth import router as auth_router
+from app.routers.categories import router as categories_router
 from app.routers.feeds import router as feeds_router
 from app.routers.ai import router as ai_router
 from app.services.feed_fetcher import refresh_all_due_feeds
@@ -49,5 +50,6 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(feeds_router)
+app.include_router(categories_router)
 app.include_router(articles_router)
 app.include_router(ai_router)

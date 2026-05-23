@@ -26,5 +26,9 @@ class Feed(TimestampMixin, Base):
     parsing_error_message: Mapped[str | None] = mapped_column(Text)
     checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     next_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    category_id: Mapped[PyUUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
+    )
 
     articles: Mapped[list["Article"]] = relationship("Article", back_populates="feed")
+    category: Mapped["Category | None"] = relationship("Category", back_populates="feeds")
