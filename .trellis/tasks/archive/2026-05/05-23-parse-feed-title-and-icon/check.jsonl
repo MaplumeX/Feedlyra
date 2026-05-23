@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify migration follows conventions: sequential ID, nullable column, Mapped[] syntax"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify favicon fetch errors are handled gracefully without crashing feed refresh"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend quality: async patterns, no bare except, specific exception types"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify nullable icon_url handled with optional chaining, not assertions"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify icon rendering follows component patterns: named exports, cn() for classes"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify icon_url flows correctly: DB → schema → API response → frontend type → component"}
+{"file": ".trellis/tasks/05-23-parse-feed-title-and-icon/prd.md", "reason": "Check implementation against PRD requirements and acceptance criteria"}
