@@ -1,7 +1,6 @@
 import DOMPurify from "dompurify";
 import { ExternalLink, Star, BookOpen, RotateCcw, Sparkles, Languages, MessageSquare, Type } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -197,7 +196,7 @@ export function ArticleDetail() {
       </div>
 
       <div className="relative flex flex-1 overflow-hidden">
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           <article className="mx-auto max-w-3xl px-6 py-8">
             <h1 className="text-2xl font-bold leading-tight">{displayTitle}</h1>
 
@@ -267,7 +266,7 @@ export function ArticleDetail() {
               </p>
             )}
           </article>
-        </ScrollArea>
+        </div>
 
         {chatPanelOpen && selectedArticleId && (
           <AIChatPanel articleId={selectedArticleId} articleTitle={article.title} />
