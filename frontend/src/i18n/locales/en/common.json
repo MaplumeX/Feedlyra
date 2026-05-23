@@ -11,5 +11,7 @@
   "ok": "OK",
   "today": "Today",
   "yesterday": "Yesterday",
-  "language": "Language"
+  "language": "Language",
+  "saving": "Saving...",
+  "description": "Description"
 }

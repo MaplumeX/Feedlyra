@@ -24,9 +24,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AddFeedDialog } from "@/components/AddFeedDialog";
+import { FeedSettingsDialog } from "@/components/FeedSettingsDialog";
 import { FeedIcon } from "@/components/FeedIcon";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import { useFeeds, useDeleteFeed, useRefreshFeed, useStarredCount } from "@/api/hooks";
+import type { Feed } from "@/api/types";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +36,7 @@ export function Sidebar() {
   const { t } = useTranslation("reader");
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [feedSettingsFeed, setFeedSettingsFeed] = useState<Feed | null>(null);
   const { selectedFeedId, articleListFilter, set: setReader } = useReaderStore();
   const { data: feeds = [] } = useFeeds();
   const deleteFeed = useDeleteFeed();
@@ -167,6 +170,15 @@ export function Sidebar() {
                           {t("refresh", { ns: "common" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFeedSettingsFeed(feed);
+                          }}
+                        >
+                          <Settings className="mr-2 h-4 w-4" />
+                          {t("feedSettings")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
                           className="text-destructive"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -200,6 +212,13 @@ export function Sidebar() {
 
       <AddFeedDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
       <SettingsDialog />
+      {feedSettingsFeed && (
+        <FeedSettingsDialog
+          feed={feedSettingsFeed}
+          open={feedSettingsFeed !== null}
+          onOpenChange={(open) => { if (!open) setFeedSettingsFeed(null); }}
+        />
+      )}
     </div>
   );
 }
