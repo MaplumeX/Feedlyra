@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify dialog follows shadcn/ui patterns"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Verify mutation hook conventions"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify API type alignment with backend FeedUpdate schema"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Lint/typecheck pass criteria"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify frontend-backend API contract consistency"}
