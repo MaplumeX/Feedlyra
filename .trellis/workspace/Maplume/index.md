@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 11
+- **Total Sessions**: 12
 - **Last Active**: 2026-05-23
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~355 | Active |
+| `journal-1.md` | ~370 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 10 | 2026-05-23 | Add feed settings dialog | `0da50d6`, `e36435a` | `Feat/sidebar-show-feed-title-instead-of-url` |
 | 10 | 2026-05-23 | Add right-click context menu for feed items | `cf23e32`, `3120730` | `Feat/feed-dropdown-right-click` |
 | 11 | 2026-05-23 | Resizable sidebar and article list panels | `35981d1` | `Feat/draggable-sidebar-article-width` |
 | 9 | 2026-05-23 | OPML import/export UI | `e586f56` | `Feat/opml-import-export` |

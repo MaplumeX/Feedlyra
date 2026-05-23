@@ -121,3 +121,4 @@ const handleSend = async () => {
 - **Using `useQuery` for mutations** — Always use `useMutation` for POST/PUT/DELETE. `useQuery` is for GET only and auto-refetches.
 - **Forgetting to invalidate queries after mutations** — Without `qc.invalidateQueries()`, the UI shows stale data after create/update/delete.
 - **Not using the query key factory** — Hard-coded query keys break when the factory changes. Always use `queryKeys.*`.
+- **Missing cross-entity invalidation** — When a mutation changes data referenced by another entity's queries, invalidate both. Example: updating a feed's title changes `feed_title` in article list responses, so `useUpdateFeed` must invalidate both `queryKeys.feeds.list()` and `queryKeys.articles.all`.

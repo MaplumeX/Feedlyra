@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Dialog component patterns, shadcn/ui conventions"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "React Query mutation hook patterns for useUpdateFeed"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand store patterns for dialog state"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Feed type definitions and API type conventions"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "File placement for new FeedSettingsDialog component"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Lint/typecheck standards"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse existing Dialog primitives and patterns"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Frontend-backend API contract for feed update"}

@@ -61,6 +61,17 @@ export function useRefreshFeed() {
   });
 }
 
+export function useUpdateFeed(feedId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { title: string }) => api.put(`/api/feeds/${feedId}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}
+
 export function useDiscoverFeeds() {
   return useMutation({
     mutationFn: (url: string) => api.post<DiscoveredFeed[]>("/api/feeds/discover", { url }),

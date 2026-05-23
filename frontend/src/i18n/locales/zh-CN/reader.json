@@ -43,5 +43,9 @@
   "fontSizeMedium": "中",
   "fontSizeLarge": "大",
   "exportOPML": "导出 OPML",
-  "importOPML": "导入 OPML"
+  "importOPML": "导入 OPML",
+  "feedSettings": "订阅源设置",
+  "feedSettingsDescription": "查看和编辑订阅源属性。",
+  "feedTitle": "标题",
+  "feedSiteUrl": "网站 URL"
 }

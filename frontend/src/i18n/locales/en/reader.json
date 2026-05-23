@@ -43,5 +43,9 @@
   "fontSizeMedium": "Medium",
   "fontSizeLarge": "Large",
   "exportOPML": "Export OPML",
-  "importOPML": "Import OPML"
+  "importOPML": "Import OPML",
+  "feedSettings": "Feed Settings",
+  "feedSettingsDescription": "View and edit feed properties.",
+  "feedTitle": "Title",
+  "feedSiteUrl": "Site URL"
 }
