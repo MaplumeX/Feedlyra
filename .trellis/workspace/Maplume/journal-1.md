@@ -217,7 +217,41 @@ Install @tailwindcss/typography for prose styling, add image lightbox with zoom-
 - None - task complete
 
 
-## Session 8: OPML import/export UI
+## Session 8: feat: scroll mark read with batch API and settings toggle
+
+**Date**: 2026-05-23
+**Task**: feat: scroll mark read with batch API and settings toggle
+**Branch**: `Feat/scroll-mark-read`
+
+### Summary
+
+Implemented scroll-to-mark-read: Virtuoso rangeChanged detects articles leaving viewport top, debounced batch-read API marks them read. Added backend PUT /api/articles/batch-read with user ownership validation, frontend useBatchRead hook, scrollMarkRead setting toggle (default on, persisted), and Virtuoso stability guards. Updated specs for batch API security and Virtuoso scroll patterns.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `dbd2892` | (see git log) |
+| `3ea521c` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 9: OPML import/export UI
 
 **Date**: 2026-05-23
 **Task**: OPML import/export UI

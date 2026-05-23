@@ -154,6 +154,18 @@ export function useMarkAllRead() {
   });
 }
 
+export function useBatchRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ articleIds }: { articleIds: string[] }) =>
+      api.put<{ marked_count: number }>("/api/articles/batch-read", { article_ids: articleIds }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+    },
+  });
+}
+
 export function useStarredCount() {
   const { data } = useArticles({ starred: true, limit: 1 });
   return data?.total ?? 0;

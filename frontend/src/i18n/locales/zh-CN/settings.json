@@ -14,6 +14,7 @@
   "connectionFailed": "连接失败",
   "invalidUrl": "URL 格式不正确",
   "modelRequired": "模型为必填项",
+  "scrollMarkRead": "滚动标记已读",
   "opmlExport": "导出订阅",
   "opmlExportDescription": "将所有订阅源下载为 OPML 文件。",
   "opmlExportButton": "导出 OPML",

@@ -147,3 +147,52 @@ Rows inside fixed-width ScrollArea panels should also constrain every flex layer
 
 - **Using resizable panels for fixed-content sidebars** — `react-resizable-panels` lets users shrink panels below readable widths. Use fixed-width CSS flex layout instead.
 - **Relying on `truncate` alone in ScrollArea sidebars** — long text can still expand the Radix internal wrapper or the flex row. Use `[&>div]:!block` on the shared ScrollArea viewport plus `w-full min-w-0 overflow-hidden` on rows and `min-w-0 flex-1 truncate` on text.
+
+---
+
+## Virtuoso Scroll-Based Detection Pattern
+
+When using `react-virtuoso`'s `rangeChanged` callback for scroll-triggered logic (e.g., mark-as-read on scroll):
+
+### Scroll Direction Gotcha
+
+In Virtuoso, `startIndex` increasing means the user scrolled **down** (older items entering viewport from the top). This is counter-intuitive — you might expect "scrolling down" to show items lower in the list with decreasing indices.
+
+```tsx
+// Correct: startIndex increased → user scrolled down → older items scrolled past
+if (range.startIndex > prevRange.startIndex) {
+  // Items between prevRange.startIndex and range.startIndex have left the viewport top
+}
+```
+
+### Required Guards
+
+1. **isStable flag**: Virtuoso fires `rangeChanged` on mount and resize. Track a stability flag that becomes true only after the first user-driven scroll:
+   ```tsx
+   const isStableRef = useRef(false);
+   // Set to true only on the second rangeChanged call (first is initialization)
+   ```
+
+2. **Debounce cleanup**: Always clean up debounce timers on unmount:
+   ```tsx
+   useEffect(() => {
+     return () => {
+       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+     };
+   }, []);
+   ```
+
+3. **Ref reset on data change**: When the underlying list changes (feed/filter switch), reset `prevRangeRef` and `isStableRef` — stale refs cause false scroll-direction detection:
+   ```tsx
+   useEffect(() => {
+     prevRangeRef.current = null;
+     isStableRef.current = false;
+   }, [selectedFeedId, articleListFilter]);
+   ```
+
+4. **Skip header items**: Virtuoso flat lists often mix header rows with data rows. Only process items of the expected `type`:
+   ```tsx
+   const articlesInRange = flatItems
+     .slice(start, end + 1)
+     .filter((item) => item.type === "article");
+   ```

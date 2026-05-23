@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify scrollMarkRead state correctly persisted in Zustand store"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Verify useBatchRead follows mutation hook conventions and invalidation patterns"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Code quality checks — no forbidden patterns, proper cleanup"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify batch-read uses correct SQLAlchemy async patterns and ReadStatus model"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify batch-read endpoint error handling follows conventions"}
+{"file": ".trellis/tasks/05-23-scroll-mark-read/prd.md", "reason": "Check implementation against all acceptance criteria"}

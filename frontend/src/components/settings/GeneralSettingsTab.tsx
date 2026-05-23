@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
 
 const languages = [
@@ -9,6 +11,7 @@ const languages = [
 
 export function GeneralSettingsTab() {
   const { t, i18n } = useTranslation("settings");
+  const { scrollMarkRead, set: setReader } = useReaderStore();
 
   return (
     <div className="space-y-4">
@@ -30,6 +33,14 @@ export function GeneralSettingsTab() {
             </button>
           ))}
         </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <Label htmlFor="scroll-mark-read">{t("scrollMarkRead")}</Label>
+        <Switch
+          id="scroll-mark-read"
+          checked={scrollMarkRead}
+          onCheckedChange={(checked) => setReader({ scrollMarkRead: checked })}
+        />
       </div>
     </div>
   );

@@ -14,6 +14,7 @@
   "connectionFailed": "Connection failed",
   "invalidUrl": "Invalid URL",
   "modelRequired": "Model is required",
+  "scrollMarkRead": "Mark as read on scroll",
   "opmlExport": "Export Subscriptions",
   "opmlExportDescription": "Download all your feed subscriptions as an OPML file.",
   "opmlExportButton": "Export OPML",
