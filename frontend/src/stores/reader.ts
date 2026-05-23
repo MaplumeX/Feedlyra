@@ -7,6 +7,7 @@ interface ReaderState {
   articleListFilter: "all" | "unread" | "starred";
   sidebarCollapsed: boolean;
   fontSize: "sm" | "md" | "lg";
+  scrollMarkRead: boolean;
   chatPanelOpen: boolean;
   commandPaletteOpen: boolean;
   settingsDialogOpen: boolean;
@@ -21,11 +22,12 @@ export const useReaderStore = create<ReaderState>()(
       articleListFilter: "all",
       sidebarCollapsed: false,
       fontSize: "md",
+      scrollMarkRead: true,
       chatPanelOpen: false,
       commandPaletteOpen: false,
       settingsDialogOpen: false,
       set: (partial) => set(partial),
     }),
-    { name: "feedlyra-reader", partialize: (state) => ({ sidebarCollapsed: state.sidebarCollapsed, fontSize: state.fontSize }) }
+    { name: "feedlyra-reader", partialize: (state) => ({ sidebarCollapsed: state.sidebarCollapsed, fontSize: state.fontSize, scrollMarkRead: state.scrollMarkRead }) }
   )
 );

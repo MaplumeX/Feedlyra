@@ -12,5 +12,6 @@
   "testConnection": "Test Connection",
   "connectionFailed": "Connection failed",
   "invalidUrl": "Invalid URL",
-  "modelRequired": "Model is required"
+  "modelRequired": "Model is required",
+  "scrollMarkRead": "Mark as read on scroll"
 }

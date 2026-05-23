@@ -45,3 +45,7 @@ class StarToggle(BaseModel):
 
 class MarkAllRead(BaseModel):
     feed_id: UUID | None = None
+
+
+class BatchRead(BaseModel):
+    article_ids: list[UUID]

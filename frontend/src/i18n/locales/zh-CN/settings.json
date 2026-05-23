@@ -12,5 +12,6 @@
   "testConnection": "测试连接",
   "connectionFailed": "连接失败",
   "invalidUrl": "URL 格式不正确",
-  "modelRequired": "模型为必填项"
+  "modelRequired": "模型为必填项",
+  "scrollMarkRead": "滚动标记已读"
 }
