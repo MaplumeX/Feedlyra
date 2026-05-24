@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Rss,
   Plus,
@@ -10,45 +11,96 @@ import {
   MoreHorizontal,
   Settings,
   PanelLeftClose,
+  FolderOpen,
+  FolderPlus,
+  Pencil,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AddFeedDialog } from "@/components/AddFeedDialog";
 import { FeedSettingsDialog } from "@/components/FeedSettingsDialog";
 import { FeedIcon } from "@/components/FeedIcon";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
-import { useFeeds, useDeleteFeed, useRefreshFeed, useStarredCount } from "@/api/hooks";
-import type { Feed } from "@/api/types";
+import {
+  useFeeds,
+  useDeleteFeed,
+  useRefreshFeed,
+  useStarredCount,
+  useCategories,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+  queryKeys,
+} from "@/api/hooks";
+import { api } from "@/api/client";
+import type { Feed, Category } from "@/api/types";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
   const { t } = useTranslation("reader");
+  const qc = useQueryClient();
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [feedSettingsFeed, setFeedSettingsFeed] = useState<Feed | null>(null);
+  const [renamingCategoryId, setRenamingCategoryId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newCategoryTitle, setNewCategoryTitle] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
   const { selectedFeedId, articleListFilter, set: setReader } = useReaderStore();
   const { data: feeds = [] } = useFeeds();
+  const { data: categories = [] } = useCategories();
   const deleteFeed = useDeleteFeed();
   const refreshFeed = useRefreshFeed();
+  const createCategory = useCreateCategory();
+  const deleteCategory = useDeleteCategory();
+  const updateCategory = useUpdateCategory(renamingCategoryId ?? "");
 
   const totalUnread = feeds.reduce((sum, f) => sum + (f.unread_count ?? 0), 0);
   const totalStarred = useStarredCount();
+
+  useEffect(() => {
+    if (renamingCategoryId && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [renamingCategoryId]);
 
   const virtualFolders = [
     {
@@ -84,6 +136,283 @@ export function Sidebar() {
 
   const isVirtualSelected = !selectedFeedId;
 
+  function handleRenameSubmit() {
+    if (!renamingCategoryId || !renameValue.trim()) return;
+    updateCategory.mutate(renameValue.trim(), {
+      onSuccess: () => {
+        setRenamingCategoryId(null);
+        setRenameValue("");
+      },
+    });
+  }
+
+  function handleCreateCategory() {
+    if (!newCategoryTitle.trim()) return;
+    createCategory.mutate(newCategoryTitle.trim(), {
+      onSuccess: () => {
+        setNewCategoryTitle("");
+        setCreateDialogOpen(false);
+      },
+    });
+  }
+
+  function handleDeleteCategory(categoryId: string) {
+    deleteCategory.mutate(categoryId, {
+      onSuccess: () => setDeleteConfirmId(null),
+    });
+  }
+
+  function startRename(category: Category) {
+    setRenamingCategoryId(category.id);
+    setRenameValue(category.title);
+  }
+
+  async function handleMoveFeed(feedId: string, categoryId: string | null) {
+    const feed = feeds.find((f) => f.id === feedId);
+    if (!feed) return;
+    try {
+      await api.put(`/api/feeds/${feedId}`, { title: feed.title, category_id: categoryId });
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+      qc.invalidateQueries({ queryKey: queryKeys.categories.list() });
+    } catch (e) {
+      console.error("Failed to move feed:", e);
+    }
+  }
+
+  const uncategorizedFeeds = feeds.filter((f) => f.category_id === null);
+
+  function renderFeedItem(feed: Feed) {
+    return (
+      <ContextMenu key={feed.id}>
+        <ContextMenuTrigger asChild>
+          <div
+            className={cn(
+              "group flex w-full min-w-0 cursor-pointer items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm hover:bg-accent",
+              selectedFeedId === feed.id && "bg-accent font-medium"
+            )}
+            onClick={() => selectFeed(feed.id)}
+          >
+            <FeedIcon iconUrl={feed.icon_url} className="h-3.5 w-3.5" />
+            <span className="min-w-0 flex-1 truncate">{feed.title}</span>
+            {(feed.unread_count ?? 0) > 0 && (
+              <Badge variant="secondary" className="h-5 min-w-5 max-w-14 shrink-0 justify-center truncate px-1 text-[10px]">
+                {feed.unread_count}
+              </Badge>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    refreshFeed.mutate(feed.id);
+                  }}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  {t("refresh", { ns: "common" })}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFeedSettingsFeed(feed);
+                  }}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  {t("feedSettings")}
+                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <FolderOpen className="mr-2 h-4 w-4" />
+                    {t("moveToCategory")}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMoveFeed(feed.id, null);
+                      }}
+                    >
+                      {t("uncategorized")}
+                    </DropdownMenuItem>
+                    {categories.map((cat) => (
+                      <DropdownMenuItem
+                        key={cat.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveFeed(feed.id, cat.id);
+                        }}
+                      >
+                        {cat.title}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteFeed.mutate(feed.id);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t("delete", { ns: "common" })}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              refreshFeed.mutate(feed.id);
+            }}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {t("refresh", { ns: "common" })}
+          </ContextMenuItem>
+          <ContextMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              setFeedSettingsFeed(feed);
+            }}
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            {t("feedSettings")}
+          </ContextMenuItem>
+          <ContextMenuSub>
+            <ContextMenuSubTrigger>
+              <FolderOpen className="mr-2 h-4 w-4" />
+              {t("moveToCategory")}
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent>
+              <ContextMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMoveFeed(feed.id, null);
+                }}
+              >
+                {t("uncategorized")}
+              </ContextMenuItem>
+              {categories.map((cat) => (
+                <ContextMenuItem
+                  key={cat.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveFeed(feed.id, cat.id);
+                  }}
+                >
+                  {cat.title}
+                </ContextMenuItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            className="text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteFeed.mutate(feed.id);
+            }}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            {t("delete", { ns: "common" })}
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    );
+  }
+
+  function renderCategoryGroup(category: Category) {
+    const categoryFeeds = feeds.filter((f) => f.category_id === category.id);
+    const isRenaming = renamingCategoryId === category.id;
+
+    return (
+      <Collapsible key={category.id} defaultOpen>
+        <div className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent group/cat">
+          <CollapsibleTrigger asChild>
+            <button className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
+              <ChevronDown className="h-3 w-3 shrink-0" />
+              {isRenaming ? (
+                <input
+                  ref={renameInputRef}
+                  className="h-5 min-w-0 flex-1 rounded border bg-background px-1 text-xs text-foreground"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onBlur={handleRenameSubmit}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleRenameSubmit();
+                    if (e.key === "Escape") {
+                      setRenamingCategoryId(null);
+                      setRenameValue("");
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <span className="min-w-0 truncate">{category.title}</span>
+              )}
+            </button>
+          </CollapsibleTrigger>
+          <Badge variant="secondary" className="h-4 min-w-4 shrink-0 justify-center px-1 text-[9px]">
+            {category.feed_count ?? categoryFeeds.length}
+          </Badge>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5 opacity-0 group-hover/cat:opacity-100 shrink-0"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreHorizontal className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startRename(category);
+                }}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                {t("renameCategory")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteConfirmId(category.id);
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t("deleteCategory")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <CollapsibleContent>
+          <div className="mt-0.5 space-y-0.5">
+            {categoryFeeds.length === 0 && (
+              <p className="px-6 py-1 text-xs text-muted-foreground">{t("noFeedsYet")}</p>
+            )}
+            {categoryFeeds.map((feed) => renderFeedItem(feed))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  }
+
   return (
     <div className="flex h-full min-w-0 flex-col overflow-hidden">
       <div className="flex min-w-0 items-center justify-between gap-2 px-3 py-2">
@@ -92,7 +421,10 @@ export function Sidebar() {
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setReader({ sidebarCollapsed: true })} title="Collapse sidebar (Shift+S)">
             <PanelLeftClose className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAddDialogOpen(true)}>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCreateDialogOpen(true)} title={t("createCategory")}>
+            <FolderPlus className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAddDialogOpen(true)} title={t("addFeed")}>
             <Plus className="h-4 w-4" />
           </Button>
         </div>
@@ -123,113 +455,28 @@ export function Sidebar() {
 
           <Separator className="my-2" />
 
+          {/* Category groups */}
+          {categories.map((category) => renderCategoryGroup(category))}
+
+          {/* Uncategorized group */}
           <Collapsible defaultOpen>
             <CollapsibleTrigger asChild>
               <button className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent">
                 <ChevronDown className="h-3 w-3 shrink-0" />
-                <span className="min-w-0 truncate">{t("subscriptions")}</span>
+                <span className="min-w-0 truncate">{t("uncategorized")}</span>
+                {uncategorizedFeeds.length > 0 && (
+                  <Badge variant="secondary" className="h-4 min-w-4 shrink-0 justify-center px-1 text-[9px]">
+                    {uncategorizedFeeds.length}
+                  </Badge>
+                )}
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <div className="mt-1 space-y-0.5">
-                {feeds.length === 0 && (
-                  <p className="px-2 py-4 text-center text-xs text-muted-foreground">
-                    {t("noFeedsYet")}
-                  </p>
+              <div className="mt-0.5 space-y-0.5">
+                {uncategorizedFeeds.length === 0 && (
+                  <p className="px-6 py-1 text-xs text-muted-foreground">{t("noFeedsYet")}</p>
                 )}
-                {feeds.map((feed) => (
-                  <ContextMenu key={feed.id}>
-                    <ContextMenuTrigger asChild>
-                      <div
-                        className={cn(
-                          "group flex w-full min-w-0 cursor-pointer items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm hover:bg-accent",
-                          selectedFeedId === feed.id && "bg-accent font-medium"
-                        )}
-                        onClick={() => selectFeed(feed.id)}
-                      >
-                        <FeedIcon iconUrl={feed.icon_url} className="h-3.5 w-3.5" />
-                        <span className="min-w-0 flex-1 truncate">{feed.title}</span>
-                        {(feed.unread_count ?? 0) > 0 && (
-                          <Badge variant="secondary" className="h-5 min-w-5 max-w-14 shrink-0 justify-center truncate px-1 text-[10px]">
-                            {feed.unread_count}
-                          </Badge>
-                        )}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <MoreHorizontal className="h-3.5 w-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                refreshFeed.mutate(feed.id);
-                              }}
-                            >
-                              <RefreshCw className="mr-2 h-4 w-4" />
-                              {t("refresh", { ns: "common" })}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setFeedSettingsFeed(feed);
-                              }}
-                            >
-                              <Settings className="mr-2 h-4 w-4" />
-                              {t("feedSettings")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteFeed.mutate(feed.id);
-                              }}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              {t("delete", { ns: "common" })}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </ContextMenuTrigger>
-                    <ContextMenuContent>
-                      <ContextMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          refreshFeed.mutate(feed.id);
-                        }}
-                      >
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        {t("refresh", { ns: "common" })}
-                      </ContextMenuItem>
-                      <ContextMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setFeedSettingsFeed(feed);
-                        }}
-                      >
-                        <Settings className="mr-2 h-4 w-4" />
-                        {t("feedSettings")}
-                      </ContextMenuItem>
-                      <ContextMenuItem
-                        className="text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteFeed.mutate(feed.id);
-                        }}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {t("delete", { ns: "common" })}
-                      </ContextMenuItem>
-                    </ContextMenuContent>
-                  </ContextMenu>
-                ))}
+                {uncategorizedFeeds.map((feed) => renderFeedItem(feed))}
               </div>
             </CollapsibleContent>
           </Collapsible>
@@ -257,6 +504,55 @@ export function Sidebar() {
           onOpenChange={(open) => { if (!open) setFeedSettingsFeed(null); }}
         />
       )}
+
+      {/* Create Category Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("createCategory")}</DialogTitle>
+            <DialogDescription>{t("categoryName")}</DialogDescription>
+          </DialogHeader>
+          <Input
+            value={newCategoryTitle}
+            onChange={(e) => setNewCategoryTitle(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCreateCategory()}
+            placeholder={t("categoryName")}
+          />
+          {createCategory.isError && (
+            <p className="text-sm text-destructive">{createCategory.error.message}</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+              {t("cancel", { ns: "common" })}
+            </Button>
+            <Button onClick={handleCreateCategory} disabled={!newCategoryTitle.trim() || createCategory.isPending}>
+              {t("add", { ns: "common" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Category Confirm Dialog */}
+      <Dialog open={deleteConfirmId !== null} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("deleteCategory")}</DialogTitle>
+            <DialogDescription>{t("deleteCategoryConfirm")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
+              {t("cancel", { ns: "common" })}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteConfirmId && handleDeleteCategory(deleteConfirmId)}
+              disabled={deleteCategory.isPending}
+            >
+              {t("delete", { ns: "common" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

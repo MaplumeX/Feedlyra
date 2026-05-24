@@ -156,6 +156,50 @@ return str(resp.url)  # the final URL after all redirects
 
 ---
 
+### Don't: Use `if field is not None` to check Pydantic optional fields when null is a valid value
+
+```python
+# Bad — cannot distinguish "not provided" from "explicitly set to null"
+class FeedUpdate(BaseModel):
+    category_id: UUID | None = None
+
+@router.put("/{feed_id}")
+async def update_feed(body: FeedUpdate):
+    if body.category_id is not None:  # ❌ can never set category_id back to null!
+        feed.category_id = body.category_id
+```
+
+**Why**: Pydantic defaults unset fields to `None`, making `if field is not None` unable to distinguish between "client didn't send this field" (should skip) and "client sent `null`" (should clear the value). This silently breaks "clear nullable FK" operations.
+
+**Instead**:
+```python
+@router.put("/{feed_id}")
+async def update_feed(body: FeedUpdate):
+    update_data = body.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(feed, field, value)  # handles None correctly
+```
+
+---
+
+### Don't: Manually escape XML with `.replace()` chains
+
+```python
+# Bad — easy to miss entities like &quot;, &apos;
+title_escaped = title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+```
+
+**Why**: Manual `.replace()` chains are fragile — adding a new entity is easy to forget, and ordering matters (e.g., `&` must be replaced first). `&quot;` is commonly missed but required inside XML attribute values.
+
+**Instead**:
+```python
+from xml.sax.saxutils import escape
+
+title_escaped = escape(title, {'"': "&quot;"})  # handles &amp;, &lt;, &gt; + &quot;
+```
+
+---
+
 ## Testing Requirements
 
 - SSE streaming endpoints must test with independent DB sessions
@@ -172,3 +216,5 @@ return str(resp.url)  # the final URL after all redirects
 - [ ] API key fields in responses are boolean indicators, not plaintext
 - [ ] No bare `except: pass` — use specific exception types with logging
 - [ ] feedparser `icon`/`image` fields may be dict or str — always check type before accessing
+- [ ] Pydantic nullable optional fields use `model_dump(exclude_unset=True)`, NOT `if field is not None`
+- [ ] XML generation uses `xml.sax.saxutils.escape`, NOT manual `.replace()` chains

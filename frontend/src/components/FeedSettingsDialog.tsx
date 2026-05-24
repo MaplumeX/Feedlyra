@@ -10,7 +10,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useUpdateFeed } from "@/api/hooks";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useUpdateFeed, useCategories } from "@/api/hooks";
 import { useTranslation } from "react-i18next";
 import type { Feed } from "@/api/types";
 
@@ -20,22 +27,29 @@ interface FeedSettingsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const UNCATEGORIZED = "__none__";
+
 export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDialogProps) {
   const { t } = useTranslation("reader");
   const [title, setTitle] = useState(feed.title);
+  const [categoryId, setCategoryId] = useState<string>(feed.category_id ?? UNCATEGORIZED);
   const updateFeed = useUpdateFeed(feed.id);
+  const { data: categories = [] } = useCategories();
 
   useEffect(() => {
     setTitle(feed.title);
-  }, [feed.title]);
+    setCategoryId(feed.category_id ?? UNCATEGORIZED);
+  }, [feed.title, feed.category_id]);
 
   function handleSave() {
-    if (!title.trim() || title === feed.title) return;
-    updateFeed.mutate({ title: title.trim() }, {
-      onSuccess: () => {
-        onOpenChange(false);
-      },
-    });
+    const trimmedTitle = title.trim();
+    const catId = categoryId === UNCATEGORIZED ? null : categoryId;
+    if (!trimmedTitle) return;
+    if (trimmedTitle === feed.title && catId === feed.category_id) return;
+    updateFeed.mutate(
+      { title: trimmedTitle, category_id: catId },
+      { onSuccess: () => onOpenChange(false) },
+    );
   }
 
   return (
@@ -69,10 +83,26 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSave()}
           />
-          {updateFeed.isError && (
-            <p className="text-sm text-destructive">{updateFeed.error.message}</p>
-          )}
         </div>
+
+        <div className="space-y-2">
+          <Label>{t("category")}</Label>
+          <Select value={categoryId} onValueChange={setCategoryId}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNCATEGORIZED}>{t("uncategorized")}</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>{cat.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {updateFeed.isError && (
+          <p className="text-sm text-destructive">{updateFeed.error.message}</p>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -80,7 +110,7 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
           </Button>
           <Button
             onClick={handleSave}
-            disabled={!title.trim() || title === feed.title || updateFeed.isPending}
+            disabled={!title.trim() || (title === feed.title && categoryId === (feed.category_id ?? UNCATEGORIZED)) || updateFeed.isPending}
           >
             {updateFeed.isPending ? t("saving", { ns: "common" }) : t("save", { ns: "common" })}
           </Button>

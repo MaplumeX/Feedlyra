@@ -9,7 +9,7 @@
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
 - **Total Sessions**: 13
-- **Last Active**: 2026-05-23
+- **Last Active**: 2026-05-24
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~419 | Active |
+| `journal-1.md` | ~418 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 13 | 2026-05-24 | Add feed category/folder support | `4e65ed0` | `Feat/feed-category` |
 | 13 | 2026-05-23 | Use native overlay scrollbar to fix layout misalignment | `70ce731`, `08b5b1e` | `Feat/article-list-scrollbar-independent-area` |
 | 10 | 2026-05-23 | Add feed settings dialog | `0da50d6`, `e36435a` | `Feat/sidebar-show-feed-title-instead-of-url` |
 | 10 | 2026-05-23 | Add right-click context menu for feed items | `cf23e32`, `3120730` | `Feat/feed-dropdown-right-click` |

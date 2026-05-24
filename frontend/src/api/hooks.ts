@@ -1,11 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
-import type { AIConfig, Article, ArticleListResponse, ChatHistory, DiscoveredFeed, Feed, OPMLExportResponse } from "./types";
+import type { AIConfig, Article, ArticleListResponse, Category, ChatHistory, DiscoveredFeed, Feed, OPMLExportResponse } from "./types";
 
 const queryKeys = {
   feeds: {
     all: ["feeds"] as const,
     list: () => [...queryKeys.feeds.all, "list"] as const,
+  },
+  categories: {
+    all: ["categories"] as const,
+    list: () => [...queryKeys.categories.all, "list"] as const,
   },
   articles: {
     all: ["articles"] as const,
@@ -32,9 +36,11 @@ export function useFeeds() {
 export function useAddFeed() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (url: string) => api.post<Feed>("/api/feeds", { url }),
+    mutationFn: ({ url, category_id }: { url: string; category_id?: string | null }) =>
+      api.post<Feed>("/api/feeds", { url, category_id: category_id ?? null }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+      qc.invalidateQueries({ queryKey: queryKeys.categories.list() });
     },
   });
 }
@@ -46,6 +52,7 @@ export function useDeleteFeed() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
       qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+      qc.invalidateQueries({ queryKey: queryKeys.categories.list() });
     },
   });
 }
@@ -64,10 +71,11 @@ export function useRefreshFeed() {
 export function useUpdateFeed(feedId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { title: string }) => api.put(`/api/feeds/${feedId}`, data),
+    mutationFn: (data: { title: string; category_id?: string | null }) => api.put(`/api/feeds/${feedId}`, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
       qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+      qc.invalidateQueries({ queryKey: queryKeys.categories.list() });
     },
   });
 }
@@ -84,6 +92,7 @@ export function useImportOPML() {
     mutationFn: (file: File) => api.upload<Feed[]>("/api/feeds/import/opml", file),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+      qc.invalidateQueries({ queryKey: queryKeys.categories.list() });
     },
   });
 }
@@ -91,6 +100,48 @@ export function useImportOPML() {
 export function useExportOPML() {
   return useMutation({
     mutationFn: () => api.get<OPMLExportResponse>("/api/feeds/export/opml"),
+  });
+}
+
+// --- Category hooks ---
+
+export function useCategories() {
+  return useQuery({
+    queryKey: queryKeys.categories.list(),
+    queryFn: () => api.get<Category[]>("/api/categories"),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useCreateCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (title: string) => api.post<Category>("/api/categories", { title }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.categories.list() });
+    },
+  });
+}
+
+export function useUpdateCategory(categoryId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (title: string) => api.put<Category>(`/api/categories/${categoryId}`, { title }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.categories.list() });
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+    },
+  });
+}
+
+export function useDeleteCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (categoryId: string) => api.delete(`/api/categories/${categoryId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.categories.list() });
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+    },
   });
 }
 

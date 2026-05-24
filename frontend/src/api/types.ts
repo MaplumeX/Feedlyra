@@ -10,6 +10,15 @@ export interface Feed {
   checked_at: string | null;
   created_at: string;
   unread_count?: number;
+  category_id: string | null;
+  category_name: string | null;
+}
+
+export interface Category {
+  id: string;
+  title: string;
+  created_at: string;
+  feed_count?: number;
 }
 
 export interface Article {
