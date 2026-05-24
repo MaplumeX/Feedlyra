@@ -573,3 +573,36 @@ Replace plain Virtuoso with GroupedVirtuoso for built-in sticky group headers. C
 ### Next Steps
 
 - None - task complete
+
+
+## Session 18: Optimize date header visibility
+
+**Date**: 2026-05-24
+**Task**: Optimize date header visibility
+**Branch**: `Feat/optimize-article-list-date-header`
+
+### Summary
+
+Increased article list date header visibility: text-xs/font-medium/muted-foreground → text-sm/font-semibold/secondary-foreground. Updated component-guidelines spec.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `855c047` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
