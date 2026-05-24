@@ -228,6 +228,25 @@ if (range.startIndex > prevRange.startIndex) {
      .filter((item) => item.type === "article");
    ```
 
+### Virtuoso Component Reuse State Leak
+
+When using `react-virtuoso`, component instances are **reused** when scrolling — the same `ArticleRow` instance may render item A, then item B. Any `useState` tracking per-item state (e.g., image load failure) will **persist across items** unless explicitly reset.
+
+```tsx
+// Wrong: imageFailed stays true when Virtuoso reuses this instance for a different article
+const [imageFailed, setImageFailed] = useState(false);
+
+// Correct: reset per-item state when the item identity changes
+const [imageFailed, setImageFailed] = useState(false);
+useEffect(() => {
+  setImageFailed(false);
+}, [article.id]);
+```
+
+**Why**: Virtualized lists recycle DOM and React component instances for performance. Without the `useEffect` reset, a failed image on article A causes article B (rendered by the same instance) to also hide its thumbnail.
+
+---
+
 ### Dual-Trigger Context Menu on List Items
 
 When list items need a context menu, provide both right-click (`ContextMenu`) and a visible button (`DropdownMenu`) so touch-screen and power users each have an entry point:
