@@ -1,0 +1,13 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "categories 表设计和 Alembic 迁移规范"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "新模型/router/schema 文件放置位置"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "categories CRUD 端点错误处理规范"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端代码质量标准"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "侧边栏分类组件和对话框修改规范"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "新增 category 组件/hooks 文件放置位置"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "categories API hooks 编写规范"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "分类相关 Zustand store 状态管理规范"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Category TypeScript 类型定义规范"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端代码质量标准"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "后端 categories schema ↔ 前端 types 对齐"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "复用现有 Collapsible/ContextMenu 等组件"}
+{"file": ".trellis/tasks/05-23-add-feed-category-folder-support/prd.md", "reason": "PRD 需求定义和技术方案"}
