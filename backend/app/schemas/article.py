@@ -13,6 +13,7 @@ class ArticleResponse(BaseModel):
     url: str
     content: str | None
     content_snippet: str | None
+    image_url: str | None
     author: str | None
     published_at: datetime | None
     fetched_at: datetime

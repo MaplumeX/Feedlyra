@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { Star, CheckCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -55,45 +55,62 @@ function ArticleRow({
 }) {
   const { t, i18n } = useTranslation("reader");
   const toggleStar = useToggleStar();
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = article.image_url && !imageFailed;
+
+  // Reset image error state when article changes (Virtuoso reuses component instances)
+  useEffect(() => {
+    setImageFailed(false);
+  }, [article.id]);
 
   return (
     <div
       className={cn(
-        "flex cursor-pointer flex-col gap-0.5 border-b pl-3 pr-0 py-2 transition-colors hover:bg-accent/50",
+        "flex cursor-pointer flex-row border-b pl-3 pr-0 py-2 transition-colors hover:bg-accent/50",
         isSelected && "bg-accent",
         !article.is_read && "font-medium"
       )}
       onClick={onSelect}
     >
-      <div className="flex items-start gap-2">
-        {!article.is_read && (
-          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
-        )}
-        <span className="flex-1 truncate text-sm">{article.title}</span>
-        <button
-          className="shrink-0 p-0.5 hover:text-primary"
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleStar.mutate({ articleId: article.id, starred: !article.is_starred });
-          }}
-        >
-          <Star
-            className={cn("h-3.5 w-3.5", article.is_starred && "fill-primary text-primary")}
-          />
-        </button>
+      <div className={cn("flex flex-col gap-0.5", showImage ? "flex-1 min-w-0" : "w-full")}>
+        <div className="flex items-start gap-2">
+          {!article.is_read && (
+            <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+          )}
+          <span className="flex-1 truncate text-sm">{article.title}</span>
+          <button
+            className="shrink-0 p-0.5 hover:text-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleStar.mutate({ articleId: article.id, starred: !article.is_starred });
+            }}
+          >
+            <Star
+              className={cn("h-3.5 w-3.5", article.is_starred && "fill-primary text-primary")}
+            />
+          </button>
+        </div>
+        <div className="flex items-center gap-2 pl-4 text-xs text-muted-foreground">
+          {article.feed_title && (
+            <>
+              <FeedIcon iconUrl={feedIconUrl} className="h-3 w-3" />
+              <span className="truncate">{article.feed_title}</span>
+            </>
+          )}
+          {article.author && <span>{t("by", { author: article.author })}</span>}
+          {article.published_at && (
+            <span>{new Date(article.published_at).toLocaleDateString(i18n.language)}</span>
+          )}
+        </div>
       </div>
-      <div className="flex items-center gap-2 pl-4 text-xs text-muted-foreground">
-        {article.feed_title && (
-          <>
-            <FeedIcon iconUrl={feedIconUrl} className="h-3 w-3" />
-            <span className="truncate">{article.feed_title}</span>
-          </>
-        )}
-        {article.author && <span>{t("by", { author: article.author })}</span>}
-        {article.published_at && (
-          <span>{new Date(article.published_at).toLocaleDateString(i18n.language)}</span>
-        )}
-      </div>
+      {showImage && (
+        <img
+          src={article.image_url ?? undefined}
+          alt=""
+          className="ml-2 h-14 w-14 shrink-0 rounded object-cover"
+          onError={() => setImageFailed(true)}
+        />
+      )}
     </div>
   );
 }

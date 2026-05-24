@@ -28,6 +28,7 @@ export interface Article {
   url: string;
   content: string | null;
   content_snippet: string | null;
+  image_url: string | null;
   author: string | null;
   published_at: string | null;
   fetched_at: string;
