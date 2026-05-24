@@ -1,5 +1,5 @@
 import DOMPurify from "dompurify";
-import { ExternalLink, Star, BookOpen, RotateCcw, Sparkles, Languages, MessageSquare, Type } from "lucide-react";
+import { ExternalLink, Star, BookOpen, RotateCcw, Sparkles, Languages, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,16 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { useArticle, useToggleRead, useToggleStar, useSummarize, useTranslate, useAIConfig } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { AIChatPanel } from "@/components/AIChatPanel";
+import { ReadingSettingsPopover, getFontStack } from "@/components/ReadingSettingsPopover";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useCallback, useRef } from "react";
-
-const FONT_SIZE_CYCLE: Array<"sm" | "md" | "lg"> = ["sm", "md", "lg"];
-
-const FONT_SIZE_CLASS: Record<"sm" | "md" | "lg", string> = {
-  sm: "prose-sm",
-  md: "prose",
-  lg: "prose-lg",
-};
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
 function ArticleDetailSkeleton() {
   return (
@@ -50,7 +43,7 @@ function EmptyState() {
 
 export function ArticleDetail() {
   const { t, i18n } = useTranslation("reader");
-  const { selectedArticleId, chatPanelOpen, fontSize, autoSummarize } = useReaderStore();
+  const { selectedArticleId, chatPanelOpen, readerSettings, autoSummarize } = useReaderStore();
   const { data: article, isLoading } = useArticle(selectedArticleId);
   const toggleRead = useToggleRead();
   const toggleStar = useToggleStar();
@@ -62,6 +55,14 @@ export function ArticleDetail() {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [lightboxAlt, setLightboxAlt] = useState("");
   const autoSummarizeTriggeredRef = useRef<string | null>(null);
+
+  const proseStyle: Record<string, string> = useMemo(() => ({
+    fontSize: `${readerSettings.fontSize}px`,
+    fontFamily: getFontStack(readerSettings.fontFamily),
+    lineHeight: String(readerSettings.lineHeight),
+    letterSpacing: `${readerSettings.letterSpacing}em`,
+    "--prose-p-spacing": `${readerSettings.paragraphSpacing}em`,
+  }), [readerSettings]);
 
   const handleProseClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target instanceof HTMLImageElement) {
@@ -82,12 +83,6 @@ export function ArticleDetail() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [lightboxSrc, closeLightbox]);
-
-  const cycleFontSize = useCallback(() => {
-    const idx = FONT_SIZE_CYCLE.indexOf(fontSize);
-    const next = FONT_SIZE_CYCLE[(idx + 1) % FONT_SIZE_CYCLE.length];
-    setReader({ fontSize: next });
-  }, [fontSize, setReader]);
 
   // Reset translation view when switching articles
   useEffect(() => {
@@ -194,18 +189,7 @@ export function ArticleDetail() {
           <MessageSquare className={cn("h-4 w-4", chatPanelOpen && "text-primary")} />
         </Button>
         <Separator orientation="vertical" className="h-5" />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={cycleFontSize}
-          title={t("fontSize")}
-        >
-          <Type className="h-4 w-4" />
-        </Button>
-        <span className="text-xs text-muted-foreground">
-          {fontSize === "sm" ? t("fontSizeSmall") : fontSize === "lg" ? t("fontSizeLarge") : t("fontSizeMedium")}
-        </span>
+        <ReadingSettingsPopover />
         <div className="flex-1" />
         <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
           <a href={article.url} target="_blank" rel="noopener noreferrer">
@@ -216,7 +200,7 @@ export function ArticleDetail() {
 
       <div className="relative flex flex-1 overflow-hidden">
         <ScrollArea className="flex-1">
-          <article className="mx-auto max-w-3xl px-6 py-8">
+          <article className="mx-auto px-6 py-8" style={{ maxWidth: `${readerSettings.contentWidth}px` }}>
             <h1 className="text-2xl font-bold leading-tight">{displayTitle}</h1>
 
             <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
@@ -270,11 +254,8 @@ export function ArticleDetail() {
 
             {sanitizedContent ? (
               <div
-                className={cn(
-                  "prose prose-slate max-w-none dark:prose-invert",
-                  FONT_SIZE_CLASS[fontSize],
-                  "[&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_img]:cursor-zoom-in"
-                )}
+                className="prose prose-slate max-w-none dark:prose-invert [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_img]:cursor-zoom-in [&_p]:mb-[var(--prose-p-spacing,1.25em)]"
+                style={proseStyle}
                 onClick={handleProseClick}
                 dangerouslySetInnerHTML={{ __html: sanitizedContent }}
               />

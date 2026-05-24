@@ -620,7 +620,40 @@ Added dark mode support: next-themes integration, ThemeProvider + ThemeToggle (l
 - None - task complete
 
 
-## Session 20: feat: auto AI summary with setting toggle and placeholder UI
+## Session 20: Add refresh all feeds button to article list header
+
+**Date**: 2026-05-24
+**Task**: Add refresh all feeds button to article list header
+**Branch**: `Feat/article-list-header-refresh-button`
+
+### Summary
+
+Added POST /api/feeds/refresh-all backend endpoint + useRefreshAllFeeds() frontend hook + RefreshCw button in ArticleList header with loading state and i18n
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5b6144d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 20b: feat: auto AI summary with setting toggle and placeholder UI
 
 **Date**: 2026-05-24
 **Task**: feat: auto AI summary with setting toggle and placeholder UI
@@ -640,6 +673,40 @@ Implemented auto-generate AI summary feature: settings toggle (persisted), auto-
 |------|---------|
 | `4056c59` | (see git log) |
 | `a7ae43a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 21: 阅读体验排版自定义
+
+**Date**: 2026-05-24
+**Task**: 阅读体验排版自定义
+**Branch**: `Feat/reader-typography-settings`
+
+### Summary
+
+实现文章阅读视图 6 项排版参数可调（字号/字体/行高/内容宽度/字间距/段落间距），工具栏 popover 实时预览，Zustand persist 持久化，更新前端 spec
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f82f55e` | (see git log) |
+| `fbbcaf1` | (see git log) |
 
 ### Testing
 

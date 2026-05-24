@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Verify backend conventions compliance for new API endpoint"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Check error handling for refresh-all endpoint"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Verify frontend conventions compliance"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Check hook pattern correctness for useRefreshAllFeeds"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Check component integration pattern in ArticleList header"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Check React Query cache invalidation is correct"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify cross-layer data flow consistency"}

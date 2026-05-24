@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend conventions: async-first, UUID PKs, Pydantic schemas, error handling patterns"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Error handling patterns for new refresh-all API endpoint"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Where to add new route and service logic"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend conventions: React Query hooks, shadcn/ui, Zustand vs RQ split"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "How to write React Query mutation hooks (useRefreshAllFeeds pattern)"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns for adding button to ArticleList header"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "React Query cache invalidation patterns for refresh callback"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "This feature spans backend API + frontend hook + component — cross-layer data flow"}

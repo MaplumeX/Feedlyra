@@ -92,6 +92,32 @@ interface AddFeedDialogProps {
 - Class merging: `cn()` from `src/lib/utils.ts` (combines `clsx` + `tailwind-merge`)
 - shadcn/ui primitives use `class-variance-authority` (cva) for variant styling
 
+### Prose Content Typography Override
+
+Article content uses `@tailwindcss/typography` `prose` classes. When user-adjustable typography is needed, override via inline styles on the prose container — do NOT swap prose size classes (`prose-sm`/`prose`/`prose-lg`):
+
+```tsx
+const proseStyle: Record<string, string> = {
+  fontSize: `${readerSettings.fontSize}px`,
+  fontFamily: getFontStack(readerSettings.fontFamily),
+  lineHeight: `${readerSettings.lineHeight}`,
+  letterSpacing: `${readerSettings.letterSpacing}em`,
+  "--prose-p-spacing": `${readerSettings.paragraphSpacing}em`,
+};
+
+<article
+  className="prose prose-slate max-w-none dark:prose-invert [&_p]:mb-[var(--prose-p-spacing,1.25em)]"
+  style={proseStyle}
+>
+```
+
+**Why**: `prose-sm`/`prose`/`prose-lg` are discrete presets with fixed type scales. Inline style overrides are continuous and composable. CSS custom properties (e.g., `--prose-p-spacing`) can be consumed by Tailwind arbitrary variants (`[&_p]:mb-[var(--prose-p-spacing)]`) for elements not directly controllable via inline style.
+
+**Key details**:
+- Use `Record<string, string>` type (not `React.CSSProperties`) to avoid type errors on CSS custom properties
+- Keep the `prose prose-slate max-w-none dark:prose-invert` classes — they provide base spacing, color, and link styles
+- Content width (`max-width`) is set separately from the prose container, typically on a parent wrapper
+
 ### Layout Convention: Three-Panel Resizable Layout
 
 The main reader layout uses `react-resizable-panels` v4 (Group/Panel/Separator) with pixel-based width constraints.
