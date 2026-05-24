@@ -618,3 +618,36 @@ Added dark mode support: next-themes integration, ThemeProvider + ThemeToggle (l
 ### Next Steps
 
 - None - task complete
+
+
+## Session 20: Add refresh all feeds button to article list header
+
+**Date**: 2026-05-24
+**Task**: Add refresh all feeds button to article list header
+**Branch**: `Feat/article-list-header-refresh-button`
+
+### Summary
+
+Added POST /api/feeds/refresh-all backend endpoint + useRefreshAllFeeds() frontend hook + RefreshCw button in ArticleList header with loading state and i18n
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5b6144d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
