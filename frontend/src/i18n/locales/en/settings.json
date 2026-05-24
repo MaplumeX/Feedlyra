@@ -26,5 +26,7 @@
   "opmlImportFailed": "Failed to import OPML",
   "opmlInvalidFile": "Please select an .opml or .xml file",
   "opmlDropOrClick": "Drop an OPML file here or click to browse",
-  "opmlImporting": "Importing..."
+  "opmlImporting": "Importing...",
+  "autoSummarize": "Auto-generate AI summary",
+  "autoSummarizeDescription": "Automatically generate an AI summary when opening an article."
 }

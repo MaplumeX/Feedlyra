@@ -62,5 +62,6 @@
   "selectCategory": "选择分类",
   "lightMode": "亮色模式",
   "darkMode": "暗色模式",
+  "generatingSummary": "正在生成摘要...",
   "systemTheme": "跟随系统"
 }

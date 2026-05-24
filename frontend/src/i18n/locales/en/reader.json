@@ -62,5 +62,6 @@
   "selectCategory": "Select Category",
   "lightMode": "Light mode",
   "darkMode": "Dark mode",
+  "generatingSummary": "Generating summary...",
   "systemTheme": "System theme"
 }

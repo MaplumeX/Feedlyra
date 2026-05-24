@@ -26,5 +26,7 @@
   "opmlImportFailed": "OPML 导入失败",
   "opmlInvalidFile": "请选择 .opml 或 .xml 文件",
   "opmlDropOrClick": "将 OPML 文件拖放到此处，或点击浏览",
-  "opmlImporting": "正在导入..."
+  "opmlImporting": "正在导入...",
+  "autoSummarize": "自动生成AI摘要",
+  "autoSummarizeDescription": "打开文章时自动生成AI摘要。"
 }

@@ -8,6 +8,7 @@ interface ReaderState {
   sidebarCollapsed: boolean;
   fontSize: "sm" | "md" | "lg";
   scrollMarkRead: boolean;
+  autoSummarize: boolean;
   chatPanelOpen: boolean;
   commandPaletteOpen: boolean;
   settingsDialogOpen: boolean;
@@ -23,11 +24,12 @@ export const useReaderStore = create<ReaderState>()(
       sidebarCollapsed: false,
       fontSize: "md",
       scrollMarkRead: true,
+      autoSummarize: false,
       chatPanelOpen: false,
       commandPaletteOpen: false,
       settingsDialogOpen: false,
       set: (partial) => set(partial),
     }),
-    { name: "feedlyra-reader", partialize: (state) => ({ sidebarCollapsed: state.sidebarCollapsed, fontSize: state.fontSize, scrollMarkRead: state.scrollMarkRead }) }
+    { name: "feedlyra-reader", partialize: (state) => ({ sidebarCollapsed: state.sidebarCollapsed, fontSize: state.fontSize, scrollMarkRead: state.scrollMarkRead, autoSummarize: state.autoSummarize }) }
   )
 );
