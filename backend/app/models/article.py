@@ -19,6 +19,7 @@ class Article(Base):
     url: Mapped[str] = mapped_column(String(2048), nullable=False)
     content: Mapped[str | None] = mapped_column(Text)
     content_snippet: Mapped[str | None] = mapped_column(Text)
+    image_url: Mapped[str | None] = mapped_column(String(2048))
     author: Mapped[str | None] = mapped_column(String(255))
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

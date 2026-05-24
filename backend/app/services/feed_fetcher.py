@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
 from time import mktime
@@ -135,6 +136,50 @@ def _extract_feed_icon(parsed: feedparser.FeedParserDict) -> str | None:
             return icon_url
     elif isinstance(image, str):
         return image
+
+    return None
+
+
+def _extract_image_url(entry: feedparser.FeedParserDict, content: str | None) -> str | None:
+    """Extract image URL from a feedparser entry.
+
+    Priority:
+    1. entry.media_thumbnail — first item's url
+    2. entry.media_content — first item with medium="image"
+    3. entry.enclosures — first item with type starting with "image/"
+    4. First <img src="..."> from HTML content
+    """
+    # 1. media_thumbnail
+    media_thumbnails = entry.get("media_thumbnail", [])
+    if media_thumbnails:
+        thumb = media_thumbnails[0]
+        url = thumb.get("url") if isinstance(thumb, dict) else None
+        if url and isinstance(url, str):
+            return url
+
+    # 2. media_content with medium="image"
+    media_contents = entry.get("media_content", [])
+    for mc in media_contents:
+        if isinstance(mc, dict) and mc.get("medium") == "image":
+            url = mc.get("url")
+            if url and isinstance(url, str):
+                return url
+
+    # 3. enclosures with image type
+    enclosures = entry.get("enclosures", [])
+    for enc in enclosures:
+        if isinstance(enc, dict):
+            enc_type = enc.get("type", "")
+            if enc_type.startswith("image/"):
+                url = enc.get("href") or enc.get("url")
+                if url and isinstance(url, str):
+                    return url
+
+    # 4. Extract first <img> from HTML content
+    if content:
+        match = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', content, re.IGNORECASE)
+        if match:
+            return match.group(1)
 
     return None
 
@@ -273,6 +318,7 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
             url=entry_url,
             content=content_value,
             content_snippet=snippet[:500] if snippet else None,
+            image_url=_extract_image_url(entry, content_value),
             author=entry.get("author", None),
             published_at=_parse_published(entry),
             fetched_at=now,

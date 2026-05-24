@@ -463,7 +463,17 @@ Remove right-side px-3 padding from ArticleList rows, date headers, filter bar, 
 - None - task complete
 
 
-## Session 15: Line-through label for article list date headers
+## Session 15: Add article list thumbnail feature
+
+**Date**: 2026-05-24
+**Task**: Add article list thumbnail feature
+**Branch**: `Feat/article-list-thumbnail`
+
+### Summary
+
+Added thumbnail display for articles with images in list view. Backend: new image_url column in articles table (alembic migration 005), image extraction from RSS feed entries (media_thumbnail > media_content > enclosures > HTML img), updated model/schema. Frontend: ArticleRow shows 56x56 square thumbnail on right when image_url exists, silent fallback to text-only on load failure, Virtuoso state reset on article change.
+
+## Session 15b: Line-through label for article list date headers
 
 **Date**: 2026-05-24
 **Task**: Line-through label for article list date headers
@@ -481,6 +491,8 @@ Remove right-side px-3 padding from ArticleList rows, date headers, filter bar, 
 
 | Hash | Message |
 |------|---------|
+| `e9bf18e` | (see git log) |
+| `9bbc41d` | (see git log) |
 | `db87132` | (see git log) |
 | `6f35ab4` | (see git log) |
 
