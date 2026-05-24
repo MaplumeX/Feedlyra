@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "包含 Line-Through Label (Section Separator) 的设计规范，需要确认组头渲染样式符合约定"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "lint/typecheck 质量标准"}
+{"file": ".trellis/tasks/05-24-fix-article-list-sticky-header/research/virtuoso-sticky-items.md", "reason": "GroupedVirtuoso sticky header 的 API 用法和迁移方案"}

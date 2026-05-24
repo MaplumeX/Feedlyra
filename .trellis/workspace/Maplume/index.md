@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 16
+- **Total Sessions**: 17
 - **Last Active**: 2026-05-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~542 | Active |
+| `journal-1.md` | ~575 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 17 | 2026-05-24 | Fix article list date header sticky behavior | `f31c791` | `Feat/fix-article-date-sticky-header` |
 | 16 | 2026-05-24 | Revert PR #16 and #18 scrollbar changes | `32028c6` | `Feat/bordeaux-pr-16-18-summary` |
 | 15 | 2026-05-24 | Add article list thumbnail feature | `e9bf18e`, `9bbc41d` | `Feat/article-list-thumbnail` |
 | 15 | 2026-05-24 | Line-through label for article list date headers | `db87132`, `6f35ab4` | `Feat/optimize-article-list-time-style` |

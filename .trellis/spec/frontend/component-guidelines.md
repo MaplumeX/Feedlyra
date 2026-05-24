@@ -152,6 +152,7 @@ Rows inside fixed-width ScrollArea panels should also constrain every flex layer
 - **Unconstrained resizable panels** — `react-resizable-panels` without `minSize`/`maxSize` lets users shrink panels below readable widths. Always set pixel constraints that keep content readable (e.g., sidebar min 120px, article list min 180px).
 - **Relying on `truncate` alone in ScrollArea sidebars** — long text can still expand the Radix internal wrapper or the flex row. Use `[&>div]:!block` on the shared ScrollArea viewport plus `w-full min-w-0 overflow-hidden` on rows and `min-w-0 flex-1 truncate` on text.
 - **"Fixing" macOS overlay scrollbar layout differences** — macOS uses overlay scrollbars by default (no layout space). Custom `::-webkit-scrollbar` CSS forces Chrome into classic mode, which reserves a 6px layout gutter. This is expected behavior, not a bug. Do not remove custom scrollbar CSS or replace `<ScrollArea>` with native `overflow-y-auto` to "fix" this. (See: PR #16/#18 revert)
+- **Using `position: sticky` inside plain `Virtuoso`** — plain `Virtuoso` wraps each item in an element with `position: absolute` + computed `top`, so CSS `position: sticky` on child content silently fails. For sticky group headers, use `GroupedVirtuoso` which applies sticky on its group wrapper element automatically.
 
 ---
 
@@ -227,11 +228,20 @@ if (range.startIndex > prevRange.startIndex) {
    }, [selectedFeedId, articleListFilter]);
    ```
 
-4. **Skip header items**: Virtuoso flat lists often mix header rows with data rows. Only process items of the expected `type`:
+4. **Map absolute indices in GroupedVirtuoso**: `GroupedVirtuoso`'s `rangeChanged` reports absolute indices that include group headers. For example, with `groupCounts=[3,2,4]`, index 0 is Group 0's header, index 1 is the first article. When iterating scrolled-past items, map the absolute index back to the article (skip header indices):
    ```tsx
-   const articlesInRange = flatItems
-     .slice(start, end + 1)
-     .filter((item) => item.type === "article");
+   function getArticleByAbsoluteIndex(absoluteIndex: number): Article | undefined {
+     let pos = absoluteIndex;
+     for (const group of grouped) {
+       if (pos === 0) return undefined; // this is a group header
+       pos -= 1; // skip the header
+       if (pos < group.articles.length) {
+         return group.articles[pos];
+       }
+       pos -= group.articles.length;
+     }
+     return undefined;
+   }
    ```
 
 ### Virtuoso Component Reuse State Leak
@@ -290,24 +300,38 @@ When list items need a context menu, provide both right-click (`ContextMenu`) an
 
 For section headers in scrollable lists (e.g., date group headers in article lists), use the Slack-style line-through label: centered text flanked by two horizontal lines.
 
+When using `react-virtuoso`, **must use `GroupedVirtuoso`** (not plain `Virtuoso`) for sticky headers to work — see gotcha below.
+
 ```tsx
-// In Virtuoso itemContent — header item
-if (item.type === "header") {
-  return (
-    <div className="sticky top-0 z-10 flex items-center gap-4 bg-background px-3 py-2">
-      <div className="h-px flex-1 bg-border" />
-      <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-        {item.label}
-      </span>
-      <div className="h-px flex-1 bg-border" />
-    </div>
-  );
-}
+// In GroupedVirtuoso groupContent callback
+<GroupedVirtuoso
+  groupCounts={grouped.map(g => g.articles.length)}
+  groupContent={(groupIndex) => {
+    const group = grouped[groupIndex];
+    if (!group) return null;
+    return (
+      <div className="flex items-center gap-4 bg-background px-3 py-2">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+          {group.label}
+        </span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
+    );
+  }}
+  itemContent={(index, groupIndex) => {
+    const article = grouped[groupIndex]?.articles[index];
+    // render article row...
+  }}
+/>
 ```
 
 **Key details**:
 - `flex items-center gap-4` — horizontal layout with 16px gap between lines and text
 - Two `h-px flex-1 bg-border` divs — 1px lines that grow to fill available space
 - `whitespace-nowrap` on text — prevents label wrapping in narrow panels
-- `sticky top-0 z-10 bg-background` — pins header to viewport top during scroll; opaque background hides content behind it
+- `bg-background` — opaque background hides content behind the pinned header
 - `px-3` symmetric padding matches article row left-alignment
+- **No manual `sticky top-0 z-10`** — `GroupedVirtuoso` applies `position: sticky` on the group wrapper element automatically
+
+> **Gotcha**: Do NOT add `sticky top-0` CSS to header content inside `GroupedVirtuoso.groupContent`. The sticky behavior comes from the wrapper element that Virtuoso creates, not from CSS on the inner content. Adding it has no effect (and in plain `Virtuoso`, it silently fails because Virtuoso uses `position: absolute` on item wrappers, which prevents `position: sticky` from working on children).
