@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Virtuoso } from "react-virtuoso";
+import { GroupedVirtuoso } from "react-virtuoso";
 import { Star, CheckCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
@@ -11,10 +11,6 @@ import { useArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, us
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
 import type { Article } from "@/api/types";
-
-type FlatItem =
-  | { type: "header"; label: string }
-  | { type: "article"; article: Article };
 
 function formatDate(dateStr: string | null, lng: string): string {
   if (!dateStr) return "";
@@ -157,17 +153,23 @@ export function ArticleList() {
   const articles = data?.items ?? [];
   const hasUnread = articles.some((a) => !a.is_read);
   const grouped = groupByDate(articles, i18n.language);
+  const groupCounts = useMemo(() => grouped.map(g => g.articles.length), [grouped]);
 
-  const flatItems: FlatItem[] = useMemo(() => {
-    const items: FlatItem[] = [];
+  /** Map a GroupedVirtuoso absolute item index (includes group headers) to the corresponding article.
+   *  Returns undefined if the index points to a group header or is out of range. */
+  function getArticleByAbsoluteIndex(absoluteIndex: number): Article | undefined {
+    let pos = absoluteIndex;
     for (const group of grouped) {
-      items.push({ type: "header", label: group.label });
-      for (const article of group.articles) {
-        items.push({ type: "article", article });
+      // pos 0 within this group segment = header
+      if (pos === 0) return undefined; // this is a group header
+      pos -= 1; // skip the header
+      if (pos < group.articles.length) {
+        return group.articles[pos];
       }
+      pos -= group.articles.length;
     }
-    return items;
-  }, [grouped]);
+    return undefined;
+  }
 
   // Scroll mark read state
   const prevRangeRef = useRef<{ startIndex: number; endIndex: number } | null>(null);
@@ -221,9 +223,9 @@ export function ArticleList() {
 
       // Collect unread article IDs that were scrolled past (between prev.startIndex and range.startIndex - 1)
       for (let i = prev.startIndex; i < range.startIndex; i++) {
-        const item = flatItems[i];
-        if (item && item.type === "article" && !item.article.is_read) {
-          pendingIdsRef.current.add(item.article.id);
+        const article = getArticleByAbsoluteIndex(i);
+        if (article && !article.is_read) {
+          pendingIdsRef.current.add(article.id);
         }
       }
 
@@ -234,7 +236,7 @@ export function ArticleList() {
         debounceTimerRef.current = setTimeout(flushPendingIds, 300);
       }
     },
-    [scrollMarkRead, flatItems, flushPendingIds]
+    [scrollMarkRead, grouped, flushPendingIds]
   );
 
   function selectArticle(article: Article) {
@@ -275,34 +277,38 @@ export function ArticleList() {
 
       {isLoading ? (
         <ArticleListSkeleton />
-      ) : flatItems.length === 0 ? (
+      ) : grouped.length === 0 ? (
         <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
           {t("noArticles")}
         </div>
       ) : (
-        <Virtuoso
+        <GroupedVirtuoso
           className="flex-1"
-          data={flatItems}
+          groupCounts={groupCounts}
+          groupContent={(groupIndex) => {
+            const group = grouped[groupIndex];
+            if (!group) return null;
+            return (
+              <div className="flex items-center gap-4 bg-background px-3 py-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                  {group.label}
+                </span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+            );
+          }}
           rangeChanged={rangeChanged}
           followOutput={articleListFilter === "unread" ? "smooth" : undefined}
-          itemContent={(_index, item) => {
-            if (item.type === "header") {
-              return (
-                <div className="sticky top-0 z-10 flex items-center gap-4 bg-background px-3 py-2">
-                  <div className="h-px flex-1 bg-border" />
-                  <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                    {item.label}
-                  </span>
-                  <div className="h-px flex-1 bg-border" />
-                </div>
-              );
-            }
+          itemContent={(index, groupIndex) => {
+            const article = grouped[groupIndex]?.articles[index];
+            if (!article) return null;
             return (
               <ArticleRow
-                article={item.article}
-                feedIconUrl={feedIconMap.get(item.article.feed_id) ?? null}
-                isSelected={selectedArticleId === item.article.id}
-                onSelect={() => selectArticle(item.article)}
+                article={article}
+                feedIconUrl={feedIconMap.get(article.feed_id) ?? null}
+                isSelected={selectedArticleId === article.id}
+                onSelect={() => selectArticle(article)}
               />
             );
           }}
