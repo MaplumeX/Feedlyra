@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify component follows existing patterns: named export, Tailwind styling, shadcn/ui conventions, cn() usage"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Check provider wrapping conventions, Zustand persist partialize for theme state, no forbidden patterns"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify theme state follows Zustand conventions if used, or next-themes conventions are correct"}
+{"file": ".trellis/tasks/05-24-dark-mode-support/prd.md", "reason": "Verify all acceptance criteria are met: three-state toggle, persistence, no FOUC, visual correctness"}
