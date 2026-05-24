@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns, styling conventions (Tailwind, shadcn/ui, cn()), layout patterns — needed to follow existing conventions for ThemeProvider and toggle button"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Required patterns (Zustand persist partialize, provider wrapping conventions) and forbidden patterns — needed to avoid common mistakes when adding ThemeProvider"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand + persist patterns — theme preference should follow existing state management conventions"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Custom hook patterns — may need a useTheme wrapper hook"}
+{"file": ".trellis/tasks/05-24-dark-mode-support/prd.md", "reason": "Task requirements and acceptance criteria — the implementation target spec"}

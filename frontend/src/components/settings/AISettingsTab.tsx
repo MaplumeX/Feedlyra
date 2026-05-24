@@ -132,7 +132,7 @@ export function AISettingsTab() {
           {t("testConnection")}
         </Button>
         {testStatus === "success" && (
-          <span className="flex items-center gap-1 text-sm text-green-600">
+          <span className="flex items-center gap-1 text-sm text-primary">
             <CheckCircle2 className="h-4 w-4" /> {t("ok", { ns: "common" })}
           </span>
         )}

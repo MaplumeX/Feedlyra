@@ -53,6 +53,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddFeedDialog } from "@/components/AddFeedDialog";
 import { FeedSettingsDialog } from "@/components/FeedSettingsDialog";
 import { FeedIcon } from "@/components/FeedIcon";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import {
   useFeeds,
@@ -486,14 +487,15 @@ export function Sidebar() {
 
       <Separator />
 
-      <div className="px-2 py-1.5">
+      <div className="flex items-center gap-1 px-2 py-1.5">
         <button
-          className="flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
           onClick={() => setReader({ settingsDialogOpen: true })}
         >
           <Settings className="h-4 w-4 shrink-0" />
           <span className="min-w-0 truncate">{t("settings", { ns: "settings" })}</span>
         </button>
+        <ThemeToggle />
       </div>
 
       <AddFeedDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />

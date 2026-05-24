@@ -585,6 +585,16 @@ Replace plain Virtuoso with GroupedVirtuoso for built-in sticky group headers. C
 
 Increased article list date header visibility: text-xs/font-medium/muted-foreground → text-sm/font-semibold/secondary-foreground. Updated component-guidelines spec.
 
+## Session 19: Dark mode support with three-state theme toggle
+
+**Date**: 2026-05-24
+**Task**: Dark mode support with three-state theme toggle
+**Branch**: `Feat/night-mode`
+
+### Summary
+
+Added dark mode support: next-themes integration, ThemeProvider + ThemeToggle (light/dark/system cycle), FOUC prevention script, hardcoded color audit fix (text-green-600→text-primary), i18n theme labels (en/zh-CN), component spec updated with dark mode patterns.
+
 ### Main Changes
 
 (Add details)
@@ -594,6 +604,8 @@ Increased article list date header visibility: text-xs/font-medium/muted-foregro
 | Hash | Message |
 |------|---------|
 | `855c047` | (see git log) |
+| `97f407b` | (see git log) |
+| `465ae31` | (see git log) |
 
 ### Testing
 
