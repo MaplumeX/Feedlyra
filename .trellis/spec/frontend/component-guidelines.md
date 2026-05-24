@@ -85,6 +85,9 @@ interface AddFeedDialogProps {
 
 - **Tailwind utility classes** inline in JSX (no CSS modules, no styled-components)
 - Theme via CSS custom properties in `index.css` (`:root` / `.dark`), mapped through `tailwind.config.ts`
+- Dark mode via `next-themes` with `attribute="class"`, `defaultTheme="system"`, `enableSystem`
+- ThemeProvider wraps app inside BrowserRouter (next-themes requires router context in SPA)
+- ThemeToggle uses `useTheme()` with `mounted` state guard to prevent hydration mismatch
 - shadcn/ui components for primitives (Button, Badge, DropdownMenu, etc.)
 - Class merging: `cn()` from `src/lib/utils.ts` (combines `clsx` + `tailwind-merge`)
 - shadcn/ui primitives use `class-variance-authority` (cva) for variant styling
@@ -153,6 +156,7 @@ Rows inside fixed-width ScrollArea panels should also constrain every flex layer
 - **Relying on `truncate` alone in ScrollArea sidebars** — long text can still expand the Radix internal wrapper or the flex row. Use `[&>div]:!block` on the shared ScrollArea viewport plus `w-full min-w-0 overflow-hidden` on rows and `min-w-0 flex-1 truncate` on text.
 - **"Fixing" macOS overlay scrollbar layout differences** — macOS uses overlay scrollbars by default (no layout space). Custom `::-webkit-scrollbar` CSS forces Chrome into classic mode, which reserves a 6px layout gutter. This is expected behavior, not a bug. Do not remove custom scrollbar CSS or replace `<ScrollArea>` with native `overflow-y-auto` to "fix" this. (See: PR #16/#18 revert)
 - **Using `position: sticky` inside plain `Virtuoso`** — plain `Virtuoso` wraps each item in an element with `position: absolute` + computed `top`, so CSS `position: sticky` on child content silently fails. For sticky group headers, use `GroupedVirtuoso` which applies sticky on its group wrapper element automatically.
+- **Hardcoded Tailwind color classes for text/background** — classes like `text-green-600`, `bg-white`, `text-gray-500` use fixed hues that don't respond to dark mode. Always use semantic classes (`text-primary`, `text-muted-foreground`, `bg-background`, `bg-muted`, etc.) which map to CSS variables that flip in `.dark`.
 
 ---
 
@@ -335,3 +339,68 @@ When using `react-virtuoso`, **must use `GroupedVirtuoso`** (not plain `Virtuoso
 - **No manual `sticky top-0 z-10`** — `GroupedVirtuoso` applies `position: sticky` on the group wrapper element automatically
 
 > **Gotcha**: Do NOT add `sticky top-0` CSS to header content inside `GroupedVirtuoso.groupContent`. The sticky behavior comes from the wrapper element that Virtuoso creates, not from CSS on the inner content. Adding it has no effect (and in plain `Virtuoso`, it silently fails because Virtuoso uses `position: absolute` on item wrappers, which prevents `position: sticky` from working on children).
+
+### Dark Mode Three-State Toggle
+
+The theme toggle cycles through `light → dark → system` using `next-themes`:
+
+```tsx
+import { useTheme } from "next-themes";
+import { Sun, Moon, Monitor } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+
+const THEME_CYCLE = ["light", "dark", "system"] as const;
+
+export function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  function cycle_theme() {
+    const current = theme ?? "system";
+    const currentIdx = THEME_CYCLE.indexOf(current as typeof THEME_CYCLE[number]);
+    const nextIdx = (currentIdx + 1) % THEME_CYCLE.length;
+    setTheme(THEME_CYCLE[nextIdx] ?? "system");
+  }
+
+  if (!mounted) {
+    return <Button variant="ghost" size="icon" className="h-7 w-7" disabled><Sun className="h-4 w-4" /></Button>;
+  }
+
+  const icon = theme === "dark" ? <Moon className="h-4 w-4" />
+    : theme === "light" ? <Sun className="h-4 w-4" />
+    : <Monitor className="h-4 w-4" />;
+
+  const label = theme === "dark" ? "Dark mode"
+    : theme === "light" ? "Light mode"
+    : "System theme";
+
+  return <Button variant="ghost" size="icon" className="h-7 w-7" onClick={cycle_theme} title={label}>{icon}</Button>;
+}
+```
+
+**Key details**:
+- `mounted` guard is mandatory — `useTheme()` returns `undefined` before mount; rendering icon based on `theme` before mount causes hydration mismatch
+- Disabled placeholder before mount prevents layout shift
+- `title` attribute on icon-only button (accessibility convention)
+- Icons: Sun (light), Moon (dark), Monitor (system) — standard convention
+- Labels should use i18n (`useTranslation("reader")` with keys `lightMode`/`darkMode`/`systemTheme`)
+
+### Vite SPA Dark Mode FOUC Prevention
+
+`next-themes` auto-injects a FOUC prevention script only for Next.js SSR. In Vite SPA, add an inline script in `index.html` before `<div id="root">`:
+
+```html
+<script>
+  (function() {
+    var stored = localStorage.getItem('theme');
+    var theme = stored || 'system';
+    var dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (dark) document.documentElement.classList.add('dark');
+  })()
+</script>
+```
+
+**Why**: Without this script, the page renders with light CSS variables first, then flashes to dark when next-themes applies the `.dark` class after React mounts. The inline script reads the same `localStorage` key (`"theme"`) that next-themes uses and applies the class synchronously before first paint.
