@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
@@ -9,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_current_user, get_db
 from app.models.article import Article, ReadStatus
+from app.models.category import Category
 from app.models.feed import Feed
 from app.models.user import User
 from app.schemas.feed import (
@@ -40,7 +40,14 @@ async def add_feed(
     if result.scalar_one_or_none() is not None:
         raise HTTPException(status_code=409, detail="Feed already exists")
 
-    feed = Feed(user_id=user.id, title="", url=body.url)
+    if body.category_id is not None:
+        cat_result = await db.execute(
+            select(Category).where(Category.id == body.category_id, Category.user_id == user.id)
+        )
+        if cat_result.scalar_one_or_none() is None:
+            raise HTTPException(status_code=404, detail="Category not found")
+
+    feed = Feed(user_id=user.id, title="", url=body.url, category_id=body.category_id)
     db.add(feed)
     await db.commit()
     await db.refresh(feed)
@@ -65,11 +72,14 @@ async def list_feeds(
     user: User = Depends(get_current_user),
 ) -> list[dict]:
     result = await db.execute(
-        select(Feed).where(Feed.user_id == user.id).order_by(Feed.title)
+        select(Feed, Category.title)
+        .outerjoin(Category, Feed.category_id == Category.id)
+        .where(Feed.user_id == user.id)
+        .order_by(Feed.title)
     )
-    feeds = result.scalars().all()
+    rows = result.all()
 
-    feed_ids = [f.id for f in feeds]
+    feed_ids = [row[0].id for row in rows]
     unread_counts: dict[str, int] = {}
     if feed_ids:
         count_result = await db.execute(
@@ -84,8 +94,13 @@ async def list_feeds(
         unread_counts = {row[0]: row[1] for row in count_result.all()}
 
     return [
-        {**FeedResponse.model_validate(f).model_dump(), "unread_count": unread_counts.get(f.id, 0)}
-        for f in feeds
+        {
+            **FeedResponse.model_validate(row[0]).model_dump(),
+            "unread_count": unread_counts.get(row[0].id, 0),
+            "category_id": row[0].category_id,
+            "category_name": row[1],
+        }
+        for row in rows
     ]
 
 
@@ -114,8 +129,19 @@ async def update_feed(
     if feed is None:
         raise HTTPException(status_code=404, detail="Feed not found")
 
-    if body.title is not None:
-        feed.title = body.title
+    update_data = body.model_dump(exclude_unset=True)
+
+    if "title" in update_data:
+        feed.title = update_data["title"]
+    if "category_id" in update_data:
+        new_cat_id = update_data["category_id"]
+        if new_cat_id is not None:
+            cat_result = await db.execute(
+                select(Category).where(Category.id == new_cat_id, Category.user_id == user.id)
+            )
+            if cat_result.scalar_one_or_none() is None:
+                raise HTTPException(status_code=404, detail="Category not found")
+        feed.category_id = new_cat_id
     await db.commit()
     await db.refresh(feed)
     return feed
@@ -171,17 +197,40 @@ async def import_opml(
     result = await db.execute(select(Feed.url).where(Feed.user_id == user.id))
     existing_urls = {row[0] for row in result.all()}
 
+    # Collect unique category titles from parsed feeds
+    category_titles = {pf.get("category") for pf in parsed_feeds if pf.get("category")}
+    title_to_category: dict[str, Category] = {}
+
+    if category_titles:
+        cat_result = await db.execute(
+            select(Category).where(Category.user_id == user.id, Category.title.in_(category_titles))
+        )
+        existing_cats = cat_result.scalars().all()
+        title_to_category = {c.title: c for c in existing_cats}
+
+        for title in category_titles:
+            if title not in title_to_category:
+                cat = Category(user_id=user.id, title=title)
+                db.add(cat)
+                title_to_category[title] = cat
+
     created: list[Feed] = []
     for pf in parsed_feeds:
         url = pf.get("url", "")
         if not url or url in existing_urls:
             continue
 
+        category_id = None
+        cat_title = pf.get("category")
+        if cat_title and cat_title in title_to_category:
+            category_id = title_to_category[cat_title].id
+
         feed = Feed(
             user_id=user.id,
             title=pf.get("title") or url,
             url=url,
             site_url=pf.get("site_url"),
+            category_id=category_id,
         )
         db.add(feed)
         created.append(feed)
@@ -199,9 +248,18 @@ async def export_opml(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
-    result = await db.execute(select(Feed).where(Feed.user_id == user.id).order_by(Feed.title))
-    feeds = result.scalars().all()
-    return {"xml": generate_opml(feeds)}
+    result = await db.execute(
+        select(Feed, Category.title)
+        .outerjoin(Category, Feed.category_id == Category.id)
+        .where(Feed.user_id == user.id)
+        .order_by(Feed.title)
+    )
+    rows = result.all()
+
+    # Build list of (Feed, category_title | None) tuples
+    feeds_with_category = [(row[0], row[1]) for row in rows]
+
+    return {"xml": generate_opml(feeds_with_category)}
 
 
 @router.post("/discover", response_model=list[DiscoveredFeed])

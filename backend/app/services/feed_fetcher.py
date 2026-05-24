@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
 from time import mktime
 from urllib.parse import urljoin, urlparse
+from xml.sax.saxutils import escape as xml_escape
 
 import feedparser
 import httpx
@@ -340,34 +341,86 @@ async def refresh_all_due_feeds(db: AsyncSession) -> None:
             await db.commit()
 
 
-def generate_opml(feeds: list[Feed]) -> str:
+def generate_opml(feeds_with_category: list[tuple[Feed, str | None]]) -> str:
     lines = ['<?xml version="1.0" encoding="UTF-8"?>']
     lines.append('<opml version="2.0">')
     lines.append("  <head>")
     lines.append("    <title>Feedlyra Subscriptions</title>")
     lines.append("  </head>")
     lines.append("  <body>")
-    for feed in feeds:
-        title_escaped = feed.title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        url_escaped = feed.url.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    # Group feeds by category
+    categorized: dict[str | None, list[Feed]] = {}
+    for feed, cat_title in feeds_with_category:
+        categorized.setdefault(cat_title, []).append(feed)
+
+    _xattr = {'"': "&quot;"}
+
+    # Output categorized feeds first
+    for cat_title, feeds in categorized.items():
+        if cat_title is None:
+            continue
+        cat_escaped = xml_escape(cat_title, _xattr)
+        lines.append(f'    <outline text="{cat_escaped}" title="{cat_escaped}">')
+        for feed in feeds:
+            title_escaped = xml_escape(feed.title, _xattr)
+            url_escaped = xml_escape(feed.url, _xattr)
+            site_escaped = ""
+            if feed.site_url:
+                site_escaped = f' htmlUrl="{xml_escape(feed.site_url, _xattr)}"'
+            lines.append(f'      <outline type="rss" text="{title_escaped}" title="{title_escaped}" xmlUrl="{url_escaped}"{site_escaped} />')
+        lines.append("    </outline>")
+
+    # Output uncategorized feeds
+    uncategorized = categorized.get(None, [])
+    for feed in uncategorized:
+        title_escaped = xml_escape(feed.title, _xattr)
+        url_escaped = xml_escape(feed.url, _xattr)
         site_escaped = ""
         if feed.site_url:
-            site_escaped = f' htmlUrl="{feed.site_url.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")}"'
+            site_escaped = f' htmlUrl="{xml_escape(feed.site_url, _xattr)}"'
         lines.append(f'    <outline type="rss" text="{title_escaped}" title="{title_escaped}" xmlUrl="{url_escaped}"{site_escaped} />')
+
     lines.append("  </body>")
     lines.append("</opml>")
     return "\n".join(lines)
 
 
 def parse_opml(xml_content: str) -> list[dict[str, str | None]]:
+    """Parse OPML with nested outline support.
+
+    Outer outlines without xmlUrl are treated as categories.
+    Inner outlines with xmlUrl are feeds assigned to the parent category.
+    Top-level outlines with xmlUrl are uncategorized feeds.
+    """
     soup = BeautifulSoup(xml_content, "lxml")
     feeds: list[dict[str, str | None]] = []
-    for outline in soup.find_all("outline"):
+
+    body = soup.find("body")
+    if not body:
+        return feeds
+
+    for outline in body.find_all("outline", recursive=False):
         xml_url = outline.get("xmlurl") or outline.get("xmlUrl")
         if xml_url:
+            # Top-level feed (uncategorized)
             feeds.append({
                 "title": outline.get("title") or outline.get("text"),
                 "url": xml_url,
                 "site_url": outline.get("htmlurl") or outline.get("htmlUrl"),
+                "category": None,
             })
+        else:
+            # Category outline — look for nested feed outlines
+            category_title = outline.get("title") or outline.get("text")
+            for child in outline.find_all("outline", recursive=False):
+                child_xml_url = child.get("xmlurl") or child.get("xmlUrl")
+                if child_xml_url:
+                    feeds.append({
+                        "title": child.get("title") or child.get("text"),
+                        "url": child_xml_url,
+                        "site_url": child.get("htmlurl") or child.get("htmlUrl"),
+                        "category": category_title,
+                    })
+
     return feeds

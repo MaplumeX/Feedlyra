@@ -8,10 +8,12 @@ from pydantic import BaseModel, Field
 
 class FeedCreate(BaseModel):
     url: str = Field(max_length=2048)
+    category_id: UUID | None = None
 
 
 class FeedUpdate(BaseModel):
     title: str | None = Field(None, max_length=500)
+    category_id: UUID | None = None
 
 
 class FeedResponse(BaseModel):
@@ -31,6 +33,8 @@ class FeedResponse(BaseModel):
 
 class FeedWithUnread(FeedResponse):
     unread_count: int = 0
+    category_id: UUID | None = None
+    category_name: str | None = None
 
 
 class OPMLExportResponse(BaseModel):

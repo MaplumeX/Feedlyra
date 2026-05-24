@@ -8,8 +8,16 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAddFeed, useDiscoverFeeds } from "@/api/hooks";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAddFeed, useDiscoverFeeds, useCategories } from "@/api/hooks";
 import { useTranslation } from "react-i18next";
 import type { DiscoveredFeed } from "@/api/types";
 
@@ -18,23 +26,31 @@ interface AddFeedDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const UNCATEGORIZED = "__none__";
+
 export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
   const { t } = useTranslation("reader");
   const [feedUrl, setFeedUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [discoveredFeeds, setDiscoveredFeeds] = useState<DiscoveredFeed[]>([]);
+  const [categoryId, setCategoryId] = useState<string>(UNCATEGORIZED);
 
   const addFeed = useAddFeed();
   const discoverFeeds = useDiscoverFeeds();
+  const { data: categories = [] } = useCategories();
 
   function handleAddFeed() {
     if (!feedUrl.trim()) return;
-    addFeed.mutate(feedUrl.trim(), {
-      onSuccess: () => {
-        setFeedUrl("");
-        onOpenChange(false);
+    addFeed.mutate(
+      { url: feedUrl.trim(), category_id: categoryId === UNCATEGORIZED ? null : categoryId },
+      {
+        onSuccess: () => {
+          setFeedUrl("");
+          setCategoryId(UNCATEGORIZED);
+          onOpenChange(false);
+        },
       },
-    });
+    );
   }
 
   function handleDiscover() {
@@ -47,13 +63,17 @@ export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
   }
 
   function handleSelectDiscovered(url: string) {
-    addFeed.mutate(url, {
-      onSuccess: () => {
-        setWebsiteUrl("");
-        setDiscoveredFeeds([]);
-        onOpenChange(false);
+    addFeed.mutate(
+      { url, category_id: categoryId === UNCATEGORIZED ? null : categoryId },
+      {
+        onSuccess: () => {
+          setWebsiteUrl("");
+          setDiscoveredFeeds([]);
+          setCategoryId(UNCATEGORIZED);
+          onOpenChange(false);
+        },
       },
-    });
+    );
   }
 
   return (
@@ -125,6 +145,21 @@ export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
             )}
           </TabsContent>
         </Tabs>
+
+        <div className="space-y-2">
+          <Label>{t("category")}</Label>
+          <Select value={categoryId} onValueChange={setCategoryId}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNCATEGORIZED}>{t("uncategorized")}</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>{cat.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -132,3 +132,4 @@ export const useReaderStore = create(
 - [ ] SSE client handles buffer residual data after stream end
 - [ ] Zustand persist `partialize` excludes temporary UI state
 - [ ] API key forms allow empty strings (optional fields: `z.string().or(z.literal(""))`)
+- [ ] New resource type mutations invalidate ALL related query keys (e.g., adding categories means `useDeleteFeed`, `useImportOPML` must also invalidate `categories.list`)

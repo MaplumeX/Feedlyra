@@ -47,5 +47,17 @@
   "feedSettings": "订阅源设置",
   "feedSettingsDescription": "查看和编辑订阅源属性。",
   "feedTitle": "标题",
-  "feedSiteUrl": "网站 URL"
+  "feedSiteUrl": "网站 URL",
+  "category": "分类",
+  "categories": "分类",
+  "uncategorized": "未分类",
+  "createCategory": "创建分类",
+  "renameCategory": "重命名分类",
+  "deleteCategory": "删除分类",
+  "moveToCategory": "移动到分类",
+  "newCategory": "新分类",
+  "categoryName": "分类名称",
+  "categoryDeleted": "分类已删除",
+  "deleteCategoryConfirm": "删除此分类？其中的订阅源将移至未分类。",
+  "selectCategory": "选择分类"
 }
