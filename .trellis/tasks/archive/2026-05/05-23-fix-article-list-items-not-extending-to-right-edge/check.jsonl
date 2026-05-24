@@ -1,0 +1,1 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify change follows scrollbar convention: native overflow-y-auto, no custom scrollbar CSS, no layout space reserved for scrollbar."}
