@@ -461,3 +461,37 @@ Remove right-side px-3 padding from ArticleList rows, date headers, filter bar, 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 15: Line-through label for article list date headers
+
+**Date**: 2026-05-24
+**Task**: Line-through label for article list date headers
+**Branch**: `Feat/optimize-article-list-time-style`
+
+### Summary
+
+将文章列表日期分组标题从 sticky inline label 改为 Slack 风格 Line-Through Label（居中文本+两侧水平线），保留 sticky 吸顶行为。同步更新 component-guidelines.md 添加该模式。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `db87132` | (see git log) |
+| `6f35ab4` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
