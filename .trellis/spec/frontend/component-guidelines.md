@@ -260,3 +260,29 @@ When list items need a context menu, provide both right-click (`ContextMenu`) an
 ```
 
 **Why**: `ContextMenuTrigger asChild` makes the existing `<div>` the trigger without adding extra DOM nodes. React `onClick` only fires on left-click, so right-click opens the context menu without also selecting the item. The `key` prop must be on the outermost `<ContextMenu>` (the list root element), not on inner children.
+
+### Line-Through Label (Section Separator)
+
+For section headers in scrollable lists (e.g., date group headers in article lists), use the Slack-style line-through label: centered text flanked by two horizontal lines.
+
+```tsx
+// In Virtuoso itemContent — header item
+if (item.type === "header") {
+  return (
+    <div className="sticky top-0 z-10 flex items-center gap-4 bg-background px-3 py-2">
+      <div className="h-px flex-1 bg-border" />
+      <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+        {item.label}
+      </span>
+      <div className="h-px flex-1 bg-border" />
+    </div>
+  );
+}
+```
+
+**Key details**:
+- `flex items-center gap-4` — horizontal layout with 16px gap between lines and text
+- Two `h-px flex-1 bg-border` divs — 1px lines that grow to fill available space
+- `whitespace-nowrap` on text — prevents label wrapping in narrow panels
+- `sticky top-0 z-10 bg-background` — pins header to viewport top during scroll; opaque background hides content behind it
+- `px-3` symmetric padding matches article row left-alignment
