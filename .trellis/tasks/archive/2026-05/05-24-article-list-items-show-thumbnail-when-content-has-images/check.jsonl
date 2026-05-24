@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify migration follows naming and conventions"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Check backend code quality for feed_fetcher changes"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify ArticleRow component follows patterns"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify type definitions are consistent"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify image_url field is consistent across backend-frontend boundary"}
