@@ -507,3 +507,36 @@ Added thumbnail display for articles with images in list view. Backend: new imag
 ### Next Steps
 
 - None - task complete
+
+
+## Session 16: Revert PR #16 and #18 scrollbar changes
+
+**Date**: 2026-05-24
+**Task**: Revert PR #16 and #18 scrollbar changes
+**Branch**: `Feat/bordeaux-pr-16-18-summary`
+
+### Summary
+
+Reverted PR #16 and #18: restored custom ::-webkit-scrollbar CSS, Firefox scrollbar-width/color rules, Radix ScrollArea in Sidebar and ArticleDetail, and right-side px-3 padding in ArticleList. Added macOS overlay scrollbar gotcha to component-guidelines.md.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `32028c6` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useArticle, useToggleRead, useToggleStar, useSummarize, useTranslate } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
@@ -196,7 +197,7 @@ export function ArticleDetail() {
       </div>
 
       <div className="relative flex flex-1 overflow-hidden">
-        <div className="flex-1 overflow-y-auto">
+        <ScrollArea className="flex-1">
           <article className="mx-auto max-w-3xl px-6 py-8">
             <h1 className="text-2xl font-bold leading-tight">{displayTitle}</h1>
 
@@ -266,7 +267,7 @@ export function ArticleDetail() {
               </p>
             )}
           </article>
-        </div>
+        </ScrollArea>
 
         {chatPanelOpen && selectedArticleId && (
           <AIChatPanel articleId={selectedArticleId} articleTitle={article.title} />
