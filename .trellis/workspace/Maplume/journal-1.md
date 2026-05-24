@@ -575,7 +575,17 @@ Replace plain Virtuoso with GroupedVirtuoso for built-in sticky group headers. C
 - None - task complete
 
 
-## Session 18: Dark mode support with three-state theme toggle
+## Session 18: Optimize date header visibility
+
+**Date**: 2026-05-24
+**Task**: Optimize date header visibility
+**Branch**: `Feat/optimize-article-list-date-header`
+
+### Summary
+
+Increased article list date header visibility: text-xs/font-medium/muted-foreground → text-sm/font-semibold/secondary-foreground. Updated component-guidelines spec.
+
+## Session 19: Dark mode support with three-state theme toggle
 
 **Date**: 2026-05-24
 **Task**: Dark mode support with three-state theme toggle
@@ -593,6 +603,7 @@ Added dark mode support: next-themes integration, ThemeProvider + ThemeToggle (l
 
 | Hash | Message |
 |------|---------|
+| `855c047` | (see git log) |
 | `97f407b` | (see git log) |
 | `465ae31` | (see git log) |
 

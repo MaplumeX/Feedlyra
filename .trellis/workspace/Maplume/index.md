@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 18
+- **Total Sessions**: 19
 - **Last Active**: 2026-05-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~609 | Active |
+| `journal-1.md` | ~610 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,7 +29,8 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
-| 18 | 2026-05-24 | Dark mode support with three-state theme toggle | `97f407b`, `465ae31` | `Feat/night-mode` |
+| 18 | 2026-05-24 | Optimize date header visibility | `855c047` | `Feat/optimize-article-list-date-header` |
+| 19 | 2026-05-24 | Dark mode support with three-state theme toggle | `97f407b`, `465ae31` | `Feat/night-mode` |
 | 17 | 2026-05-24 | Fix article list date header sticky behavior | `f31c791` | `Feat/fix-article-date-sticky-header` |
 | 16 | 2026-05-24 | Revert PR #16 and #18 scrollbar changes | `32028c6` | `Feat/bordeaux-pr-16-18-summary` |
 | 15 | 2026-05-24 | Add article list thumbnail feature | `e9bf18e`, `9bbc41d` | `Feat/article-list-thumbnail` |

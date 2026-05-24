@@ -316,7 +316,7 @@ When using `react-virtuoso`, **must use `GroupedVirtuoso`** (not plain `Virtuoso
     return (
       <div className="flex items-center gap-4 bg-background px-3 py-2">
         <div className="h-px flex-1 bg-border" />
-        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+        <span className="text-sm font-semibold text-secondary-foreground whitespace-nowrap">
           {group.label}
         </span>
         <div className="h-px flex-1 bg-border" />
