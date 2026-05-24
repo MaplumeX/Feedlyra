@@ -618,3 +618,37 @@ Added dark mode support: next-themes integration, ThemeProvider + ThemeToggle (l
 ### Next Steps
 
 - None - task complete
+
+
+## Session 20: feat: auto AI summary with setting toggle and placeholder UI
+
+**Date**: 2026-05-24
+**Task**: feat: auto AI summary with setting toggle and placeholder UI
+**Branch**: `Feat/auto-ai-summary`
+
+### Summary
+
+Implemented auto-generate AI summary feature: settings toggle (persisted), auto-trigger mutation with dedup guard, placeholder UI matching summary container style, i18n en/zh-CN. Updated frontend specs with two new patterns (Auto-Trigger Mutation with Dedup Guard, Placeholder UI with Same Container Style) and state-management partialize config.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4056c59` | (see git log) |
+| `a7ae43a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
