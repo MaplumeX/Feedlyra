@@ -25,6 +25,7 @@ from app.services.feed_fetcher import (
     fetch_and_store_feed,
     generate_opml,
     parse_opml,
+    refresh_all_feeds,
 )
 
 router = APIRouter(prefix="/api/feeds", tags=["feeds"])
@@ -160,6 +161,14 @@ async def delete_feed(
 
     await db.execute(delete(Feed).where(Feed.id == feed_id))
     await db.commit()
+
+
+@router.post("/refresh-all")
+async def refresh_all(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict[str, int]:
+    return await refresh_all_feeds(db, user.id)
 
 
 @router.post("/{feed_id}/refresh", response_model=FeedResponse)

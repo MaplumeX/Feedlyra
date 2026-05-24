@@ -32,6 +32,7 @@
   "actions": "操作",
   "markAllAsRead": "全部标为已读",
   "refreshFeeds": "刷新订阅源",
+  "refreshAll": "刷新所有订阅源",
   "toggleSidebar": "切换侧边栏",
   "aiSettings": "AI 设置",
   "summarizeCurrentArticle": "摘要当前文章",

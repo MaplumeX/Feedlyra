@@ -57,6 +57,22 @@ export function useDeleteFeed() {
   });
 }
 
+interface RefreshAllResponse {
+  refreshed: number;
+  failed: number;
+}
+
+export function useRefreshAllFeeds() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<RefreshAllResponse>("/api/feeds/refresh-all", {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}
+
 export function useRefreshFeed() {
   const qc = useQueryClient();
   return useMutation({
