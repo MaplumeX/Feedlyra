@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 13
+- **Total Sessions**: 14
 - **Last Active**: 2026-05-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~418 | Active |
+| `journal-1.md` | ~452 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 14 | 2026-05-24 | Fix article list right-edge padding | `5e8c430` | `Feat/article-list-right-boundary-gap` |
 | 13 | 2026-05-24 | Add feed category/folder support | `4e65ed0` | `Feat/feed-category` |
 | 13 | 2026-05-23 | Use native overlay scrollbar to fix layout misalignment | `70ce731`, `08b5b1e` | `Feat/article-list-scrollbar-independent-area` |
 | 10 | 2026-05-23 | Add feed settings dialog | `0da50d6`, `e36435a` | `Feat/sidebar-show-feed-title-instead-of-url` |

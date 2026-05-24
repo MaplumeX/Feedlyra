@@ -1,0 +1,1 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Contains scrollbar convention: use native overflow-y-auto, no custom scrollbar CSS. Also has layout convention and common mistakes about scrollbar forcing classic mode."}

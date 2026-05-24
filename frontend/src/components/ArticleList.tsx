@@ -59,7 +59,7 @@ function ArticleRow({
   return (
     <div
       className={cn(
-        "flex cursor-pointer flex-col gap-0.5 border-b px-3 py-2 transition-colors hover:bg-accent/50",
+        "flex cursor-pointer flex-col gap-0.5 border-b pl-3 pr-0 py-2 transition-colors hover:bg-accent/50",
         isSelected && "bg-accent",
         !article.is_read && "font-medium"
       )}
@@ -100,7 +100,7 @@ function ArticleRow({
 
 function ArticleListSkeleton() {
   return (
-    <div className="space-y-2 p-3">
+    <div className="space-y-2 py-3 pl-3 pr-0">
       {Array.from({ length: 10 }).map((_, i) => (
         <div key={i} className="space-y-2">
           <Skeleton className="h-4 w-3/4" />
@@ -229,7 +229,7 @@ export function ArticleList() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b px-3 py-2 flex items-center gap-2">
+      <div className="border-b pl-3 pr-0 py-2 flex items-center gap-2">
         <Tabs
           value={articleListFilter}
           onValueChange={(v) =>
@@ -271,7 +271,7 @@ export function ArticleList() {
           itemContent={(_index, item) => {
             if (item.type === "header") {
               return (
-                <div className="sticky top-0 z-10 bg-background px-3 py-1 text-xs font-medium text-muted-foreground border-b">
+                <div className="sticky top-0 z-10 bg-background pl-3 pr-0 py-1 text-xs font-medium text-muted-foreground border-b">
                   {item.label}
                 </div>
               );

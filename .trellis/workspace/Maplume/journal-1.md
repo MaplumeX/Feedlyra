@@ -428,3 +428,36 @@ Removed custom ::-webkit-scrollbar CSS and replaced Radix ScrollArea with overfl
 ### Next Steps
 
 - None - task complete
+
+
+## Session 14: Fix article list right-edge padding
+
+**Date**: 2026-05-24
+**Task**: Fix article list right-edge padding
+**Branch**: `Feat/article-list-right-boundary-gap`
+
+### Summary
+
+Remove right-side px-3 padding from ArticleList rows, date headers, filter bar, and skeleton loader. Overlay scrollbar doesn't need layout space, so pr-0 lets items extend to the right edge.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5e8c430` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
