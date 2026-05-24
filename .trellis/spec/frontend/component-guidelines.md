@@ -340,7 +340,66 @@ When using `react-virtuoso`, **must use `GroupedVirtuoso`** (not plain `Virtuoso
 
 > **Gotcha**: Do NOT add `sticky top-0` CSS to header content inside `GroupedVirtuoso.groupContent`. The sticky behavior comes from the wrapper element that Virtuoso creates, not from CSS on the inner content. Adding it has no effect (and in plain `Virtuoso`, it silently fails because Virtuoso uses `position: absolute` on item wrappers, which prevents `position: sticky` from working on children).
 
-### Dark Mode Three-State Toggle
+### Auto-Trigger Mutation with Dedup Guard
+
+When a mutation should fire automatically on data load (e.g., auto-summarize when opening an article), use a `useRef` guard to prevent re-triggering:
+
+```tsx
+const triggeredRef = useRef<string | null>(null);
+
+useEffect(() => {
+  if (!article || !autoSummarize || article.summary) return;
+  if (mutation.isPending) return;
+  if (triggeredRef.current === article.id) return;
+  // Additional precondition checks (e.g., AI config ready)
+  const ready = aiConfig?.base_url && aiConfig?.has_api_key && aiConfig?.model;
+  if (!ready) return;
+  triggeredRef.current = article.id;
+  mutation.mutate(article.id);
+}, [article, autoSummarize, aiConfig, mutation]);
+
+// Reset guard when target entity changes
+useEffect(() => {
+  triggeredRef.current = null;
+}, [selectedArticleId]);
+```
+
+**Why**: React effects can re-fire due to dependency changes. Without the `useRef` guard, switching tabs or config changes could trigger duplicate API calls. The guard records which entity was already triggered, and the separate reset effect clears it on entity change so a different entity can still trigger.
+
+**Key rules**:
+- Check `mutation.isPending` before mutating — prevents concurrent calls
+- Use `useRef` (not `useState`) for the guard — avoids causing re-renders that re-trigger the effect
+- Reset the ref in a separate `useEffect` keyed on the entity identifier
+- Silently skip (return early) when preconditions aren't met — don't show errors for expected states
+
+### Placeholder UI with Same Container Style
+
+When showing a loading state for content that will appear in a styled container, use the **exact same container** with placeholder content instead of a generic skeleton:
+
+```tsx
+// Loading placeholder — same container as the result
+{isLoading && !data && (
+  <div className="mb-4 rounded-md border bg-muted/50 p-4">
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <Icon className="h-3.5 w-3.5 animate-spin" />
+      {t("generatingLabel")}
+    </div>
+  </div>
+)}
+
+// Result — same container
+{data && (
+  <div className="mb-4 rounded-md border bg-muted/50 p-4">
+    <div className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+      <Icon className="h-3.5 w-3.5" />
+      {t("resultLabel")}
+    </div>
+    <p className="text-sm whitespace-pre-wrap">{data}</p>
+  </div>
+)}
+```
+
+**Why**: Using the same container class ensures no layout shift when loading transitions to loaded. The user sees the summary box appear once and then fill in, rather than seeing a skeleton disappear and a differently-styled box appear.
 
 The theme toggle cycles through `light → dark → system` using `next-themes`:
 

@@ -47,7 +47,7 @@ Also writes `access_token` to `localStorage` directly for the API client to read
 
 ### Reader store (`src/stores/reader.ts`)
 
-Partially persisted — only `sidebarCollapsed` survives reload:
+Partially persisted — `sidebarCollapsed`, `fontSize`, `scrollMarkRead`, and `autoSummarize` survive reload:
 
 ```tsx
 export const useReaderStore = create<ReaderState>()(
@@ -56,6 +56,9 @@ export const useReaderStore = create<ReaderState>()(
       selectedFeedId: null,
       selectedArticleId: null,
       sidebarCollapsed: false,
+      fontSize: "md",
+      scrollMarkRead: true,
+      autoSummarize: false,
       chatPanelOpen: false,
       commandPaletteOpen: false,
       settingsDialogOpen: false,
@@ -63,12 +66,12 @@ export const useReaderStore = create<ReaderState>()(
     }),
     {
       name: "feedlyra-reader",
-      partialize: (state) =>
-        Object.fromEntries(
-          Object.entries(state).filter(
-            ([key]) => !["commandPaletteOpen", "chatPanelOpen", "selectedArticleId", "selectedFeedId", "settingsDialogOpen"].includes(key)
-          )
-        ),
+      partialize: (state) => ({
+        sidebarCollapsed: state.sidebarCollapsed,
+        fontSize: state.fontSize,
+        scrollMarkRead: state.scrollMarkRead,
+        autoSummarize: state.autoSummarize,
+      }),
     }
   )
 );
@@ -92,7 +95,7 @@ All API data flows through `useQuery`/`useMutation` hooks in `src/api/hooks.ts`.
 |-------------|----------------|-------------------|
 | Auth tokens | API responses | Form input values |
 | UI toggles (panels, modals) | Any fetched/cached data | Hover/focus state |
-| User preferences (sidebar collapsed) | | Transient animation state |
+| User preferences (sidebar collapsed, auto-summarize) | | Transient animation state |
 
 ---
 
