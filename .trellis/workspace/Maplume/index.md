@@ -30,6 +30,7 @@
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
 | 15 | 2026-05-24 | Add article list thumbnail feature | `e9bf18e`, `9bbc41d` | `Feat/article-list-thumbnail` |
+| 15 | 2026-05-24 | Line-through label for article list date headers | `db87132`, `6f35ab4` | `Feat/optimize-article-list-time-style` |
 | 14 | 2026-05-24 | Fix article list right-edge padding | `5e8c430` | `Feat/article-list-right-boundary-gap` |
 | 13 | 2026-05-24 | Add feed category/folder support | `4e65ed0` | `Feat/feed-category` |
 | 13 | 2026-05-23 | Use native overlay scrollbar to fix layout misalignment | `70ce731`, `08b5b1e` | `Feat/article-list-scrollbar-independent-area` |

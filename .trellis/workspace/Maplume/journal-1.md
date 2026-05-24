@@ -473,6 +473,16 @@ Remove right-side px-3 padding from ArticleList rows, date headers, filter bar, 
 
 Added thumbnail display for articles with images in list view. Backend: new image_url column in articles table (alembic migration 005), image extraction from RSS feed entries (media_thumbnail > media_content > enclosures > HTML img), updated model/schema. Frontend: ArticleRow shows 56x56 square thumbnail on right when image_url exists, silent fallback to text-only on load failure, Virtuoso state reset on article change.
 
+## Session 15b: Line-through label for article list date headers
+
+**Date**: 2026-05-24
+**Task**: Line-through label for article list date headers
+**Branch**: `Feat/optimize-article-list-time-style`
+
+### Summary
+
+将文章列表日期分组标题从 sticky inline label 改为 Slack 风格 Line-Through Label（居中文本+两侧水平线），保留 sticky 吸顶行为。同步更新 component-guidelines.md 添加该模式。
+
 ### Main Changes
 
 (Add details)
@@ -483,6 +493,8 @@ Added thumbnail display for articles with images in list view. Backend: new imag
 |------|---------|
 | `e9bf18e` | (see git log) |
 | `9bbc41d` | (see git log) |
+| `db87132` | (see git log) |
+| `6f35ab4` | (see git log) |
 
 ### Testing
 

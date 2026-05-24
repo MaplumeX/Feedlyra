@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify styling follows Tailwind utility class conventions, cn() usage, shadcn/ui theme variables, no CSS modules"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify no forbidden patterns introduced, Virtuoso header item conventions followed"}
+{"file": ".trellis/tasks/05-24-optimize-article-list-time-header-style/research/date-header-ui-patterns.md", "reason": "Verify Line-Through Label pattern implemented correctly: flex layout, h-px lines, whitespace-nowrap, sticky behavior"}

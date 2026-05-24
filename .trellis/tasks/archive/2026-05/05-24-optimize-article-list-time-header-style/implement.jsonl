@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Styling patterns: Tailwind utility classes, cn() merging, shadcn/ui theme variables, Virtuoso flat list with header/article items"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality checks: forbidden patterns, Virtuoso header item filtering conventions"}
+{"file": ".trellis/tasks/05-24-optimize-article-list-time-header-style/research/date-header-ui-patterns.md", "reason": "Design pattern reference: Line-Through Label Tailwind implementation recipe, sticky vs non-sticky behavior comparison"}

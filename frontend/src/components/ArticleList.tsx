@@ -288,8 +288,12 @@ export function ArticleList() {
           itemContent={(_index, item) => {
             if (item.type === "header") {
               return (
-                <div className="sticky top-0 z-10 bg-background pl-3 pr-0 py-1 text-xs font-medium text-muted-foreground border-b">
-                  {item.label}
+                <div className="sticky top-0 z-10 flex items-center gap-4 bg-background px-3 py-2">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                    {item.label}
+                  </span>
+                  <div className="h-px flex-1 bg-border" />
                 </div>
               );
             }
