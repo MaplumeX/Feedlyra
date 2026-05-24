@@ -59,5 +59,8 @@
   "categoryName": "分类名称",
   "categoryDeleted": "分类已删除",
   "deleteCategoryConfirm": "删除此分类？其中的订阅源将移至未分类。",
-  "selectCategory": "选择分类"
+  "selectCategory": "选择分类",
+  "lightMode": "亮色模式",
+  "darkMode": "暗色模式",
+  "systemTheme": "跟随系统"
 }

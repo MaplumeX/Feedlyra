@@ -59,5 +59,8 @@
   "categoryName": "Category Name",
   "categoryDeleted": "Category deleted",
   "deleteCategoryConfirm": "Delete this category? Feeds in it will move to Uncategorized.",
-  "selectCategory": "Select Category"
+  "selectCategory": "Select Category",
+  "lightMode": "Light mode",
+  "darkMode": "Dark mode",
+  "systemTheme": "System theme"
 }
