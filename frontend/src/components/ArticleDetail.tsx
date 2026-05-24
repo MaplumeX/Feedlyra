@@ -6,12 +6,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { useArticle, useToggleRead, useToggleStar, useSummarize, useTranslate } from "@/api/hooks";
+import { useArticle, useToggleRead, useToggleStar, useSummarize, useTranslate, useAIConfig } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { AIChatPanel } from "@/components/AIChatPanel";
 import { ReadingSettingsPopover, getFontStack } from "@/components/ReadingSettingsPopover";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
 function ArticleDetailSkeleton() {
   return (
@@ -43,16 +43,18 @@ function EmptyState() {
 
 export function ArticleDetail() {
   const { t, i18n } = useTranslation("reader");
-  const { selectedArticleId, chatPanelOpen, readerSettings } = useReaderStore();
+  const { selectedArticleId, chatPanelOpen, readerSettings, autoSummarize } = useReaderStore();
   const { data: article, isLoading } = useArticle(selectedArticleId);
   const toggleRead = useToggleRead();
   const toggleStar = useToggleStar();
   const summarize = useSummarize();
   const translateMut = useTranslate();
+  const { data: aiConfig } = useAIConfig();
   const { set: setReader } = useReaderStore();
   const [showTranslation, setShowTranslation] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [lightboxAlt, setLightboxAlt] = useState("");
+  const autoSummarizeTriggeredRef = useRef<string | null>(null);
 
   const proseStyle: Record<string, string> = useMemo(() => ({
     fontSize: `${readerSettings.fontSize}px`,
@@ -85,6 +87,22 @@ export function ArticleDetail() {
   // Reset translation view when switching articles
   useEffect(() => {
     setShowTranslation(false);
+  }, [selectedArticleId]);
+
+  // Auto-summarize: trigger when article loads, autoSummarize is on, article has no summary, and AI is configured
+  useEffect(() => {
+    if (!article || !autoSummarize || article.summary) return;
+    if (summarize.isPending) return;
+    if (autoSummarizeTriggeredRef.current === article.id) return;
+    const aiReady = aiConfig?.base_url && aiConfig?.has_api_key && aiConfig?.model;
+    if (!aiReady) return;
+    autoSummarizeTriggeredRef.current = article.id;
+    summarize.mutate(article.id);
+  }, [article, autoSummarize, aiConfig, summarize]);
+
+  // Reset auto-summarize trigger ref when article changes
+  useEffect(() => {
+    autoSummarizeTriggeredRef.current = null;
   }, [selectedArticleId]);
 
   // Auto-switch to translation view after successful translation
@@ -211,6 +229,15 @@ export function ArticleDetail() {
             )}
 
             <Separator className="my-4" />
+
+            {autoSummarize && summarize.isPending && !article.summary && (
+              <div className="mb-4 rounded-md border bg-muted/50 p-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Sparkles className="h-3.5 w-3.5 animate-spin" />
+                  {t("generatingSummary")}
+                </div>
+              </div>
+            )}
 
             {article.summary && (
               <div className="mb-4 rounded-md border bg-muted/50 p-4">

@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~687 | Active |
+| `journal-1.md` | ~705 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -31,6 +31,7 @@
 |---|------|-------|---------|--------|
 | 21 | 2026-05-24 | 阅读体验排版自定义 | `f82f55e`, `fbbcaf1` | `Feat/reader-typography-settings` |
 | 20 | 2026-05-24 | Add refresh all feeds button to article list header | `5b6144d` | `Feat/article-list-header-refresh-button` |
+| 20 | 2026-05-24 | feat: auto AI summary with setting toggle and placeholder UI | `4056c59`, `a7ae43a` | `Feat/auto-ai-summary` |
 | 18 | 2026-05-24 | Optimize date header visibility | `855c047` | `Feat/optimize-article-list-date-header` |
 | 19 | 2026-05-24 | Dark mode support with three-state theme toggle | `97f407b`, `465ae31` | `Feat/night-mode` |
 | 17 | 2026-05-24 | Fix article list date header sticky behavior | `f31c791` | `Feat/fix-article-date-sticky-header` |

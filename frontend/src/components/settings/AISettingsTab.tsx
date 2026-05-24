@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { useAIConfig, useUpdateAIConfig } from "@/api/hooks";
+import { useReaderStore } from "@/stores/reader";
 
 const aiConfigSchema = z.object({
   base_url: z.string().url().or(z.literal("")),
@@ -24,6 +26,8 @@ export function AISettingsTab() {
   const updateConfig = useUpdateAIConfig();
   const [testStatus, setTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [testError, setTestError] = useState("");
+
+  const { autoSummarize, set: setReader } = useReaderStore();
 
   const { register, handleSubmit, formState: { errors, isDirty } } = useForm<AIConfigForm>({
     resolver: zodResolver(aiConfigSchema),
@@ -118,6 +122,18 @@ export function AISettingsTab() {
         {errors.model && (
           <p className="text-xs text-destructive">{errors.model.message}</p>
         )}
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label htmlFor="auto-summarize">{t("autoSummarize")}</Label>
+          <p className="text-xs text-muted-foreground">{t("autoSummarizeDescription")}</p>
+        </div>
+        <Switch
+          id="auto-summarize"
+          checked={autoSummarize}
+          onCheckedChange={(checked) => setReader({ autoSummarize: checked })}
+        />
       </div>
 
       <Separator />

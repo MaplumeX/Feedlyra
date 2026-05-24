@@ -26,6 +26,7 @@ interface ReaderState {
   sidebarCollapsed: boolean;
   readerSettings: ReaderSettings;
   scrollMarkRead: boolean;
+  autoSummarize: boolean;
   chatPanelOpen: boolean;
   commandPaletteOpen: boolean;
   settingsDialogOpen: boolean;
@@ -43,6 +44,7 @@ export const useReaderStore = create<ReaderState>()(
       sidebarCollapsed: false,
       readerSettings: { ...DEFAULT_READER_SETTINGS },
       scrollMarkRead: true,
+      autoSummarize: false,
       chatPanelOpen: false,
       commandPaletteOpen: false,
       settingsDialogOpen: false,
@@ -57,6 +59,7 @@ export const useReaderStore = create<ReaderState>()(
         sidebarCollapsed: state.sidebarCollapsed,
         readerSettings: state.readerSettings,
         scrollMarkRead: state.scrollMarkRead,
+        autoSummarize: state.autoSummarize,
       }),
     }
   )

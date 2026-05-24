@@ -1,0 +1,8 @@
+{"file": ".trellis/tasks/05-24-feat-ai/prd.md", "reason": "PRD with all requirements and decisions for auto-summarize feature"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec index for overall conventions"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns — switch, skeleton, async state conventions"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand store patterns — persist middleware, adding new settings"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "React Query mutation hook patterns — useSummarizeArticle"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Type conventions for article/summary data"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Where new code goes — components, stores, api hooks"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer data flow — settings → component → API"}

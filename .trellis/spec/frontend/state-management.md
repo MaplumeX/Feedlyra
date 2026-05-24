@@ -47,7 +47,7 @@ Also writes `access_token` to `localStorage` directly for the API client to read
 
 ### Reader store (`src/stores/reader.ts`)
 
-Partially persisted — user preferences survive reload, temporary UI state does not:
+Partially persisted — user preferences (`sidebarCollapsed`, `readerSettings`, `scrollMarkRead`, `autoSummarize`) survive reload, temporary UI state does not:
 
 ```tsx
 interface ReaderSettings {
@@ -65,11 +65,10 @@ export const useReaderStore = create<ReaderState>()(
       selectedFeedId: null,
       selectedArticleId: null,
       sidebarCollapsed: false,
-      scrollMarkRead: true,
+      sidebarCollapsed: false,
       readerSettings: { ...DEFAULT_READER_SETTINGS },
-      setReaderSetting: <K extends keyof ReaderSettings>(key: K, value: ReaderSettings[K]) =>
-        set((state) => ({ readerSettings: { ...state.readerSettings, [key]: value } })),
-      resetReaderSettings: () => set({ readerSettings: { ...DEFAULT_READER_SETTINGS } }),
+      scrollMarkRead: true,
+      autoSummarize: false,
       chatPanelOpen: false,
       commandPaletteOpen: false,
       settingsDialogOpen: false,
@@ -77,12 +76,12 @@ export const useReaderStore = create<ReaderState>()(
     }),
     {
       name: "feedlyra-reader",
-      partialize: (state) =>
-        Object.fromEntries(
-          Object.entries(state).filter(
-            ([key]) => !["commandPaletteOpen", "chatPanelOpen", "selectedArticleId", "selectedFeedId", "settingsDialogOpen"].includes(key)
-          )
-        ),
+      partialize: (state) => ({
+        sidebarCollapsed: state.sidebarCollapsed,
+        readerSettings: state.readerSettings,
+        scrollMarkRead: state.scrollMarkRead,
+        autoSummarize: state.autoSummarize,
+      }),
     }
   )
 );
@@ -106,7 +105,7 @@ All API data flows through `useQuery`/`useMutation` hooks in `src/api/hooks.ts`.
 |-------------|----------------|-------------------|
 | Auth tokens | API responses | Form input values |
 | UI toggles (panels, modals) | Any fetched/cached data | Hover/focus state |
-| User preferences (sidebar collapsed, reader settings) | | Transient animation state |
+| User preferences (sidebar collapsed, reader settings, auto-summarize) | | Transient animation state |
 
 ---
 
