@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "验证 Popover/Slider/Select 组件用法符合规范"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "验证 Zustand persist 状态正确持久化和读取"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "lint/typecheck/整体质量验证标准"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "验证 readerSettings 类型完整性"}

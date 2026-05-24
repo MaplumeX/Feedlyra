@@ -47,15 +47,29 @@ Also writes `access_token` to `localStorage` directly for the API client to read
 
 ### Reader store (`src/stores/reader.ts`)
 
-Partially persisted — only `sidebarCollapsed` survives reload:
+Partially persisted — user preferences survive reload, temporary UI state does not:
 
 ```tsx
+interface ReaderSettings {
+  fontSize: number;        // 14–24px, default 16
+  fontFamily: string;      // font option key, default "system"
+  lineHeight: number;      // 1.4–2.2, default 1.75
+  contentWidth: number;    // 640–960px, default 768
+  letterSpacing: number;  // 0–0.1em, default 0
+  paragraphSpacing: number; // 0.5–2em, default 1.25
+}
+
 export const useReaderStore = create<ReaderState>()(
   persist(
     (set) => ({
       selectedFeedId: null,
       selectedArticleId: null,
       sidebarCollapsed: false,
+      scrollMarkRead: true,
+      readerSettings: { ...DEFAULT_READER_SETTINGS },
+      setReaderSetting: <K extends keyof ReaderSettings>(key: K, value: ReaderSettings[K]) =>
+        set((state) => ({ readerSettings: { ...state.readerSettings, [key]: value } })),
+      resetReaderSettings: () => set({ readerSettings: { ...DEFAULT_READER_SETTINGS } }),
       chatPanelOpen: false,
       commandPaletteOpen: false,
       settingsDialogOpen: false,
@@ -74,7 +88,7 @@ export const useReaderStore = create<ReaderState>()(
 );
 ```
 
-Uses a single generic `set` action instead of individual setters.
+Uses a generic `set` action for simple updates, plus specific typed actions (`setReaderSetting`, `resetReaderSettings`) for complex nested state.
 
 ---
 
@@ -92,7 +106,7 @@ All API data flows through `useQuery`/`useMutation` hooks in `src/api/hooks.ts`.
 |-------------|----------------|-------------------|
 | Auth tokens | API responses | Form input values |
 | UI toggles (panels, modals) | Any fetched/cached data | Hover/focus state |
-| User preferences (sidebar collapsed) | | Transient animation state |
+| User preferences (sidebar collapsed, reader settings) | | Transient animation state |
 
 ---
 

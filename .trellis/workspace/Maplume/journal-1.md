@@ -651,3 +651,37 @@ Added POST /api/feeds/refresh-all backend endpoint + useRefreshAllFeeds() fronte
 ### Next Steps
 
 - None - task complete
+
+
+## Session 21: 阅读体验排版自定义
+
+**Date**: 2026-05-24
+**Task**: 阅读体验排版自定义
+**Branch**: `Feat/reader-typography-settings`
+
+### Summary
+
+实现文章阅读视图 6 项排版参数可调（字号/字体/行高/内容宽度/字间距/段落间距），工具栏 popover 实时预览，Zustand persist 持久化，更新前端 spec
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f82f55e` | (see git log) |
+| `fbbcaf1` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
