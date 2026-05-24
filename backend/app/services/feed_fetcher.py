@@ -9,6 +9,8 @@ from time import mktime
 from urllib.parse import urljoin, urlparse
 from xml.sax.saxutils import escape as xml_escape
 
+from uuid import UUID
+
 import feedparser
 import httpx
 import trafilatura
@@ -367,6 +369,23 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
                     logger.exception("Failed to generate summaries for feed %s", feed.id)
         except Exception:
             logger.exception("Error during background summarization setup for feed %s", feed.id)
+
+
+async def refresh_all_feeds(db: AsyncSession, user_id: UUID) -> dict[str, int]:
+    result = await db.execute(select(Feed).where(Feed.user_id == user_id))
+    feeds = result.scalars().all()
+
+    refreshed = 0
+    failed = 0
+    for feed in feeds:
+        try:
+            await fetch_and_store_feed(feed, db)
+            refreshed += 1
+        except Exception:
+            failed += 1
+            logger.exception("Failed to refresh feed %s", feed.id)
+
+    return {"refreshed": refreshed, "failed": failed}
 
 
 async def refresh_all_due_feeds(db: AsyncSession) -> None:

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GroupedVirtuoso } from "react-virtuoso";
-import { Star, CheckCheck } from "lucide-react";
+import { Star, CheckCheck, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { FeedIcon } from "@/components/FeedIcon";
-import { useArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead } from "@/api/hooks";
+import { useArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead, useRefreshAllFeeds } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
 import type { Article } from "@/api/types";
@@ -141,6 +141,7 @@ export function ArticleList() {
   const toggleRead = useToggleRead();
   const markAllRead = useMarkAllRead();
   const batchRead = useBatchRead();
+  const refreshAll = useRefreshAllFeeds();
 
   const feedIconMap = useMemo(() => {
     const map = new Map<string, string | null>();
@@ -261,11 +262,21 @@ export function ArticleList() {
             <TabsTrigger value="starred" className="text-xs px-2">{t("starred")}</TabsTrigger>
           </TabsList>
         </Tabs>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 ml-auto"
+          disabled={refreshAll.isPending}
+          onClick={() => refreshAll.mutate()}
+          title={t("refreshAll")}
+        >
+          <RefreshCw className={cn("h-3.5 w-3.5", refreshAll.isPending && "animate-spin")} />
+        </Button>
         {hasUnread && (
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 ml-auto text-xs"
+            className="h-7 text-xs"
             disabled={markAllRead.isPending}
             onClick={() => markAllRead.mutate({ feedId: selectedFeedId ?? undefined })}
           >

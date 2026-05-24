@@ -32,6 +32,7 @@
   "actions": "Actions",
   "markAllAsRead": "Mark All as Read",
   "refreshFeeds": "Refresh Feeds",
+  "refreshAll": "Refresh All Feeds",
   "toggleSidebar": "Toggle Sidebar",
   "aiSettings": "AI Settings",
   "summarizeCurrentArticle": "Summarize Current Article",
