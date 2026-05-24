@@ -16,7 +16,6 @@ import {
   Pencil,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -433,7 +432,7 @@ export function Sidebar() {
 
       <Separator />
 
-      <ScrollArea className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 overflow-y-auto">
         <div className="min-w-0 space-y-1 p-2">
           {virtualFolders.map((vf) => (
             <button
@@ -482,7 +481,7 @@ export function Sidebar() {
             </CollapsibleContent>
           </Collapsible>
         </div>
-      </ScrollArea>
+      </div>
 
       <Separator />
 

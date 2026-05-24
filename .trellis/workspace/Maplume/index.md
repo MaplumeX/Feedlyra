@@ -30,6 +30,7 @@
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
 | 13 | 2026-05-24 | Add feed category/folder support | `4e65ed0` | `Feat/feed-category` |
+| 13 | 2026-05-23 | Use native overlay scrollbar to fix layout misalignment | `70ce731`, `08b5b1e` | `Feat/article-list-scrollbar-independent-area` |
 | 10 | 2026-05-23 | Add feed settings dialog | `0da50d6`, `e36435a` | `Feat/sidebar-show-feed-title-instead-of-url` |
 | 10 | 2026-05-23 | Add right-click context menu for feed items | `cf23e32`, `3120730` | `Feat/feed-dropdown-right-click` |
 | 11 | 2026-05-23 | Resizable sidebar and article list panels | `35981d1` | `Feat/draggable-sidebar-article-width` |

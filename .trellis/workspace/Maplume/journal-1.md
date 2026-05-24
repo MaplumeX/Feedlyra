@@ -395,6 +395,16 @@ Replace fixed-width flex layout with react-resizable-panels v4. Sidebar: 120-280
 
 Implemented single-level feed categories: backend Category model + CRUD API, feed.category_id FK with ON DELETE SET NULL, OPML nested outline import/export, frontend sidebar category grouping with uncategorized section, AddFeed/FeedSettings category selectors, i18n keys. Check found 6 issues (exclude_unset bug, XML escape, cache invalidation gaps) — all fixed. Updated quality specs.
 
+## Session 13: Use native overlay scrollbar to fix layout misalignment
+
+**Date**: 2026-05-23
+**Task**: Use native overlay scrollbar to fix layout misalignment
+**Branch**: `Feat/article-list-scrollbar-independent-area`
+
+### Summary
+
+Removed custom ::-webkit-scrollbar CSS and replaced Radix ScrollArea with overflow-y-auto in Sidebar and ArticleDetail. Native overlay scrollbars no longer reserve layout space, fixing the visual misalignment between headers and scrollable content.
+
 ### Main Changes
 
 (Add details)
@@ -404,6 +414,8 @@ Implemented single-level feed categories: backend Category model + CRUD API, fee
 | Hash | Message |
 |------|---------|
 | `4e65ed0` | (see git log) |
+| `70ce731` | (see git log) |
+| `08b5b1e` | (see git log) |
 
 ### Testing
 
