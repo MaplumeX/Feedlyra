@@ -540,3 +540,36 @@ Reverted PR #16 and #18: restored custom ::-webkit-scrollbar CSS, Firefox scroll
 ### Next Steps
 
 - None - task complete
+
+
+## Session 17: Fix article list date header sticky behavior
+
+**Date**: 2026-05-24
+**Task**: Fix article list date header sticky behavior
+**Branch**: `Feat/fix-article-date-sticky-header`
+
+### Summary
+
+Replace plain Virtuoso with GroupedVirtuoso for built-in sticky group headers. CSS position: sticky silently fails inside Virtuoso because item wrappers use position: absolute. Updated scroll-mark-read index mapping to handle GroupedVirtuoso absolute indices.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f31c791` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
