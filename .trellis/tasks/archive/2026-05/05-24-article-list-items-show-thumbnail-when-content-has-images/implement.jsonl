@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Alembic migration conventions for adding image_url column"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend code quality standards for model/schema changes"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "React component patterns for ArticleRow layout change"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Type definition conventions for adding image_url to Article type"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Ensuring backend-frontend type consistency for image_url field"}
