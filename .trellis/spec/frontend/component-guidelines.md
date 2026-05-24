@@ -110,22 +110,28 @@ Group (orientation="horizontal")
 
 > **Note**: `react-resizable-panels` v4 uses `Group`/`Panel`/`Separator` naming (not v3's `PanelGroup`/`Panel`/`PanelResizeHandle`). v4 supports pixel values directly for `minSize`/`maxSize`/`defaultSize`.
 
-### Scrollable Areas — Use Native `overflow-y-auto`
+### ScrollArea in Fixed-Width Panels
 
-All scrollable regions in the app use native browser scrolling via `overflow-y-auto`, not Radix `<ScrollArea>` or custom `::-webkit-scrollbar` CSS.
+Radix ScrollArea inserts an internal content wrapper with `display: table`. In fixed-width panels such as the sidebar, that wrapper can expand to the max-content width of long feed titles and make rows overflow horizontally.
+
+The shared ScrollArea primitive must force that internal wrapper back to block layout:
 
 ```tsx
-// Scrollable panel content
-<div className="flex-1 overflow-y-auto">
-  {items.map(...)}
+<ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit] [&>div]:!block">
+  {children}
+</ScrollAreaPrimitive.Viewport>
+```
+
+Rows inside fixed-width ScrollArea panels should also constrain every flex layer:
+
+```tsx
+<div className="flex w-full min-w-0 overflow-hidden">
+  <span className="min-w-0 flex-1 truncate">Long text</span>
+  <Badge className="shrink-0 truncate">123</Badge>
 </div>
 ```
 
-**Why native scrolling**: macOS uses overlay scrollbars by default — they float over content without taking layout space. Both Radix `<ScrollArea>` and custom `::-webkit-scrollbar` CSS force the browser into classic scrollbar mode, which reserves a layout gutter (6–10px). This causes the scrollable content area to be narrower than adjacent fixed-width headers/toolbars, creating visible misalignment.
-
-> **Warning**: Never add `::-webkit-scrollbar { width: ... }` or `scrollbar-width` / `scrollbar-color` rules in global CSS. These properties force Chrome/Electron to switch from overlay to classic scrollbar mode, making the scrollbar occupy layout space.
-
-The `ui/scroll-area.tsx` component file is preserved for potential shadcn component dependencies (e.g., dropdown menus), but should not be used for main scrollable panels.
+**Why**: `truncate` only works when the flex item is allowed to shrink (`min-w-0`) and the row has a concrete width (`w-full`). The ScrollArea wrapper fix prevents the scroll viewport from using max-content width as that concrete width.
 
 ---
 
@@ -144,8 +150,8 @@ The `ui/scroll-area.tsx` component file is preserved for potential shadcn compon
 ## Common Mistakes
 
 - **Unconstrained resizable panels** — `react-resizable-panels` without `minSize`/`maxSize` lets users shrink panels below readable widths. Always set pixel constraints that keep content readable (e.g., sidebar min 120px, article list min 180px).
-- **Custom scrollbar CSS forcing classic mode** — `::-webkit-scrollbar { width: Npx }` or `scrollbar-width` / `scrollbar-color` in global CSS forces Chrome/Electron from overlay to classic scrollbar mode, reserving layout space and misaligning headers with content. Use native `overflow-y-auto` instead — see "Scrollable Areas" section.
-- **Relying on `truncate` alone in fixed-width panels** — long text can still expand flex rows. Use `w-full min-w-0 overflow-hidden` on rows and `min-w-0 flex-1 truncate` on text.
+- **Relying on `truncate` alone in ScrollArea sidebars** — long text can still expand the Radix internal wrapper or the flex row. Use `[&>div]:!block` on the shared ScrollArea viewport plus `w-full min-w-0 overflow-hidden` on rows and `min-w-0 flex-1 truncate` on text.
+- **"Fixing" macOS overlay scrollbar layout differences** — macOS uses overlay scrollbars by default (no layout space). Custom `::-webkit-scrollbar` CSS forces Chrome into classic mode, which reserves a 6px layout gutter. This is expected behavior, not a bug. Do not remove custom scrollbar CSS or replace `<ScrollArea>` with native `overflow-y-auto` to "fix" this. (See: PR #16/#18 revert)
 
 ---
 

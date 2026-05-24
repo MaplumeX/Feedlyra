@@ -49,6 +49,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddFeedDialog } from "@/components/AddFeedDialog";
 import { FeedSettingsDialog } from "@/components/FeedSettingsDialog";
 import { FeedIcon } from "@/components/FeedIcon";
@@ -432,7 +433,7 @@ export function Sidebar() {
 
       <Separator />
 
-      <div className="min-w-0 flex-1 overflow-y-auto">
+      <ScrollArea className="min-w-0 flex-1">
         <div className="min-w-0 space-y-1 p-2">
           {virtualFolders.map((vf) => (
             <button
@@ -481,7 +482,7 @@ export function Sidebar() {
             </CollapsibleContent>
           </Collapsible>
         </div>
-      </div>
+      </ScrollArea>
 
       <Separator />
 
