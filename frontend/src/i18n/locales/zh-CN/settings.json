@@ -28,5 +28,20 @@
   "opmlDropOrClick": "将 OPML 文件拖放到此处，或点击浏览",
   "opmlImporting": "正在导入...",
   "autoSummarize": "自动生成AI摘要",
-  "autoSummarizeDescription": "打开文章时自动生成AI摘要。"
+  "autoSummarizeDescription": "打开文章时自动生成AI摘要。",
+  "categories": "分类",
+  "addCategory": "添加分类",
+  "categoryName": "分类名称",
+  "categoryPlaceholder": "新分类名称",
+  "renameCategory": "重命名",
+  "deleteCategory": "删除分类",
+  "deleteCategoryConfirm": "删除此分类？其中的订阅源将移至未分类。",
+  "categoryDeleted": "分类已删除",
+  "feedList": "订阅源列表",
+  "noFeeds": "暂无订阅源。",
+  "editFeed": "编辑",
+  "deleteFeed": "删除",
+  "deleteFeedConfirm": "删除此订阅源？此操作无法撤销。",
+  "feedDeleted": "订阅源已删除",
+  "uncategorized": "未分类"
 }

@@ -719,3 +719,36 @@ Implemented auto-generate AI summary feature: settings toggle (persisted), auto-
 ### Next Steps
 
 - None - task complete
+
+
+## Session 22: Add feed management view to settings subscriptions tab
+
+**Date**: 2026-05-25
+**Task**: Add feed management view to settings subscriptions tab
+**Branch**: `Feat/feed-management-settings-view`
+
+### Summary
+
+在设置页订阅标签页中增加统一管理视图：分类管理区域（Badge 横排 + 内联添加/重命名/删除）、扁平订阅源列表（FeedIcon + 标题 + 分类 Badge + DropdownMenu 编辑/删除）、复用 FeedSettingsDialog、动态扩宽对话框至 max-w-2xl、保留 OPML 导入导出、i18n 中英双语 14 个新 key
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9591ddc` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -15,15 +16,16 @@ import { SubscriptionsTab } from "./SubscriptionsTab";
 export function SettingsDialog() {
   const { t } = useTranslation("settings");
   const { settingsDialogOpen, set: setReader } = useReaderStore();
+  const [activeTab, setActiveTab] = useState("general");
 
   return (
     <Dialog open={settingsDialogOpen} onOpenChange={(open) => setReader({ settingsDialogOpen: open })}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className={`transition-[max-width] duration-200 ${activeTab === "subscriptions" ? "sm:max-w-2xl" : "sm:max-w-[480px]"}`}>
         <DialogHeader>
           <DialogTitle>{t("settings")}</DialogTitle>
           <DialogDescription>{t("settingsDescription")}</DialogDescription>
         </DialogHeader>
-        <Tabs defaultValue="general" className="mt-2">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
           <TabsList className="w-full">
             <TabsTrigger value="general" className="flex-1">{t("general")}</TabsTrigger>
             <TabsTrigger value="ai" className="flex-1">{t("aiSettings")}</TabsTrigger>

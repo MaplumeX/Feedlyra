@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec index — implement agent needs to discover relevant frontend coding guidelines"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns and conventions for building new SubscriptionsTab UI"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "State management patterns — react-query and Zustand usage conventions"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Custom hooks conventions — reusing existing useFeeds/useCategories hooks"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Type safety conventions — Feed/Category types from api/types.ts"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality bar for frontend code — lint, typecheck requirements"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Code reuse guidance — reusing FeedSettingsDialog, FeedIcon, existing hooks"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Directory structure conventions — where new components should live"}
