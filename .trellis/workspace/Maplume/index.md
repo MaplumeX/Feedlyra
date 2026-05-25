@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 22
-- **Last Active**: 2026-05-25
+- **Total Sessions**: 21
+- **Last Active**: 2026-05-24
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~754 | Active |
+| `journal-1.md` | ~705 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,7 +29,6 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
-| 22 | 2026-05-25 | 添加订阅源管理表格到设置页面 | `40ab125` | `feat/unified-feed-management` |
 | 21 | 2026-05-24 | 阅读体验排版自定义 | `f82f55e`, `fbbcaf1` | `Feat/reader-typography-settings` |
 | 20 | 2026-05-24 | Add refresh all feeds button to article list header | `5b6144d` | `Feat/article-list-header-refresh-button` |
 | 20 | 2026-05-24 | feat: auto AI summary with setting toggle and placeholder UI | `4056c59`, `a7ae43a` | `Feat/auto-ai-summary` |
