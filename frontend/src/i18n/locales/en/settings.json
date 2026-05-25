@@ -28,5 +28,20 @@
   "opmlDropOrClick": "Drop an OPML file here or click to browse",
   "opmlImporting": "Importing...",
   "autoSummarize": "Auto-generate AI summary",
-  "autoSummarizeDescription": "Automatically generate an AI summary when opening an article."
+  "autoSummarizeDescription": "Automatically generate an AI summary when opening an article.",
+  "categories": "Categories",
+  "addCategory": "Add category",
+  "categoryName": "Category name",
+  "categoryPlaceholder": "New category name",
+  "renameCategory": "Rename",
+  "deleteCategory": "Delete",
+  "deleteCategoryConfirm": "Delete this category? Feeds in it will move to Uncategorized.",
+  "categoryDeleted": "Category deleted",
+  "feedList": "Feed List",
+  "noFeeds": "No feeds found.",
+  "editFeed": "Edit",
+  "deleteFeed": "Delete",
+  "deleteFeedConfirm": "Delete this feed? This cannot be undone.",
+  "feedDeleted": "Feed deleted",
+  "uncategorized": "Uncategorized"
 }
