@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec index — check agent needs to verify compliance with frontend specs"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify new components follow component conventions"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify state management patterns are correct"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify type safety — no any types, proper Feed/Category typing"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality bar — lint, typecheck, i18n completeness"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Verify hooks usage follows conventions"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Verify proper reuse of existing components (FeedSettingsDialog, FeedIcon)"}
