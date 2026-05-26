@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 24
+- **Total Sessions**: 25
 - **Last Active**: 2026-05-26
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~820 | Active |
+| `journal-1.md` | ~853 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 25 | 2026-05-26 | Show full article button always in toolbar | `a432187` | `Feat/show-full-article-button-always` |
 | 24 | 2026-05-26 | Add Readability-lxml extraction for article full content | `c24e72e` | `Feat/readability-web-extraction` |
 | 23 | 2026-05-26 | AI摘要和Chat面板Markdown渲染 | `d277811` | `Feat/md-render` |
 | 22 | 2026-05-25 | Add feed management view to settings subscriptions tab | `9591ddc` | `Feat/feed-management-settings-view` |

@@ -818,3 +818,36 @@ Integrated readability-lxml + httpx to extract article content as HTML (replacin
 ### Next Steps
 
 - None - task complete
+
+
+## Session 25: Show full article button always in toolbar
+
+**Date**: 2026-05-26
+**Task**: Show full article button always in toolbar
+**Branch**: `Feat/show-full-article-button-always`
+
+### Summary
+
+将'获取全文'按钮从文章无内容回退区移至工具栏，使其始终可见可点击，包括已有内容时也允许重新提取
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a432187` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
