@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "组件规范：export function声明、props约定、prose排版覆盖模式（L95-120），MarkdownContent通用组件需遵循"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "目录结构规范：确定MarkdownContent组件放置位置"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "质量规范：确保实现符合项目质量标准"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "类型安全规范：marked类型声明和组件props类型定义"}
+{"file": ".trellis/tasks/05-26-ai-markdown/research/markdown-libs.md", "reason": "markdown库对比研究：marked用法、DOMPurify集成方式、prose类搭配方案"}
+{"file": ".trellis/tasks/05-26-ai-markdown/prd.md", "reason": "PRD：需求、验收标准、技术方案决策"}
