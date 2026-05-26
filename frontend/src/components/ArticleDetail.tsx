@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useArticle, useToggleRead, useToggleStar, useSummarize, useTranslate, useAIConfig } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { AIChatPanel } from "@/components/AIChatPanel";
+import { MarkdownContent } from "@/components/MarkdownContent";
 import { ReadingSettingsPopover, getFontStack } from "@/components/ReadingSettingsPopover";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
@@ -248,7 +249,7 @@ export function ArticleDetail() {
                     <span className="text-xs font-normal">({article.summary_model})</span>
                   )}
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{article.summary}</p>
+                <MarkdownContent content={article.summary} />
               </div>
             )}
 
