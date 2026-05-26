@@ -785,3 +785,36 @@ Implemented auto-generate AI summary feature: settings toggle (persisted), auto-
 ### Next Steps
 
 - None - task complete
+
+
+## Session 24: Add Readability-lxml extraction for article full content
+
+**Date**: 2026-05-26
+**Task**: Add Readability-lxml extraction for article full content
+**Branch**: `Feat/readability-web-extraction`
+
+### Summary
+
+Integrated readability-lxml + httpx to extract article content as HTML (replacing trafilatura plain-text fallback). Added POST /api/articles/{id}/extract endpoint and frontend '获取全文' button for on-demand extraction. Refactored articles router to share ArticleResponse building logic.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c24e72e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
