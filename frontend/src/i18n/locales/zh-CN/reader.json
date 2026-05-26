@@ -75,5 +75,8 @@
   "lightMode": "亮色模式",
   "darkMode": "暗色模式",
   "generatingSummary": "正在生成摘要...",
+  "extractFullContent": "获取全文",
+  "extractingContent": "正在提取全文...",
+  "extractFailed": "提取全文失败",
   "systemTheme": "跟随系统"
 }

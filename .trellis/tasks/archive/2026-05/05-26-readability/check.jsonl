@@ -1,0 +1,4 @@
+{"file": ".trellis/tasks/05-26-readability/prd.md", "reason": "PRD with acceptance criteria to verify against"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend quality checks: error handling, logging, test requirements"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend quality checks: component patterns, type safety"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify cross-layer consistency between new API endpoint and frontend integration"}

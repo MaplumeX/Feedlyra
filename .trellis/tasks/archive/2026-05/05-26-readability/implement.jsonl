@@ -1,0 +1,5 @@
+{"file": ".trellis/tasks/05-26-readability/prd.md", "reason": "PRD with requirements, decision, and acceptance criteria for Readability extraction feature"}
+{"file": ".trellis/tasks/05-26-readability/research/python-readability-libs.md", "reason": "Research on readability-lxml API usage, integration patterns, and comparison with trafilatura"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec index for coding conventions and quality guidelines"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec index for component and state management conventions"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer data flow guide — new extract endpoint spans backend API to frontend component"}

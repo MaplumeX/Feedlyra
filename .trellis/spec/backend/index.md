@@ -33,6 +33,7 @@ This directory contains guidelines for backend development in the Feedlyra proje
 - **No repository pattern**: Routers and services both write SQL directly
 - **Encryption of secrets**: User AI API keys are encrypted at rest with Fernet (key derived from `SECRET_KEY` via SHA256)
 - **No tests, no linting, no CI** — currently not configured
+- **Content extraction**: Use `readability-lxml` + httpx for web content extraction. Sync library calls wrapped in `run_in_executor()`. Never use `trafilatura.fetch_url()` — always use httpx for HTTP requests (proxy support). See `feed_fetcher.py:_fetch_and_extract_content` for the pattern.
 
 ---
 
