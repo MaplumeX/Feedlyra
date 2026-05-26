@@ -191,6 +191,20 @@ export function ArticleDetail() {
         >
           <MessageSquare className={cn("h-4 w-4", chatPanelOpen && "text-primary")} />
         </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          disabled={extractContent.isPending}
+          onClick={() => {
+            extractContent.mutate(article.id, {
+              onError: () => toast.error(t("extractFailed")),
+            });
+          }}
+          title={t("extractFullContent")}
+        >
+          <FileText className={cn("h-4 w-4", extractContent.isPending && "animate-spin")} />
+        </Button>
         <Separator orientation="vertical" className="h-5" />
         <ReadingSettingsPopover />
         <div className="flex-1" />
@@ -263,7 +277,7 @@ export function ArticleDetail() {
                 dangerouslySetInnerHTML={{ __html: sanitizedContent }}
               />
             ) : (
-              <div className="space-y-3">
+              <>
                 {article.content_snippet ? (
                   <p className="text-sm text-muted-foreground">{article.content_snippet}</p>
                 ) : (
@@ -279,20 +293,7 @@ export function ArticleDetail() {
                     </a>
                   </p>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={extractContent.isPending}
-                  onClick={() => {
-                    extractContent.mutate(article.id, {
-                      onError: () => toast.error(t("extractFailed")),
-                    });
-                  }}
-                >
-                  <FileText className="mr-1.5 h-3.5 w-3.5" />
-                  {extractContent.isPending ? t("extractingContent") : t("extractFullContent")}
-                </Button>
-              </div>
+              </>
             )}
           </article>
         </ScrollArea>
