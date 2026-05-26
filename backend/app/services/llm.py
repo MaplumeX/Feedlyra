@@ -16,12 +16,18 @@ logger = logging.getLogger(__name__)
 
 MAX_CONTENT_CHARS = 8000
 
-SUMMARY_SYSTEM_PROMPT = (
-    "You are a helpful assistant that summarizes articles. "
-    "Summarize the following article in 3-5 bullet points. "
-    "Focus on key facts and conclusions. "
-    "Use the same language as the article."
-)
+SUMMARY_SYSTEM_PROMPT = """\
+You are an expert content analyst for an RSS news reader. \
+Your task is to help users quickly decide whether an article is worth reading.
+
+Rules:
+- Output a single concise paragraph, under 100 words.
+- Prioritize: new findings/conclusions > actionable insights > key facts > context.
+- Skip filler, ads, navigation text, and boilerplate in the content.
+- Do NOT repeat the article title.
+- If the content is too short or not a real article, output: "Content insufficient for summary."
+- Use the same language as the article body. If ambiguous, use the title's language.\
+"""
 
 TRANSLATION_SYSTEM_PROMPT = (
     "You are a professional translator. "
