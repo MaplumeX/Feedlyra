@@ -13,8 +13,8 @@ from uuid import UUID
 
 import feedparser
 import httpx
-import trafilatura
 from bs4 import BeautifulSoup
+from readability import Document
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -84,14 +84,29 @@ def _parse_feed(content: bytes) -> feedparser.FeedParserDict:
     return feedparser.parse(content)
 
 
-def _extract_full_text(url: str) -> str | None:
+def _extract_content_html(html: str, url: str) -> str | None:
     try:
-        downloaded = trafilatura.fetch_url(url)
-        if downloaded:
-            return trafilatura.extract(downloaded, favor_precision=True)
+        doc = Document(html, url=url)
+        return doc.summary()
     except Exception:
-        pass
-    return None
+        logger.warning("readability-lxml extraction failed for %s", url)
+        return None
+
+
+async def _fetch_and_extract_content(url: str) -> str | None:
+    try:
+        async with httpx.AsyncClient(
+            timeout=HTTP_TIMEOUT, follow_redirects=True, headers={"User-Agent": USER_AGENT}
+        ) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            html = resp.text
+
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, _extract_content_html, html, url)
+    except Exception:
+        logger.warning("Failed to fetch/extract content for %s", url)
+        return None
 
 
 def _compute_next_check(feed: Feed) -> datetime:
@@ -307,12 +322,11 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
             snippet = _html_to_text(content_value)
 
         if not content_value:
-            loop = asyncio.get_running_loop()
-            extracted = await loop.run_in_executor(None, _extract_full_text, entry_url)
+            extracted = await _fetch_and_extract_content(entry_url)
             if extracted:
                 content_value = extracted
                 if not snippet:
-                    snippet = extracted[:500]
+                    snippet = _html_to_text(extracted)
 
         article = Article(
             feed_id=feed.id,

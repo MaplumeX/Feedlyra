@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -13,8 +14,51 @@ from app.models.ai import ArticleAIData
 from app.models.feed import Feed
 from app.models.user import User
 from app.schemas.article import ArticleListResponse, ArticleResponse, BatchRead, MarkAllRead, ReadToggle, StarToggle
+from app.services.feed_fetcher import _fetch_and_extract_content, _html_to_text
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/articles", tags=["articles"])
+
+
+async def _build_article_response(
+    article: Article, user_id: UUID, db: AsyncSession, feed_title: str | None = None
+) -> ArticleResponse:
+    """Build a full ArticleResponse with read/starred/ai_data enriched."""
+    if feed_title is None:
+        feed_result = await db.execute(select(Feed.title).where(Feed.id == article.feed_id))
+        feed_title = feed_result.scalar()
+
+    read_result = await db.execute(
+        select(ReadStatus).where(
+            ReadStatus.user_id == user_id, ReadStatus.article_id == article.id
+        )
+    )
+    is_read = read_result.scalar_one_or_none() is not None
+
+    starred_result = await db.execute(
+        select(StarredArticle).where(
+            StarredArticle.user_id == user_id, StarredArticle.article_id == article.id
+        )
+    )
+    is_starred = starred_result.scalar_one_or_none() is not None
+
+    ai_data_result = await db.execute(
+        select(ArticleAIData).where(ArticleAIData.article_id == article.id)
+    )
+    ai_data = ai_data_result.scalar_one_or_none()
+
+    item = ArticleResponse.model_validate(article)
+    item.is_read = is_read
+    item.is_starred = is_starred
+    item.feed_title = feed_title
+    if ai_data:
+        item.summary = ai_data.summary
+        item.summary_model = ai_data.summary_model
+        item.translated_title = ai_data.translated_title
+        item.translated_content = ai_data.translated_content
+        item.translation_lang = ai_data.translation_lang
+    return item
 
 
 @router.get("", response_model=ArticleListResponse)
@@ -185,7 +229,7 @@ async def get_article(
     article_id: UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> dict:
+) -> ArticleResponse:
     result = await db.execute(
         select(Article, Feed.title.label("feed_title"))
         .join(Feed, Feed.id == Article.feed_id)
@@ -196,37 +240,7 @@ async def get_article(
         raise HTTPException(status_code=404, detail="Article not found")
 
     article, feed_title = row
-
-    read_result = await db.execute(
-        select(ReadStatus).where(
-            ReadStatus.user_id == user.id, ReadStatus.article_id == article_id
-        )
-    )
-    is_read = read_result.scalar_one_or_none() is not None
-
-    starred_result = await db.execute(
-        select(StarredArticle).where(
-            StarredArticle.user_id == user.id, StarredArticle.article_id == article_id
-        )
-    )
-    is_starred = starred_result.scalar_one_or_none() is not None
-
-    ai_data_result = await db.execute(
-        select(ArticleAIData).where(ArticleAIData.article_id == article_id)
-    )
-    ai_data = ai_data_result.scalar_one_or_none()
-
-    item = ArticleResponse.model_validate(article)
-    item.is_read = is_read
-    item.is_starred = is_starred
-    item.feed_title = feed_title
-    if ai_data:
-        item.summary = ai_data.summary
-        item.summary_model = ai_data.summary_model
-        item.translated_title = ai_data.translated_title
-        item.translated_content = ai_data.translated_content
-        item.translation_lang = ai_data.translation_lang
-    return item
+    return await _build_article_response(article, user.id, db, feed_title=feed_title)
 
 
 @router.put("/{article_id}/read", response_model=ArticleResponse)
@@ -235,7 +249,7 @@ async def toggle_read(
     body: ReadToggle,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> dict:
+) -> ArticleResponse:
     result = await db.execute(
         select(Article).join(Feed, Feed.id == Article.feed_id).where(
             Feed.user_id == user.id, Article.id == article_id
@@ -259,21 +273,7 @@ async def toggle_read(
 
     await db.commit()
 
-    starred_result = await db.execute(
-        select(StarredArticle).where(
-            StarredArticle.user_id == user.id, StarredArticle.article_id == article_id
-        )
-    )
-    is_starred = starred_result.scalar_one_or_none() is not None
-
-    feed_result = await db.execute(select(Feed.title).where(Feed.id == article.feed_id))
-    feed_title = feed_result.scalar()
-
-    item = ArticleResponse.model_validate(article)
-    item.is_read = body.read
-    item.is_starred = is_starred
-    item.feed_title = feed_title
-    return item
+    return await _build_article_response(article, user.id, db)
 
 
 @router.put("/{article_id}/star", response_model=ArticleResponse)
@@ -282,7 +282,7 @@ async def toggle_star(
     body: StarToggle,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> dict:
+) -> ArticleResponse:
     result = await db.execute(
         select(Article).join(Feed, Feed.id == Article.feed_id).where(
             Feed.user_id == user.id, Article.id == article_id
@@ -308,18 +308,32 @@ async def toggle_star(
 
     await db.commit()
 
-    read_result = await db.execute(
-        select(ReadStatus).where(
-            ReadStatus.user_id == user.id, ReadStatus.article_id == article_id
+    return await _build_article_response(article, user.id, db)
+
+
+@router.post("/{article_id}/extract", response_model=ArticleResponse)
+async def extract_article_content(
+    article_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> ArticleResponse:
+    result = await db.execute(
+        select(Article).join(Feed, Feed.id == Article.feed_id).where(
+            Feed.user_id == user.id, Article.id == article_id
         )
     )
-    is_read = read_result.scalar_one_or_none() is not None
+    article = result.scalar_one_or_none()
+    if article is None:
+        raise HTTPException(status_code=404, detail="Article not found")
 
-    feed_result = await db.execute(select(Feed.title).where(Feed.id == article.feed_id))
-    feed_title = feed_result.scalar()
+    extracted = await _fetch_and_extract_content(article.url)
+    if extracted is None:
+        raise HTTPException(status_code=422, detail="Failed to extract article content")
 
-    item = ArticleResponse.model_validate(article)
-    item.is_read = is_read
-    item.is_starred = body.starred
-    item.feed_title = feed_title
-    return item
+    article.content = extracted
+    if not article.content_snippet:
+        article.content_snippet = _html_to_text(extracted)
+    await db.commit()
+    await db.refresh(article)
+
+    return await _build_article_response(article, user.id, db)

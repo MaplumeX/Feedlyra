@@ -29,6 +29,7 @@ FastAPI's default `{"detail": "message"}` JSON shape. No custom error envelope o
 | `403` | Forbidden — batch operation contains resources not owned by user |
 | `404` | Not Found — standard resource-not-found |
 | `409` | Conflict — duplicate feed |
+| `422` | Unprocessable Entity — content extraction failed (readability) |
 | `502` | Bad Gateway — upstream feed fetch failure |
 
 ---

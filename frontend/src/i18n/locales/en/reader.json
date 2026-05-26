@@ -75,5 +75,8 @@
   "lightMode": "Light mode",
   "darkMode": "Dark mode",
   "generatingSummary": "Generating summary...",
+  "extractFullContent": "Extract Full Content",
+  "extractingContent": "Extracting full content...",
+  "extractFailed": "Failed to extract full content",
   "systemTheme": "System theme"
 }

@@ -313,3 +313,15 @@ export function useChatHistory(articleId: string | null) {
     enabled: !!articleId,
   });
 }
+
+export function useExtractContent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (articleId: string) =>
+      api.post<Article>(`/api/articles/${articleId}/extract`, {}),
+    onSuccess: (_data, articleId) => {
+      qc.invalidateQueries({ queryKey: queryKeys.articles.detail(articleId) });
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}

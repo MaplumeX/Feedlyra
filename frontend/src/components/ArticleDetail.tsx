@@ -1,12 +1,13 @@
 import DOMPurify from "dompurify";
-import { ExternalLink, Star, BookOpen, RotateCcw, Sparkles, Languages, MessageSquare } from "lucide-react";
+import { toast } from "sonner";
+import { ExternalLink, Star, BookOpen, RotateCcw, Sparkles, Languages, MessageSquare, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { useArticle, useToggleRead, useToggleStar, useSummarize, useTranslate, useAIConfig } from "@/api/hooks";
+import { useArticle, useToggleRead, useToggleStar, useSummarize, useTranslate, useAIConfig, useExtractContent } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { AIChatPanel } from "@/components/AIChatPanel";
 import { MarkdownContent } from "@/components/MarkdownContent";
@@ -50,6 +51,7 @@ export function ArticleDetail() {
   const toggleStar = useToggleStar();
   const summarize = useSummarize();
   const translateMut = useTranslate();
+  const extractContent = useExtractContent();
   const { data: aiConfig } = useAIConfig();
   const { set: setReader } = useReaderStore();
   const [showTranslation, setShowTranslation] = useState(false);
@@ -260,20 +262,37 @@ export function ArticleDetail() {
                 onClick={handleProseClick}
                 dangerouslySetInnerHTML={{ __html: sanitizedContent }}
               />
-            ) : article.content_snippet ? (
-              <p className="text-sm text-muted-foreground">{article.content_snippet}</p>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                {t("noContent")}{" "}
-                <a
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline"
+              <div className="space-y-3">
+                {article.content_snippet ? (
+                  <p className="text-sm text-muted-foreground">{article.content_snippet}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {t("noContent")}{" "}
+                    <a
+                      href={article.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline"
+                    >
+                      {t("readOnOriginalSite")}
+                    </a>
+                  </p>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={extractContent.isPending}
+                  onClick={() => {
+                    extractContent.mutate(article.id, {
+                      onError: () => toast.error(t("extractFailed")),
+                    });
+                  }}
                 >
-                  {t("readOnOriginalSite")}
-                </a>
-              </p>
+                  <FileText className="mr-1.5 h-3.5 w-3.5" />
+                  {extractContent.isPending ? t("extractingContent") : t("extractFullContent")}
+                </Button>
+              </div>
             )}
           </article>
         </ScrollArea>
