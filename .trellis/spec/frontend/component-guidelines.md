@@ -473,6 +473,31 @@ export function ThemeToggle() {
 - Icons: Sun (light), Moon (dark), Monitor (system) — standard convention
 - Labels should use i18n (`useTranslation("reader")` with keys `lightMode`/`darkMode`/`systemTheme`)
 
+### Markdown Content Rendering
+
+For rendering markdown text (AI summaries, chat messages, etc.), use the shared `MarkdownContent` component:
+
+```tsx
+import { MarkdownContent } from "@/components/MarkdownContent";
+
+<MarkdownContent content={article.summary} />
+<MarkdownContent content={msg.content} className="prose-xs" />
+```
+
+**Implementation**: `marked` parses markdown → DOMPurify sanitizes HTML → `dangerouslySetInnerHTML` renders in prose container. `useMemo` caches the parse result.
+
+**Why marked (not react-markdown)**: Zero dependencies (1 package vs 85), consistent with the project's existing HTML rendering pattern (DOMPurify + prose + dangerouslySetInnerHTML for article content), and lighter for the small text volumes in summaries/chat.
+
+**Key details**:
+- `marked` v18+ includes TypeScript types — do NOT install `@types/marked` (it's for v4/v5)
+- Always sanitize with DOMPurify before rendering — marked does not sanitize HTML by default
+- Use `prose prose-sm` for small text areas (summaries, chat); use `prose` without size modifier for article-sized content
+- The component returns `null` for empty/falsy content — callers need not guard
+
+> **Gotcha**: `marked.parse()` returns `string | Promise<string>`. For synchronous usage, cast with `as string` or configure `marked.use({ async: false })`.
+
+---
+
 ### Vite SPA Dark Mode FOUC Prevention
 
 `next-themes` auto-injects a FOUC prevention script only for Next.js SSR. In Vite SPA, add an inline script in `index.html` before `<div id="root">`:

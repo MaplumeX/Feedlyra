@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useChatHistory } from "@/api/hooks";
 import { streamChat } from "@/api/sse";
+import { MarkdownContent } from "@/components/MarkdownContent";
 import { useReaderStore } from "@/stores/reader";
 import type { ChatMessage } from "@/api/types";
 import { cn } from "@/lib/utils";
@@ -145,7 +146,11 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
                   : "bg-muted mr-4"
               )}
             >
-              <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+              {msg.role === "assistant" ? (
+                <MarkdownContent content={msg.content} />
+              ) : (
+                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+              )}
             </div>
           ))
         )}

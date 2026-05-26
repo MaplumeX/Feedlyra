@@ -752,3 +752,36 @@ Implemented auto-generate AI summary feature: settings toggle (persisted), auto-
 ### Next Steps
 
 - None - task complete
+
+
+## Session 23: AI摘要和Chat面板Markdown渲染
+
+**Date**: 2026-05-26
+**Task**: AI摘要和Chat面板Markdown渲染
+**Branch**: `Feat/md-render`
+
+### Summary
+
+添加MarkdownContent通用组件（marked+DOMPurify+prose），AI摘要区域和Chat助手消息支持Markdown富文本渲染，更新组件规范spec
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d277811` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
