@@ -105,7 +105,8 @@ Alembic with async support (`alembic/env.py` uses `async_engine_from_config` + `
 - `full_content` is nullable until extraction succeeds.
 - Extracting an article writes only `full_content`; it must not overwrite `content`.
 - If `full_content` already exists, the extract endpoint returns the article response without refetching the remote URL.
-- AI article operations should use the richest available content via `Article.readable_content`: `full_content`, then `content`, then `content_snippet`, then empty string.
+- AI article operations that do not expose content-source choice may use the richest available content via `Article.readable_content`: `full_content`, then `content`, then `content_snippet`, then empty string.
+- AI summaries are source-aware and must not use `Article.readable_content`; see "Scenario: Source-Aware Article Summary Cache".
 
 ### 4. Validation & Error Matrix
 - Article not owned by the current user -> `404 Article not found`.
@@ -140,3 +141,59 @@ article.full_content = extracted
 - **Not using mixins**: New models that manually declare `id`/`created_at`/`updated_at` instead of `UUIDMixin`/`TimestampMixin` create inconsistency. Use the mixins.
 - **Missing `ondelete="CASCADE"`**: Without database-level cascade, orphaned records remain after parent deletion.
 - **Using `expire_on_commit=True`**: The default causes lazy-load errors after commit in async context. Always use `expire_on_commit=False`.
+
+---
+
+## Scenario: Source-Aware Article Summary Cache
+
+### 1. Scope / Trigger
+- Trigger: article summaries must track which content source they summarize because users can switch between feed content and extracted full content.
+
+### 2. Signatures
+- DB: `article_summaries.id: UUID` primary key.
+- DB: `article_summaries.article_id: UUID` references `articles.id` with `ondelete="CASCADE"`.
+- DB: `article_summaries.source: String(20)` stores `"feed"` or `"full"`.
+- DB: `article_summaries.content_hash: String(64)` stores the hash of the exact source content summarized.
+- DB: `article_summaries.summary: Text` stores generated markdown/plain text.
+- DB: `article_summaries.model: String(100)` stores the AI model.
+- DB: unique constraint on `(article_id, source, model)`.
+- API: `POST /api/ai/articles/{article_id}/summarize?source=feed|full -> SummarizeResponse`.
+- API: `ArticleResponse.summaries: dict[str, ArticleSummaryResponse]`.
+
+### 3. Contracts
+- `source=feed` summarizes `article.content`, falling back to `article.content_snippet`.
+- `source=full` summarizes `article.full_content` only.
+- Cache reuse requires matching `article_id`, `source`, `model`, and `content_hash`.
+- Article list/detail responses should include summaries only for the current user's configured model.
+- `ArticleResponse.summary` and `ArticleResponse.summary_model` remain compatibility aliases for the current-model feed summary only.
+- Legacy `article_ai_data.summary` rows are migrated into `article_summaries` with `source='feed'`; old summary columns are not used for new summary writes.
+
+### 4. Validation & Error Matrix
+- Article not owned by the current user -> `404 Article not found`.
+- `source` is not `feed` or `full` -> `400 Invalid summary source`.
+- `source=full` and `article.full_content` is empty -> `422 Full content is not available`.
+- `source=feed` and neither `content` nor `content_snippet` exists -> `422 Article content is not available`.
+- Missing AI configuration -> `400` with the LLM config error message.
+
+### 5. Good/Base/Bad Cases
+- Good: feed summary and full summary for the same article/model coexist and do not overwrite each other.
+- Base: user has only a feed summary; switching to full content shows no full summary until generated.
+- Bad: summary generation uses `Article.readable_content`, causing a full-content summary to be returned while the UI is showing feed content.
+
+### 6. Tests Required
+- API integration: existing feed summary cache is reused only when source, model, and content hash match.
+- API integration: generating a full summary writes `source='full'` and does not modify the feed summary.
+- Migration regression: legacy `article_ai_data.summary` becomes a feed summary row.
+- Frontend/API contract: article response includes `summaries.feed` and/or `summaries.full`.
+
+### 7. Wrong vs Correct
+#### Wrong
+```python
+summary = await generate_summary(client, model, article.title, article.readable_content)
+```
+
+#### Correct
+```python
+content = get_summary_content(article, summary_source)
+summary = await generate_summary(client, model, article.title, content)
+```

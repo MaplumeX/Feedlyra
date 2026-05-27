@@ -3,7 +3,16 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class ArticleSummaryResponse(BaseModel):
+    summary: str
+    model: str
+    content_hash: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
 class ArticleResponse(BaseModel):
@@ -23,6 +32,7 @@ class ArticleResponse(BaseModel):
     feed_title: str | None = None
     summary: str | None = None
     summary_model: str | None = None
+    summaries: dict[str, ArticleSummaryResponse] = Field(default_factory=dict)
     translated_title: str | None = None
     translated_content: str | None = None
     translation_lang: str | None = None

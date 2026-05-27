@@ -2,7 +2,7 @@ from app.models.user import User
 from app.models.feed import Feed
 from app.models.category import Category
 from app.models.article import Article, ReadStatus, StarredArticle
-from app.models.ai import ArticleAIData, ArticleChat, ChatMessage
+from app.models.ai import ArticleAIData, ArticleChat, ArticleSummary, ChatMessage
 
 __all__ = [
     "User",
@@ -10,6 +10,7 @@ __all__ = [
     "Category",
     "Article",
     "ArticleAIData",
+    "ArticleSummary",
     "ArticleChat",
     "ChatMessage",
     "ReadStatus",

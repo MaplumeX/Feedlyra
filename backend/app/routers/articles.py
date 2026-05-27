@@ -10,19 +10,53 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_current_user, get_db
 from app.models.article import Article, ReadStatus, StarredArticle
-from app.models.ai import ArticleAIData
+from app.models.ai import ArticleAIData, ArticleSummary
 from app.models.feed import Feed
 from app.models.user import User
-from app.schemas.article import ArticleListResponse, ArticleResponse, BatchRead, MarkAllRead, ReadToggle, StarToggle
+from app.schemas.article import (
+    ArticleListResponse,
+    ArticleResponse,
+    ArticleSummaryResponse,
+    BatchRead,
+    MarkAllRead,
+    ReadToggle,
+    StarToggle,
+)
 from app.services.feed_fetcher import _fetch_and_extract_content, _html_to_text
+from app.services.article_summary import SUMMARY_SOURCE_FEED
+from app.services.llm import get_user_model
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/articles", tags=["articles"])
 
 
+def _apply_ai_data(item: ArticleResponse, ai_data: ArticleAIData | None) -> None:
+    if not ai_data:
+        return
+    item.translated_title = ai_data.translated_title
+    item.translated_content = ai_data.translated_content
+    item.translation_lang = ai_data.translation_lang
+
+
+def _summary_response(summary: ArticleSummary) -> ArticleSummaryResponse:
+    return ArticleSummaryResponse(
+        summary=summary.summary,
+        model=summary.model,
+        content_hash=summary.content_hash,
+        created_at=summary.created_at,
+    )
+
+
+def _apply_summaries(item: ArticleResponse, summaries: list[ArticleSummary]) -> None:
+    item.summaries = {summary.source: _summary_response(summary) for summary in summaries}
+    feed_summary = item.summaries.get(SUMMARY_SOURCE_FEED)
+    item.summary = feed_summary.summary if feed_summary else None
+    item.summary_model = feed_summary.model if feed_summary else None
+
+
 async def _build_article_response(
-    article: Article, user_id: UUID, db: AsyncSession, feed_title: str | None = None
+    article: Article, user: User, db: AsyncSession, feed_title: str | None = None
 ) -> ArticleResponse:
     """Build a full ArticleResponse with read/starred/ai_data enriched."""
     if feed_title is None:
@@ -31,14 +65,14 @@ async def _build_article_response(
 
     read_result = await db.execute(
         select(ReadStatus).where(
-            ReadStatus.user_id == user_id, ReadStatus.article_id == article.id
+            ReadStatus.user_id == user.id, ReadStatus.article_id == article.id
         )
     )
     is_read = read_result.scalar_one_or_none() is not None
 
     starred_result = await db.execute(
         select(StarredArticle).where(
-            StarredArticle.user_id == user_id, StarredArticle.article_id == article.id
+            StarredArticle.user_id == user.id, StarredArticle.article_id == article.id
         )
     )
     is_starred = starred_result.scalar_one_or_none() is not None
@@ -52,12 +86,17 @@ async def _build_article_response(
     item.is_read = is_read
     item.is_starred = is_starred
     item.feed_title = feed_title
-    if ai_data:
-        item.summary = ai_data.summary
-        item.summary_model = ai_data.summary_model
-        item.translated_title = ai_data.translated_title
-        item.translated_content = ai_data.translated_content
-        item.translation_lang = ai_data.translation_lang
+    model = get_user_model(user)
+    summaries_result = await db.execute(
+        select(ArticleSummary).where(
+            ArticleSummary.article_id == article.id,
+            ArticleSummary.model == model,
+        )
+    )
+    summaries = list(summaries_result.scalars().all())
+
+    _apply_ai_data(item, ai_data)
+    _apply_summaries(item, summaries)
     return item
 
 
@@ -112,6 +151,8 @@ async def list_articles(
     read_ids: set[UUID] = set()
     starred_ids: set[UUID] = set()
     ai_data_map: dict[UUID, ArticleAIData] = {}
+    summary_map: dict[UUID, list[ArticleSummary]] = {}
+    model = get_user_model(user)
     if article_ids:
         read_result = await db.execute(
             select(ReadStatus.article_id).where(
@@ -132,19 +173,23 @@ async def list_articles(
         )
         ai_data_map = {a.article_id: a for a in ai_result.scalars().all()}
 
+        summary_result = await db.execute(
+            select(ArticleSummary).where(
+                ArticleSummary.article_id.in_(article_ids),
+                ArticleSummary.model == model,
+            )
+        )
+        for summary in summary_result.scalars().all():
+            summary_map.setdefault(summary.article_id, []).append(summary)
+
     items = []
     for article, feed_title in rows:
         item = ArticleResponse.model_validate(article)
         item.is_read = article.id in read_ids
         item.is_starred = article.id in starred_ids
         item.feed_title = feed_title
-        ai_data = ai_data_map.get(article.id)
-        if ai_data:
-            item.summary = ai_data.summary
-            item.summary_model = ai_data.summary_model
-            item.translated_title = ai_data.translated_title
-            item.translated_content = ai_data.translated_content
-            item.translation_lang = ai_data.translation_lang
+        _apply_ai_data(item, ai_data_map.get(article.id))
+        _apply_summaries(item, summary_map.get(article.id, []))
         items.append(item)
 
     return {"items": items, "total": total, "page": page, "limit": limit}
@@ -240,7 +285,7 @@ async def get_article(
         raise HTTPException(status_code=404, detail="Article not found")
 
     article, feed_title = row
-    return await _build_article_response(article, user.id, db, feed_title=feed_title)
+    return await _build_article_response(article, user, db, feed_title=feed_title)
 
 
 @router.put("/{article_id}/read", response_model=ArticleResponse)
@@ -273,7 +318,7 @@ async def toggle_read(
 
     await db.commit()
 
-    return await _build_article_response(article, user.id, db)
+    return await _build_article_response(article, user, db)
 
 
 @router.put("/{article_id}/star", response_model=ArticleResponse)
@@ -308,7 +353,7 @@ async def toggle_star(
 
     await db.commit()
 
-    return await _build_article_response(article, user.id, db)
+    return await _build_article_response(article, user, db)
 
 
 @router.post("/{article_id}/extract", response_model=ArticleResponse)
@@ -327,7 +372,7 @@ async def extract_article_content(
         raise HTTPException(status_code=404, detail="Article not found")
 
     if article.full_content:
-        return await _build_article_response(article, user.id, db)
+        return await _build_article_response(article, user, db)
 
     extracted = await _fetch_and_extract_content(article.url)
     if extracted is None:
@@ -339,4 +384,4 @@ async def extract_article_content(
     await db.commit()
     await db.refresh(article)
 
-    return await _build_article_response(article, user.id, db)
+    return await _build_article_response(article, user, db)

@@ -149,7 +149,7 @@ export function CommandPalette() {
             <CommandGroup heading={t("ai")}>
               <CommandItem
                 disabled={summarize.isPending}
-                onSelect={() => runAndClose(() => summarize.mutate(selectedArticleId))}
+                onSelect={() => runAndClose(() => summarize.mutate({ articleId: selectedArticleId, source: "feed" }))}
               >
                 <Sparkles className="mr-2 h-4 w-4" />
                 {t("summarizeCurrentArticle")}
