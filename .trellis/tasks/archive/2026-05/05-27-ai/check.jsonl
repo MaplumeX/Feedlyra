@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Verify backend code follows project conventions"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify frontend code follows project conventions"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify API contract consistency between backend and frontend"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Check for code reuse opportunities and DRY violations"}

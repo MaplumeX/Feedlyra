@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 28
+- **Total Sessions**: 29
 - **Last Active**: 2026-05-27
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~955 | Active |
+| `journal-1.md` | ~989 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 29 | 2026-05-27 | Per-feature AI model config for translation, summary, and chat | `425b7ef`, `cbdf6d9` | `Feat/configurable-ai-models-per-feature` |
 | 28 | 2026-05-27 | Source-aware article summaries | `6b5c3da`, `c107216` | `Feat/fulltext-summary-refresh` |
 | 27 | 2026-05-27 | Article floating TOC | `bb3d5bc`, `7c8ddd6` | `Feat/floating-toc-for-articles` |
 | 26 | 2026-05-27 | Full content toggle | `445d821`, `d1b0bd8` | `Feat/provo-v1` |
