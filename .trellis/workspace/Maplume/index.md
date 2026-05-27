@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 27
+- **Total Sessions**: 28
 - **Last Active**: 2026-05-27
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~921 | Active |
+| `journal-1.md` | ~955 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 28 | 2026-05-27 | Source-aware article summaries | `6b5c3da`, `c107216` | `Feat/fulltext-summary-refresh` |
 | 27 | 2026-05-27 | Article floating TOC | `bb3d5bc`, `7c8ddd6` | `Feat/floating-toc-for-articles` |
 | 26 | 2026-05-27 | Full content toggle | `445d821`, `d1b0bd8` | `Feat/provo-v1` |
 | 25 | 2026-05-26 | Show full article button always in toolbar | `a432187` | `Feat/show-full-article-button-always` |

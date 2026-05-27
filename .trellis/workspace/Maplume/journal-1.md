@@ -919,3 +919,37 @@ Added a floating article table of contents with responsive collapsed mode and dr
 ### Next Steps
 
 - None - task complete
+
+
+## Session 28: Source-aware article summaries
+
+**Date**: 2026-05-27
+**Task**: Source-aware article summaries
+**Branch**: `Feat/fulltext-summary-refresh`
+
+### Summary
+
+Implemented source-aware AI summary caching for feed and full article content, added migration and frontend selection logic, and documented the backend contract.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6b5c3da` | (see git log) |
+| `c107216` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
