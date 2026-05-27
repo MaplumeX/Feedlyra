@@ -953,3 +953,37 @@ Implemented source-aware AI summary caching for feed and full article content, a
 ### Next Steps
 
 - None - task complete
+
+
+## Session 29: Per-feature AI model config for translation, summary, and chat
+
+**Date**: 2026-05-27
+**Task**: Per-feature AI model config for translation, summary, and chat
+**Branch**: `Feat/configurable-ai-models-per-feature`
+
+### Summary
+
+Added per-feature AI model, provider, and API key configuration for translation, summary, and chat features with fallback to global defaults. 13 files changed across backend (migration, model, schema, service, router) and frontend (types, hooks, component, i18n).
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `425b7ef` | (see git log) |
+| `cbdf6d9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
