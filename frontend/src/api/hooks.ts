@@ -1,6 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
-import type { AIConfig, Article, ArticleListResponse, Category, ChatHistory, DiscoveredFeed, Feed, OPMLExportResponse } from "./types";
+import type {
+  AIConfig,
+  Article,
+  ArticleListResponse,
+  ArticleSummarySource,
+  Category,
+  ChatHistory,
+  DiscoveredFeed,
+  Feed,
+  OPMLExportResponse,
+} from "./types";
 
 const queryKeys = {
   feeds: {
@@ -273,13 +283,15 @@ export function useUpdateAIConfig() {
 interface SummarizeResponse {
   summary: string;
   model: string;
+  source: ArticleSummarySource;
+  content_hash: string;
 }
 
 export function useSummarize() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (articleId: string) =>
-      api.post<SummarizeResponse>(`/api/ai/articles/${articleId}/summarize`, {}),
+    mutationFn: ({ articleId, source }: { articleId: string; source: ArticleSummarySource }) =>
+      api.post<SummarizeResponse>(`/api/ai/articles/${articleId}/summarize?source=${source}`, {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.articles.all });
     },

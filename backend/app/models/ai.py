@@ -3,11 +3,11 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID as PyUUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
+from app.models.base import Base, TimestampMixin, UUIDMixin
 
 
 class ArticleAIData(Base):
@@ -26,6 +26,23 @@ class ArticleAIData(Base):
     translation_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     article: Mapped["Article"] = relationship("Article", back_populates="ai_data")
+
+
+class ArticleSummary(UUIDMixin, TimestampMixin, Base):
+    __tablename__ = "article_summaries"
+    __table_args__ = (
+        UniqueConstraint("article_id", "source", "model", name="uq_article_summaries_article_source_model"),
+    )
+
+    article_id: Mapped[PyUUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("articles.id", ondelete="CASCADE"), nullable=False
+    )
+    source: Mapped[str] = mapped_column(String(20), nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    article: Mapped["Article"] = relationship("Article", back_populates="summary_rows")
 
 
 class ArticleChat(Base):

@@ -6,16 +6,23 @@ import uuid
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session
 from app.dependencies import get_current_user, get_db
-from app.models.ai import ArticleAIData, ArticleChat, ChatMessage
+from app.models.ai import ArticleAIData, ArticleChat, ArticleSummary, ChatMessage
 from app.models.article import Article
 from app.models.feed import Feed
 from app.models.user import User
+from app.services.article_summary import (
+    SUMMARY_SOURCE_FEED,
+    SUMMARY_SOURCE_FULL,
+    SummarySource,
+    get_summary_content,
+    get_summary_content_hash,
+)
 from app.schemas.ai import (
     AIConfigResponse,
     AIConfigUpdate,
@@ -39,6 +46,12 @@ from app.services.llm import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
+
+
+def _validate_summary_source(source: str) -> SummarySource:
+    if source in (SUMMARY_SOURCE_FEED, SUMMARY_SOURCE_FULL):
+        return source
+    raise HTTPException(status_code=400, detail="Invalid summary source")
 
 
 @router.put("/config", response_model=AIConfigResponse)
@@ -99,6 +112,7 @@ async def test_ai_connection(
 @router.post("/articles/{article_id}/summarize", response_model=SummarizeResponse)
 async def summarize_article(
     article_id: UUID,
+    source: str = Query(default=SUMMARY_SOURCE_FEED),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
@@ -112,16 +126,34 @@ async def summarize_article(
     if article is None:
         raise HTTPException(status_code=404, detail="Article not found")
 
-    # Check for cached summary
-    ai_data_result = await db.execute(
-        select(ArticleAIData).where(ArticleAIData.article_id == article_id)
-    )
-    ai_data = ai_data_result.scalar_one_or_none()
+    summary_source = _validate_summary_source(source)
+    content = get_summary_content(article, summary_source)
+    if summary_source == SUMMARY_SOURCE_FULL and not content:
+        raise HTTPException(status_code=422, detail="Full content is not available")
+    if not content:
+        raise HTTPException(status_code=422, detail="Article content is not available")
+
+    content_hash = get_summary_content_hash(content)
 
     model = get_user_model(user)
 
-    if ai_data and ai_data.summary and ai_data.summary_model == model:
-        return {"summary": ai_data.summary, "model": ai_data.summary_model}
+    # Check for cached summary
+    summary_result = await db.execute(
+        select(ArticleSummary).where(
+            ArticleSummary.article_id == article_id,
+            ArticleSummary.source == summary_source,
+            ArticleSummary.model == model,
+        )
+    )
+    article_summary = summary_result.scalar_one_or_none()
+
+    if article_summary and article_summary.content_hash == content_hash:
+        return {
+            "summary": article_summary.summary,
+            "model": article_summary.model,
+            "source": article_summary.source,
+            "content_hash": article_summary.content_hash,
+        }
 
     # Generate summary
     try:
@@ -129,26 +161,34 @@ async def summarize_article(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    summary = await generate_summary(client, model, article.title, article.readable_content)
+    summary = await generate_summary(client, model, article.title, content)
 
     now = datetime.now(timezone.utc)
 
-    if ai_data is None:
-        ai_data = ArticleAIData(
+    if article_summary is None:
+        article_summary = ArticleSummary(
             article_id=article_id,
+            source=summary_source,
+            content_hash=content_hash,
             summary=summary,
-            summary_model=model,
-            summary_created_at=now,
+            model=model,
+            created_at=now,
+            updated_at=now,
         )
-        db.add(ai_data)
+        db.add(article_summary)
     else:
-        ai_data.summary = summary
-        ai_data.summary_model = model
-        ai_data.summary_created_at = now
+        article_summary.summary = summary
+        article_summary.content_hash = content_hash
+        article_summary.updated_at = now
 
     await db.commit()
 
-    return {"summary": summary, "model": model}
+    return {
+        "summary": summary,
+        "model": model,
+        "source": summary_source,
+        "content_hash": content_hash,
+    }
 
 
 @router.post("/articles/{article_id}/translate", response_model=TranslateResponse)

@@ -15,6 +15,7 @@ import { ReadingSettingsPopover, getFontStack } from "@/components/ReadingSettin
 import { ArticleTableOfContents, createArticleContentWithAnchors } from "@/components/ArticleTableOfContents";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import type { ArticleSummarySource } from "@/api/types";
 
 function ArticleDetailSkeleton() {
   return (
@@ -105,15 +106,15 @@ export function ArticleDetail() {
     setShowFullContent(false);
   }, [selectedArticleId]);
 
-  // Auto-summarize: trigger when article loads, autoSummarize is on, article has no summary, and AI is configured
+  // Auto-summarize uses feed content only; full-content summaries are generated on demand.
   useEffect(() => {
-    if (!article || !autoSummarize || article.summary) return;
+    if (!article || !autoSummarize || article.summaries?.feed) return;
     if (summarize.isPending) return;
     if (autoSummarizeTriggeredRef.current === article.id) return;
     const aiReady = aiConfig?.base_url && aiConfig?.has_api_key && aiConfig?.model;
     if (!aiReady) return;
     autoSummarizeTriggeredRef.current = article.id;
-    summarize.mutate(article.id);
+    summarize.mutate({ articleId: article.id, source: "feed" });
   }, [article, autoSummarize, aiConfig, summarize]);
 
   // Reset auto-summarize trigger ref when article changes
@@ -131,6 +132,8 @@ export function ArticleDetail() {
 
   const hasTranslation = !!article?.translated_content;
   const hasFullContent = !!article?.full_content;
+  const summarySource: ArticleSummarySource = showFullContent && hasFullContent ? "full" : "feed";
+  const currentSummary = article?.summaries?.[summarySource] ?? null;
   const displayContent = !article
     ? null
     : showTranslation && hasTranslation
@@ -189,7 +192,7 @@ export function ArticleDetail() {
           size="icon"
           className="h-8 w-8"
           disabled={summarize.isPending}
-          onClick={() => summarize.mutate(article.id)}
+          onClick={() => summarize.mutate({ articleId: article.id, source: summarySource })}
           title={t("aiSummarize")}
         >
           <Sparkles className={cn("h-4 w-4", summarize.isPending && "animate-spin")} />
@@ -317,7 +320,7 @@ export function ArticleDetail() {
 
             <Separator className="my-4" />
 
-            {autoSummarize && summarize.isPending && !article.summary && (
+            {summarize.isPending && !currentSummary && (
               <div className="mb-4 rounded-md border bg-muted/50 p-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Sparkles className="h-3.5 w-3.5 animate-spin" />
@@ -326,16 +329,16 @@ export function ArticleDetail() {
               </div>
             )}
 
-            {article.summary && (
+            {currentSummary && (
               <div className="mb-4 rounded-md border bg-muted/50 p-4">
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <Sparkles className="h-3.5 w-3.5" />
                   {t("aiSummary")}
-                  {article.summary_model && (
-                    <span className="text-xs font-normal">({article.summary_model})</span>
+                  {currentSummary.model && (
+                    <span className="text-xs font-normal">({currentSummary.model})</span>
                   )}
                 </div>
-                <MarkdownContent content={article.summary} />
+                <MarkdownContent content={currentSummary.summary} />
               </div>
             )}
 

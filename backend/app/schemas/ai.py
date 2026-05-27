@@ -9,6 +9,8 @@ from pydantic import BaseModel, Field
 class SummarizeResponse(BaseModel):
     summary: str
     model: str
+    source: str
+    content_hash: str
 
 
 class TranslateRequest(BaseModel):

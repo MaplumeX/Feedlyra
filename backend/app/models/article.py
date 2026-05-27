@@ -30,6 +30,9 @@ class Article(Base):
     ai_data: Mapped["ArticleAIData | None"] = relationship(
         "ArticleAIData", back_populates="article", uselist=False
     )
+    summary_rows: Mapped[list["ArticleSummary"]] = relationship(
+        "ArticleSummary", back_populates="article", cascade="all, delete-orphan"
+    )
 
     @property
     def readable_content(self) -> str:

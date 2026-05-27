@@ -38,9 +38,19 @@ export interface Article {
   feed_title: string | null;
   summary: string | null;
   summary_model: string | null;
+  summaries: Partial<Record<ArticleSummarySource, ArticleSummary>>;
   translated_title: string | null;
   translated_content: string | null;
   translation_lang: string | null;
+}
+
+export type ArticleSummarySource = "feed" | "full";
+
+export interface ArticleSummary {
+  summary: string;
+  model: string;
+  content_hash: string;
+  created_at: string;
 }
 
 export interface ArticleListResponse {
