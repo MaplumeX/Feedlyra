@@ -12,6 +12,7 @@ class ArticleResponse(BaseModel):
     title: str
     url: str
     content: str | None
+    full_content: str | None
     content_snippet: str | None
     image_url: str | None
     author: str | None

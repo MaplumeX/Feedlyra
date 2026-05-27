@@ -27,6 +27,7 @@ export interface Article {
   title: string;
   url: string;
   content: string | null;
+  full_content: string | null;
   content_snippet: string | null;
   image_url: string | null;
   author: string | null;

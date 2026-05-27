@@ -55,6 +55,7 @@ export function ArticleDetail() {
   const { data: aiConfig } = useAIConfig();
   const { set: setReader } = useReaderStore();
   const [showTranslation, setShowTranslation] = useState(false);
+  const [showFullContent, setShowFullContent] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [lightboxAlt, setLightboxAlt] = useState("");
   const autoSummarizeTriggeredRef = useRef<string | null>(null);
@@ -90,6 +91,7 @@ export function ArticleDetail() {
   // Reset translation view when switching articles
   useEffect(() => {
     setShowTranslation(false);
+    setShowFullContent(false);
   }, [selectedArticleId]);
 
   // Auto-summarize: trigger when article loads, autoSummarize is on, article has no summary, and AI is configured
@@ -112,6 +114,7 @@ export function ArticleDetail() {
   useEffect(() => {
     if (translateMut.isSuccess && article?.translated_content) {
       setShowTranslation(true);
+      setShowFullContent(false);
     }
   }, [translateMut.isSuccess, article?.translated_content]);
 
@@ -120,8 +123,11 @@ export function ArticleDetail() {
   if (!article) return <EmptyState />;
 
   const hasTranslation = !!article.translated_content;
+  const hasFullContent = !!article.full_content;
   const displayContent = showTranslation && hasTranslation
     ? article.translated_content
+    : showFullContent && hasFullContent
+    ? article.full_content
     : article.content;
   const displayTitle = showTranslation && hasTranslation
     ? (article.translated_title ?? article.title)
@@ -173,7 +179,9 @@ export function ArticleDetail() {
           disabled={translateMut.isPending}
           onClick={() => {
             if (hasTranslation) {
-              setShowTranslation(!showTranslation);
+              const nextShowTranslation = !showTranslation;
+              setShowTranslation(nextShowTranslation);
+              if (nextShowTranslation) setShowFullContent(false);
             } else {
               translateMut.mutate({ articleId: article.id });
             }
@@ -192,18 +200,47 @@ export function ArticleDetail() {
           <MessageSquare className={cn("h-4 w-4", chatPanelOpen && "text-primary")} />
         </Button>
         <Button
-          variant="ghost"
+          variant={showFullContent ? "secondary" : "ghost"}
           size="icon"
           className="h-8 w-8"
           disabled={extractContent.isPending}
           onClick={() => {
+            if (showFullContent) {
+              setShowFullContent(false);
+              return;
+            }
+            setShowTranslation(false);
+            if (hasFullContent) {
+              setShowFullContent(true);
+              return;
+            }
             extractContent.mutate(article.id, {
+              onSuccess: (updatedArticle) => {
+                if (updatedArticle.full_content) {
+                  setShowFullContent(true);
+                }
+              },
               onError: () => toast.error(t("extractFailed")),
             });
           }}
-          title={t("extractFullContent")}
+          title={
+            extractContent.isPending
+              ? t("extractingContent")
+              : showFullContent
+              ? t("showFeedContent")
+              : hasFullContent
+              ? t("showFullContent")
+              : t("extractFullContent")
+          }
+          aria-pressed={showFullContent}
         >
-          <FileText className={cn("h-4 w-4", extractContent.isPending && "animate-spin")} />
+          <FileText
+            className={cn(
+              "h-4 w-4",
+              extractContent.isPending && "animate-spin",
+              showFullContent && !extractContent.isPending && "text-primary"
+            )}
+          />
         </Button>
         <Separator orientation="vertical" className="h-5" />
         <ReadingSettingsPopover />
@@ -239,7 +276,14 @@ export function ArticleDetail() {
                 <Badge variant={showTranslation ? "default" : "outline"} className="cursor-pointer text-xs" onClick={() => setShowTranslation(false)}>
                   {t("original")}
                 </Badge>
-                <Badge variant={showTranslation ? "outline" : "default"} className="cursor-pointer text-xs" onClick={() => setShowTranslation(true)}>
+                <Badge
+                  variant={showTranslation ? "outline" : "default"}
+                  className="cursor-pointer text-xs"
+                  onClick={() => {
+                    setShowTranslation(true);
+                    setShowFullContent(false);
+                  }}
+                >
                   {article.translation_lang?.toUpperCase() ?? t("translation")}
                 </Badge>
               </div>

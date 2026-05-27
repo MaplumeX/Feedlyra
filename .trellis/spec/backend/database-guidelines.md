@@ -89,6 +89,52 @@ Alembic with async support (`alembic/env.py` uses `async_engine_from_config` + `
 
 ---
 
+## Scenario: Article Full-Content Storage
+
+### 1. Scope / Trigger
+- Trigger: article extraction needs to preserve both feed-provided content and fetched readable full content across the database, API, and frontend.
+
+### 2. Signatures
+- DB: `articles.content: Text | null` stores original feed content or the feed fetcher's initial fallback content.
+- DB: `articles.full_content: Text | null` stores manually fetched readable full content.
+- API: `POST /api/articles/{article_id}/extract -> ArticleResponse`.
+- Schema: `ArticleResponse.full_content: str | None`.
+
+### 3. Contracts
+- `content` remains the original/default article body shown when an article opens.
+- `full_content` is nullable until extraction succeeds.
+- Extracting an article writes only `full_content`; it must not overwrite `content`.
+- If `full_content` already exists, the extract endpoint returns the article response without refetching the remote URL.
+- AI article operations should use the richest available content via `Article.readable_content`: `full_content`, then `content`, then `content_snippet`, then empty string.
+
+### 4. Validation & Error Matrix
+- Article not owned by the current user -> `404 Article not found`.
+- Readability/http extraction returns no content -> `422 Failed to extract article content`.
+- Existing `full_content` -> `200 ArticleResponse` with cached content, no network extraction.
+
+### 5. Good/Base/Bad Cases
+- Good: feed content exists, extraction succeeds, response contains both `content` and `full_content`.
+- Base: no feed content exists, extraction succeeds, `content_snippet` may be populated from extracted text while `content` remains unchanged.
+- Bad: extraction overwrites `content`, making the frontend unable to toggle back to the original/default view.
+
+### 6. Tests Required
+- API integration: extracting an article sets `full_content` and preserves `content`.
+- API integration: extracting the same article twice returns cached `full_content` without replacing `content`.
+- Frontend/API contract: article response types include nullable `full_content`.
+
+### 7. Wrong vs Correct
+#### Wrong
+```python
+article.content = extracted
+```
+
+#### Correct
+```python
+article.full_content = extracted
+```
+
+---
+
 ## Common Mistakes
 
 - **Not using mixins**: New models that manually declare `id`/`created_at`/`updated_at` instead of `UUIDMixin`/`TimestampMixin` create inconsistency. Use the mixins.

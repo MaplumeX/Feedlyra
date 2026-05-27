@@ -319,7 +319,8 @@ export function useExtractContent() {
   return useMutation({
     mutationFn: (articleId: string) =>
       api.post<Article>(`/api/articles/${articleId}/extract`, {}),
-    onSuccess: (_data, articleId) => {
+    onSuccess: (data, articleId) => {
+      qc.setQueryData(queryKeys.articles.detail(articleId), data);
       qc.invalidateQueries({ queryKey: queryKeys.articles.detail(articleId) });
       qc.invalidateQueries({ queryKey: queryKeys.articles.all });
     },

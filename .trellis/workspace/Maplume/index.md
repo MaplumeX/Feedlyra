@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 25
-- **Last Active**: 2026-05-26
+- **Total Sessions**: 26
+- **Last Active**: 2026-05-27
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~853 | Active |
+| `journal-1.md` | ~887 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 26 | 2026-05-27 | Full content toggle | `445d821`, `d1b0bd8` | `Feat/provo-v1` |
 | 25 | 2026-05-26 | Show full article button always in toolbar | `a432187` | `Feat/show-full-article-button-always` |
 | 24 | 2026-05-26 | Add Readability-lxml extraction for article full content | `c24e72e` | `Feat/readability-web-extraction` |
 | 23 | 2026-05-26 | AI摘要和Chat面板Markdown渲染 | `d277811` | `Feat/md-render` |

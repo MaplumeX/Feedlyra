@@ -365,7 +365,7 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
                     for article in new_articles:
                         try:
                             summary = await generate_summary(
-                                client, model, article.title, article.content or article.content_snippet or ""
+                                client, model, article.title, article.readable_content
                             )
                             ai_data = ArticleAIData(
                                 article_id=article.id,

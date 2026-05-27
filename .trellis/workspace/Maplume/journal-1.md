@@ -851,3 +851,37 @@ Integrated readability-lxml + httpx to extract article content as HTML (replacin
 ### Next Steps
 
 - None - task complete
+
+
+## Session 26: Full content toggle
+
+**Date**: 2026-05-27
+**Task**: Full content toggle
+**Branch**: `Feat/provo-v1`
+
+### Summary
+
+Implemented a true article full-content toggle with persistent full_content storage, frontend original/full display switching, and documented the storage contract.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `445d821` | (see git log) |
+| `d1b0bd8` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

@@ -129,8 +129,7 @@ async def summarize_article(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    content = article.content or article.content_snippet or ""
-    summary = await generate_summary(client, model, article.title, content)
+    summary = await generate_summary(client, model, article.title, article.readable_content)
 
     now = datetime.now(timezone.utc)
 
@@ -196,9 +195,8 @@ async def translate_article_endpoint(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    content = article.content or article.content_snippet or ""
     translated_title, translated_content = await translate_article(
-        client, model, article.title, content, body.target_lang
+        client, model, article.title, article.readable_content, body.target_lang
     )
 
     now = datetime.now(timezone.utc)
@@ -295,8 +293,7 @@ async def chat_with_article(
     chat_history = [{"role": m.role, "content": m.content} for m in history_msgs]
 
     # Build messages for LLM
-    content = article.content or article.content_snippet or ""
-    messages = build_chat_messages(article.title, content, chat_history, body.message)
+    messages = build_chat_messages(article.title, article.readable_content, chat_history, body.message)
 
     # Create LLM client
     try:
