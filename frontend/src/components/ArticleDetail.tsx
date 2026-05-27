@@ -12,6 +12,7 @@ import { useReaderStore } from "@/stores/reader";
 import { AIChatPanel } from "@/components/AIChatPanel";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { ReadingSettingsPopover, getFontStack } from "@/components/ReadingSettingsPopover";
+import { ArticleTableOfContents, createArticleContentWithAnchors } from "@/components/ArticleTableOfContents";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
@@ -58,7 +59,17 @@ export function ArticleDetail() {
   const [showFullContent, setShowFullContent] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [lightboxAlt, setLightboxAlt] = useState("");
+  const [scrollViewport, setScrollViewport] = useState<HTMLDivElement | null>(null);
+  const [articleElement, setArticleElement] = useState<HTMLElement | null>(null);
   const autoSummarizeTriggeredRef = useRef<string | null>(null);
+
+  const setScrollViewportRef = useCallback((node: HTMLDivElement | null) => {
+    setScrollViewport(node);
+  }, []);
+
+  const setArticleElementRef = useCallback((node: HTMLElement | null) => {
+    setArticleElement(node);
+  }, []);
 
   const proseStyle: Record<string, string> = useMemo(() => ({
     fontSize: `${readerSettings.fontSize}px`,
@@ -118,27 +129,38 @@ export function ArticleDetail() {
     }
   }, [translateMut.isSuccess, article?.translated_content]);
 
-  if (!selectedArticleId) return <EmptyState />;
-  if (isLoading) return <ArticleDetailSkeleton />;
-  if (!article) return <EmptyState />;
-
-  const hasTranslation = !!article.translated_content;
-  const hasFullContent = !!article.full_content;
-  const displayContent = showTranslation && hasTranslation
+  const hasTranslation = !!article?.translated_content;
+  const hasFullContent = !!article?.full_content;
+  const displayContent = !article
+    ? null
+    : showTranslation && hasTranslation
     ? article.translated_content
     : showFullContent && hasFullContent
     ? article.full_content
     : article.content;
-  const displayTitle = showTranslation && hasTranslation
+  const displayTitle = article && showTranslation && hasTranslation
     ? (article.translated_title ?? article.title)
-    : article.title;
+    : article?.title ?? "";
 
-  const sanitizedContent = displayContent
-    ? DOMPurify.sanitize(displayContent, {
+  const articleContent = useMemo(() => {
+    if (!displayContent) {
+      return { html: null, tocItems: [] };
+    }
+
+    const sanitized = DOMPurify.sanitize(displayContent, {
         ADD_TAGS: ["img", "figure", "figcaption", "video", "audio", "source", "iframe"],
         ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "loading", "src", "controls"],
-      })
-    : null;
+      });
+    const anchoredContent = createArticleContentWithAnchors(sanitized);
+    return { html: anchoredContent.html, tocItems: anchoredContent.items };
+  }, [displayContent]);
+
+  if (!selectedArticleId) return <EmptyState />;
+  if (isLoading) return <ArticleDetailSkeleton />;
+  if (!article) return <EmptyState />;
+
+  const sanitizedContent = articleContent.html;
+  const tocItems = articleContent.tocItems;
 
   return (
     <div className="flex h-full flex-col">
@@ -253,8 +275,12 @@ export function ArticleDetail() {
       </div>
 
       <div className="relative flex flex-1 overflow-hidden">
-        <ScrollArea className="flex-1">
-          <article className="mx-auto px-6 py-8" style={{ maxWidth: `${readerSettings.contentWidth}px` }}>
+        <ScrollArea className="flex-1" viewportRef={setScrollViewportRef}>
+          <article
+            ref={setArticleElementRef}
+            className="mx-auto px-6 py-8"
+            style={{ maxWidth: `${readerSettings.contentWidth}px` }}
+          >
             <h1 className="text-2xl font-bold leading-tight">{displayTitle}</h1>
 
             <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
@@ -341,6 +367,14 @@ export function ArticleDetail() {
             )}
           </article>
         </ScrollArea>
+
+        <ArticleTableOfContents
+          items={tocItems}
+          scrollViewport={scrollViewport}
+          articleElement={articleElement}
+          forceCompact={chatPanelOpen}
+          reservedRight={chatPanelOpen ? 320 : 0}
+        />
 
         {chatPanelOpen && selectedArticleId && (
           <AIChatPanel articleId={selectedArticleId} articleTitle={article.title} />
