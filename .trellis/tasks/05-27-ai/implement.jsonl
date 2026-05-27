@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Alembic migration creation for new user columns"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Know where models, schemas, routers, services live"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend code conventions and forbidden patterns"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Error handling patterns for API routes"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "AISettingsTab.tsx refactor with collapsible sections"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "useAIConfig and useUpdateAIConfig hook changes"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "New FeatureAIConfig TypeScript types"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand/React Query conventions for AI config state"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "API contract consistency between backend schemas and frontend types"}
