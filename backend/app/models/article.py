@@ -18,6 +18,7 @@ class Article(Base):
     title: Mapped[str] = mapped_column(String(1000), nullable=False)
     url: Mapped[str] = mapped_column(String(2048), nullable=False)
     content: Mapped[str | None] = mapped_column(Text)
+    full_content: Mapped[str | None] = mapped_column(Text)
     content_snippet: Mapped[str | None] = mapped_column(Text)
     image_url: Mapped[str | None] = mapped_column(String(2048))
     author: Mapped[str | None] = mapped_column(String(255))
@@ -29,6 +30,10 @@ class Article(Base):
     ai_data: Mapped["ArticleAIData | None"] = relationship(
         "ArticleAIData", back_populates="article", uselist=False
     )
+
+    @property
+    def readable_content(self) -> str:
+        return self.full_content or self.content or self.content_snippet or ""
 
 
 class ReadStatus(Base):

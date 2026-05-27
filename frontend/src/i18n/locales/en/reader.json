@@ -76,6 +76,8 @@
   "darkMode": "Dark mode",
   "generatingSummary": "Generating summary...",
   "extractFullContent": "Extract Full Content",
+  "showFullContent": "Show Full Content",
+  "showFeedContent": "Show Feed Content",
   "extractingContent": "Extracting full content...",
   "extractFailed": "Failed to extract full content",
   "systemTheme": "System theme"

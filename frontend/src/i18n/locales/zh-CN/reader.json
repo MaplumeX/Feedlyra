@@ -76,6 +76,8 @@
   "darkMode": "暗色模式",
   "generatingSummary": "正在生成摘要...",
   "extractFullContent": "获取全文",
+  "showFullContent": "显示全文",
+  "showFeedContent": "显示订阅内容",
   "extractingContent": "正在提取全文...",
   "extractFailed": "提取全文失败",
   "systemTheme": "跟随系统"

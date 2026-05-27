@@ -326,11 +326,14 @@ async def extract_article_content(
     if article is None:
         raise HTTPException(status_code=404, detail="Article not found")
 
+    if article.full_content:
+        return await _build_article_response(article, user.id, db)
+
     extracted = await _fetch_and_extract_content(article.url)
     if extracted is None:
         raise HTTPException(status_code=422, detail="Failed to extract article content")
 
-    article.content = extracted
+    article.full_content = extracted
     if not article.content_snippet:
         article.content_snippet = _html_to_text(extracted)
     await db.commit()
