@@ -885,3 +885,37 @@ Implemented a true article full-content toggle with persistent full_content stor
 ### Next Steps
 
 - None - task complete
+
+
+## Session 27: Article floating TOC
+
+**Date**: 2026-05-27
+**Task**: Article floating TOC
+**Branch**: `Feat/floating-toc-for-articles`
+
+### Summary
+
+Added a floating article table of contents with responsive collapsed mode and draggable Y-position trigger; documented ScrollArea viewport ref usage.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bb3d5bc` | (see git log) |
+| `7c8ddd6` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

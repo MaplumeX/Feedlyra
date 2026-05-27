@@ -80,5 +80,8 @@
   "showFeedContent": "显示订阅内容",
   "extractingContent": "正在提取全文...",
   "extractFailed": "提取全文失败",
+  "tableOfContents": "目录",
+  "expandToc": "展开目录",
+  "collapseToc": "收起目录",
   "systemTheme": "跟随系统"
 }

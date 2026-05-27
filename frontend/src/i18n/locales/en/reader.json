@@ -80,5 +80,8 @@
   "showFeedContent": "Show Feed Content",
   "extractingContent": "Extracting full content...",
   "extractFailed": "Failed to extract full content",
+  "tableOfContents": "Contents",
+  "expandToc": "Expand table of contents",
+  "collapseToc": "Collapse table of contents",
   "systemTheme": "System theme"
 }

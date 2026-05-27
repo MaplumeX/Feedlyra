@@ -162,6 +162,35 @@ Rows inside fixed-width ScrollArea panels should also constrain every flex layer
 
 **Why**: `truncate` only works when the flex item is allowed to shrink (`min-w-0`) and the row has a concrete width (`w-full`). The ScrollArea wrapper fix prevents the scroll viewport from using max-content width as that concrete width.
 
+### ScrollArea Viewport Access for Reader Features
+
+When a feature needs to measure, listen to, or scroll the article reader viewport (for example section highlighting or TOC jumps), extend the shared `ScrollArea` primitive with an optional viewport ref instead of replacing it with native `overflow-y-auto`.
+
+```tsx
+interface ScrollAreaProps extends React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> {
+  viewportRef?: React.Ref<HTMLDivElement>;
+}
+
+<ScrollAreaPrimitive.Viewport
+  ref={viewportRef}
+  className="h-full w-full rounded-[inherit] [&>div]:!block"
+>
+  {children}
+</ScrollAreaPrimitive.Viewport>
+```
+
+Feature components can then receive the real viewport element:
+
+```tsx
+const [scrollViewport, setScrollViewport] = useState<HTMLDivElement | null>(null);
+
+<ScrollArea className="flex-1" viewportRef={setScrollViewport}>
+  <article>{/* content */}</article>
+</ScrollArea>
+```
+
+**Why**: Radix `ScrollArea` scrolls inside its viewport, not the root element. Exposing the viewport preserves the project-wide ScrollArea wrapper fix (`[&>div]:!block`), keeps scrollbar behavior consistent, and gives feature code the correct element for `scrollTo`, scroll listeners, and width measurement.
+
 ---
 
 ## Accessibility
