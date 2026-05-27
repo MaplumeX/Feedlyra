@@ -86,7 +86,7 @@ async def _build_article_response(
     item.is_read = is_read
     item.is_starred = is_starred
     item.feed_title = feed_title
-    model = get_user_model(user)
+    model = get_user_model(user, "summary")
     summaries_result = await db.execute(
         select(ArticleSummary).where(
             ArticleSummary.article_id == article.id,
@@ -152,7 +152,7 @@ async def list_articles(
     starred_ids: set[UUID] = set()
     ai_data_map: dict[UUID, ArticleAIData] = {}
     summary_map: dict[UUID, list[ArticleSummary]] = {}
-    model = get_user_model(user)
+    model = get_user_model(user, "summary")
     if article_ids:
         read_result = await db.execute(
             select(ReadStatus.article_id).where(

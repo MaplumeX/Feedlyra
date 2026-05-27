@@ -29,11 +29,14 @@ from app.schemas.ai import (
     ChatHistoryResponse,
     ChatMessageResponse,
     ChatRequest,
+    FeatureAIConfigResponse,
+    FeatureAIConfigUpdate,
     SummarizeResponse,
     TranslateRequest,
     TranslateResponse,
 )
 from app.services.llm import (
+    Feature,
     build_chat_messages,
     encrypt_api_key,
     generate_summary,
@@ -54,6 +57,39 @@ def _validate_summary_source(source: str) -> SummarySource:
     raise HTTPException(status_code=400, detail="Invalid summary source")
 
 
+def _build_feature_response(user: User, feature: Feature) -> FeatureAIConfigResponse:
+    feature_base = getattr(user, f"{feature}_base_url")
+    feature_key = getattr(user, f"{feature}_api_key")
+    feature_model = getattr(user, f"{feature}_model")
+    enabled = bool(feature_base or feature_key or feature_model)
+    return FeatureAIConfigResponse(
+        enabled=enabled,
+        base_url=feature_base,
+        model=feature_model,
+        has_api_key=feature_key is not None,
+    )
+
+
+def _apply_feature_update(
+    user: User,
+    feature: Feature,
+    update: FeatureAIConfigUpdate | None,
+) -> None:
+    if update is None:
+        return
+    if update.enabled is False:
+        setattr(user, f"{feature}_base_url", None)
+        setattr(user, f"{feature}_api_key", None)
+        setattr(user, f"{feature}_model", None)
+        return
+    if update.base_url is not None:
+        setattr(user, f"{feature}_base_url", update.base_url or None)
+    if update.api_key is not None:
+        setattr(user, f"{feature}_api_key", encrypt_api_key(update.api_key) if update.api_key else None)
+    if update.model is not None:
+        setattr(user, f"{feature}_model", update.model or None)
+
+
 @router.put("/config", response_model=AIConfigResponse)
 async def update_ai_config(
     body: AIConfigUpdate,
@@ -67,6 +103,10 @@ async def update_ai_config(
     if body.model is not None:
         user.ai_model = body.model
 
+    _apply_feature_update(user, "translate", body.translate)
+    _apply_feature_update(user, "summary", body.summary)
+    _apply_feature_update(user, "chat", body.chat)
+
     await db.commit()
     await db.refresh(user)
 
@@ -74,6 +114,9 @@ async def update_ai_config(
         "base_url": user.ai_base_url,
         "model": user.ai_model,
         "has_api_key": user.ai_api_key is not None,
+        "translate": _build_feature_response(user, "translate"),
+        "summary": _build_feature_response(user, "summary"),
+        "chat": _build_feature_response(user, "chat"),
     }
 
 
@@ -85,6 +128,9 @@ async def get_ai_config(
         "base_url": user.ai_base_url,
         "model": user.ai_model,
         "has_api_key": user.ai_api_key is not None,
+        "translate": _build_feature_response(user, "translate"),
+        "summary": _build_feature_response(user, "summary"),
+        "chat": _build_feature_response(user, "chat"),
     }
 
 
@@ -135,7 +181,7 @@ async def summarize_article(
 
     content_hash = get_summary_content_hash(content)
 
-    model = get_user_model(user)
+    model = get_user_model(user, "summary")
 
     # Check for cached summary
     summary_result = await db.execute(
@@ -157,7 +203,7 @@ async def summarize_article(
 
     # Generate summary
     try:
-        client = get_user_llm_client(user)
+        client = get_user_llm_client(user, "summary")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -214,7 +260,7 @@ async def translate_article_endpoint(
     )
     ai_data = ai_data_result.scalar_one_or_none()
 
-    model = get_user_model(user)
+    model = get_user_model(user, "translate")
 
     if (
         ai_data
@@ -231,7 +277,7 @@ async def translate_article_endpoint(
 
     # Generate translation
     try:
-        client = get_user_llm_client(user)
+        client = get_user_llm_client(user, "translate")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -296,7 +342,7 @@ async def chat_with_article(
     )
     chat = chat_result.scalar_one_or_none()
 
-    model = get_user_model(user)
+    model = get_user_model(user, "chat")
 
     if chat is None:
         chat = ArticleChat(
@@ -337,7 +383,7 @@ async def chat_with_article(
 
     # Create LLM client
     try:
-        client = get_user_llm_client(user)
+        client = get_user_llm_client(user, "chat")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

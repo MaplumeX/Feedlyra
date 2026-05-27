@@ -65,10 +65,20 @@ export interface DiscoveredFeed {
   url: string;
 }
 
+export interface FeatureAIConfig {
+  enabled: boolean;
+  base_url: string | null;
+  model: string | null;
+  has_api_key: boolean;
+}
+
 export interface AIConfig {
   base_url: string | null;
   model: string | null;
   has_api_key: boolean;
+  translate: FeatureAIConfig;
+  summary: FeatureAIConfig;
+  chat: FeatureAIConfig;
 }
 
 export interface ChatMessage {

@@ -5,6 +5,7 @@ import hashlib
 import json
 import logging
 from collections.abc import AsyncIterator
+from typing import Literal
 
 from cryptography.fernet import Fernet
 from openai import AsyncOpenAI
@@ -15,6 +16,8 @@ from app.models.user import User
 logger = logging.getLogger(__name__)
 
 MAX_CONTENT_CHARS = 8000
+
+Feature = Literal["translate", "summary", "chat"]
 
 SUMMARY_SYSTEM_PROMPT = """\
 You are an expert content analyst for an RSS news reader. \
@@ -58,12 +61,25 @@ def decrypt_api_key(encrypted: str) -> str:
     return _get_fernet().decrypt(encrypted.encode()).decode()
 
 
-def get_user_llm_client(user: User) -> AsyncOpenAI:
+def _get_feature_attrs(user: User, feature: Feature | None) -> tuple[str | None, str | None, str | None]:
+    """Return (base_url, api_key, model) for a feature, respecting override priority."""
+    if feature is None:
+        return user.ai_base_url, user.ai_api_key, user.ai_model
+    return (
+        getattr(user, f"{feature}_base_url") or user.ai_base_url,
+        getattr(user, f"{feature}_api_key") or user.ai_api_key,
+        getattr(user, f"{feature}_model") or user.ai_model,
+    )
+
+
+def get_user_llm_client(user: User, feature: Feature | None = None) -> AsyncOpenAI:
     """Create an OpenAI client from user's BYOK config or fall back to server defaults."""
-    base_url = user.ai_base_url or settings.AI_DEFAULT_BASE_URL
+    feature_base_url, feature_api_key, _ = _get_feature_attrs(user, feature)
+
+    base_url = feature_base_url or settings.AI_DEFAULT_BASE_URL
     api_key: str
-    if user.ai_api_key:
-        api_key = decrypt_api_key(user.ai_api_key)
+    if feature_api_key:
+        api_key = decrypt_api_key(feature_api_key)
     elif settings.AI_DEFAULT_API_KEY:
         api_key = settings.AI_DEFAULT_API_KEY
     else:
@@ -72,8 +88,9 @@ def get_user_llm_client(user: User) -> AsyncOpenAI:
     return AsyncOpenAI(base_url=base_url, api_key=api_key)
 
 
-def get_user_model(user: User) -> str:
-    return user.ai_model or settings.AI_DEFAULT_MODEL
+def get_user_model(user: User, feature: Feature | None = None) -> str:
+    _, _, feature_model = _get_feature_attrs(user, feature)
+    return feature_model or settings.AI_DEFAULT_MODEL
 
 
 async def generate_summary(client: AsyncOpenAI, model: str, title: str, content: str) -> str:

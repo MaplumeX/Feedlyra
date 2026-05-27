@@ -40,13 +40,33 @@ class ChatHistoryResponse(BaseModel):
     messages: list[ChatMessageResponse]
 
 
+class FeatureAIConfigUpdate(BaseModel):
+    enabled: bool | None = None
+    base_url: str | None = Field(default=None, max_length=500)
+    api_key: str | None = Field(default=None, max_length=255)
+    model: str | None = Field(default=None, max_length=100)
+
+
 class AIConfigUpdate(BaseModel):
     base_url: str | None = Field(default=None, max_length=500)
     api_key: str | None = Field(default=None, max_length=255)
     model: str | None = Field(default=None, max_length=100)
+    translate: FeatureAIConfigUpdate | None = None
+    summary: FeatureAIConfigUpdate | None = None
+    chat: FeatureAIConfigUpdate | None = None
+
+
+class FeatureAIConfigResponse(BaseModel):
+    enabled: bool
+    base_url: str | None
+    model: str | None
+    has_api_key: bool
 
 
 class AIConfigResponse(BaseModel):
     base_url: str | None
     model: str | None
     has_api_key: bool
+    translate: FeatureAIConfigResponse
+    summary: FeatureAIConfigResponse
+    chat: FeatureAIConfigResponse

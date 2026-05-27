@@ -363,10 +363,10 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
 
             user_result = await db.execute(select(User).where(User.id == feed.user_id))
             feed_user = user_result.scalar_one_or_none()
-            if feed_user and feed_user.ai_api_key:
+            if feed_user:
                 try:
-                    client = get_user_llm_client(feed_user)
-                    model = get_user_model(feed_user)
+                    client = get_user_llm_client(feed_user, "summary")
+                    model = get_user_model(feed_user, "summary")
                     for article in new_articles:
                         try:
                             content = get_summary_content(article, SUMMARY_SOURCE_FEED)

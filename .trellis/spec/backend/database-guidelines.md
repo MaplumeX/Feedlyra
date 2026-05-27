@@ -141,6 +141,60 @@ article.full_content = extracted
 - **Not using mixins**: New models that manually declare `id`/`created_at`/`updated_at` instead of `UUIDMixin`/`TimestampMixin` create inconsistency. Use the mixins.
 - **Missing `ondelete="CASCADE"`**: Without database-level cascade, orphaned records remain after parent deletion.
 - **Using `expire_on_commit=True`**: The default causes lazy-load errors after commit in async context. Always use `expire_on_commit=False`.
+- **Nullable override columns without fallback logic**: Adding nullable per-feature columns to a user/config table without a corresponding `feature_val or global_val` resolution helper leads to inconsistent fallback behavior across call sites. Always pair override columns with a resolution function.
+
+---
+
+## Scenario: Per-Feature AI Config Overrides
+
+### 1. Scope / Trigger
+- Trigger: users need different models/providers for different AI features (translation, summary, chat), with fallback to a shared global config.
+
+### 2. Signatures
+- DB: `users.translate_base_url: String(500) | null`, `users.translate_api_key: Text | null`, `users.translate_model: String(100) | null` (same pattern for `summary_*` and `chat_*`).
+- DB: existing `users.ai_base_url`, `users.ai_api_key`, `users.ai_model` serve as global fallback.
+- Service: `get_user_llm_client(user, feature: "translate" | "summary" | "chat" | None) -> AsyncOpenAI`.
+- Service: `get_user_model(user, feature: "translate" | "summary" | "chat" | None) -> str`.
+- API: `FeatureAIConfigResponse { enabled, base_url, model, has_api_key }`.
+- API: `AIConfigResponse { base_url, model, has_api_key, translate, summary, chat }`.
+
+### 3. Contracts
+- Priority chain: feature-specific value → global user value → server default (`settings.AI_DEFAULT_*`).
+- `enabled` is true when ANY of the three feature-specific columns is non-null.
+- Setting `enabled: false` in the update payload clears all three feature-specific columns (sets them to NULL).
+- Feature API key encryption uses the same Fernet mechanism as the global key.
+- API endpoints pass the feature name explicitly: `get_user_llm_client(user, "summary")`, not `get_user_llm_client(user)`.
+- Articles router uses `get_user_model(user, "summary")` for filtering cached summaries — it must match the model that generated them.
+
+### 4. Validation & Error Matrix
+- Missing global API key AND missing feature API key → `ValueError("No API key configured...")` → `400`.
+- Feature override columns are all nullable — no validation on individual NULL values.
+- When `enabled: false` is sent, columns are cleared regardless of current state.
+
+### 5. Good/Base/Bad Cases
+- Good: user sets `summary_model = "gpt-4o"` and `translate_model = "deepseek-chat"`, each feature uses its own model.
+- Base: user only sets global config, all features fall back to the same model.
+- Bad: feature endpoint calls `get_user_model(user)` without the feature parameter, silently using the global model when a per-feature override exists.
+
+### 6. Tests Required
+- Unit: `_get_feature_attrs` returns feature value when set, global value when feature is NULL, None when both are NULL.
+- API integration: `GET /api/ai/config` returns `translate.enabled: true` after setting translate overrides.
+- API integration: `PUT /api/ai/config` with `translate: {enabled: false}` clears all three translate columns.
+- API integration: summarize endpoint uses the summary model, not the global model.
+
+### 7. Wrong vs Correct
+#### Wrong
+```python
+# Forgetting the feature parameter — silently uses global model
+model = get_user_model(user)
+client = get_user_llm_client(user)
+```
+
+#### Correct
+```python
+model = get_user_model(user, "summary")
+client = get_user_llm_client(user, "summary")
+```
 
 ---
 

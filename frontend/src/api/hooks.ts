@@ -269,10 +269,34 @@ export function useAIConfig() {
   });
 }
 
+export interface UpdateAIConfigPayload {
+  base_url?: string | null;
+  api_key?: string | null;
+  model?: string | null;
+  translate?: {
+    enabled?: boolean;
+    base_url?: string | null;
+    api_key?: string | null;
+    model?: string | null;
+  } | null;
+  summary?: {
+    enabled?: boolean;
+    base_url?: string | null;
+    api_key?: string | null;
+    model?: string | null;
+  } | null;
+  chat?: {
+    enabled?: boolean;
+    base_url?: string | null;
+    api_key?: string | null;
+    model?: string | null;
+  } | null;
+}
+
 export function useUpdateAIConfig() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { base_url?: string | null; api_key?: string | null; model?: string | null }) =>
+    mutationFn: (data: UpdateAIConfigPayload) =>
       api.put<AIConfig>("/api/ai/config", data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.ai.config });
