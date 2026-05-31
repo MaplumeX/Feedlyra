@@ -10,6 +10,7 @@ import type {
   DiscoveredFeed,
   Feed,
   OPMLExportResponse,
+  User,
 } from "./types";
 
 const queryKeys = {
@@ -29,9 +30,50 @@ const queryKeys = {
   ai: {
     config: ["ai", "config"] as const,
   },
+  auth: {
+    me: ["auth", "me"] as const,
+  },
 } as const;
 
 export { queryKeys };
+
+// --- Auth hooks ---
+
+export function useCurrentUser() {
+  return useQuery({
+    queryKey: queryKeys.auth.me,
+    queryFn: () => api.get<User>("/api/auth/me"),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useUpdateProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { username: string }) => api.put<User>("/api/auth/me/profile", data),
+    onSuccess: (user) => {
+      qc.setQueryData(queryKeys.auth.me, user);
+    },
+  });
+}
+
+export function useUpdateEmail() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { email: string; current_password: string }) =>
+      api.put<User>("/api/auth/me/email", data),
+    onSuccess: (user) => {
+      qc.setQueryData(queryKeys.auth.me, user);
+    },
+  });
+}
+
+export function useUpdatePassword() {
+  return useMutation({
+    mutationFn: (data: { current_password: string; new_password: string }) =>
+      api.put<void>("/api/auth/me/password", data),
+  });
+}
 
 // --- Feed hooks ---
 

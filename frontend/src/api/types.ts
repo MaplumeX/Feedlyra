@@ -1,3 +1,9 @@
+export interface User {
+  id: string;
+  email: string;
+  username: string;
+}
+
 export interface Feed {
   id: string;
   title: string;
