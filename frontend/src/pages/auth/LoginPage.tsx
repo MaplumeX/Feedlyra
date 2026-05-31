@@ -4,6 +4,7 @@ import { z } from "@/lib/i18n-zod";
 import { useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { api } from "@/api/client";
+import type { User } from "@/api/types";
 import { useAuthStore } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,7 @@ export function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     const tokens = await api.post<{ access_token: string; refresh_token: string }>("/api/auth/login", data);
     setTokens(tokens.access_token, tokens.refresh_token);
-    const user = await api.get<{ id: string; email: string; username: string }>("/api/auth/me");
+    const user = await api.get<User>("/api/auth/me");
     setUser(user);
     navigate("/");
   };

@@ -10,6 +10,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useReaderStore } from "@/stores/reader";
 import { GeneralSettingsTab } from "./GeneralSettingsTab";
+import { AccountSettingsTab } from "./AccountSettingsTab";
 import { AISettingsTab } from "./AISettingsTab";
 import { SubscriptionsTab } from "./SubscriptionsTab";
 
@@ -28,11 +29,15 @@ export function SettingsDialog() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
           <TabsList className="w-full">
             <TabsTrigger value="general" className="flex-1">{t("general")}</TabsTrigger>
+            <TabsTrigger value="account" className="flex-1">{t("account")}</TabsTrigger>
             <TabsTrigger value="ai" className="flex-1">{t("aiSettings")}</TabsTrigger>
             <TabsTrigger value="subscriptions" className="flex-1">{t("subscriptions")}</TabsTrigger>
           </TabsList>
           <TabsContent value="general" className="mt-4">
             <GeneralSettingsTab />
+          </TabsContent>
+          <TabsContent value="account" className="mt-4">
+            <AccountSettingsTab />
           </TabsContent>
           <TabsContent value="ai" className="mt-4">
             <AISettingsTab />

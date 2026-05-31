@@ -4,6 +4,7 @@ import { z } from "@/lib/i18n-zod";
 import { useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { api } from "@/api/client";
+import type { User } from "@/api/types";
 import { useAuthStore } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +43,7 @@ export function RegisterPage() {
       password: data.password,
     });
     setTokens(tokens.access_token, tokens.refresh_token);
-    const user = await api.get<{ id: string; email: string; username: string }>("/api/auth/me");
+    const user = await api.get<User>("/api/auth/me");
     setUser(user);
     navigate("/");
   };

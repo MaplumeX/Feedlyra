@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 30
+- **Total Sessions**: 31
 - **Last Active**: 2026-05-31
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1022 | Active |
+| `journal-1.md` | ~1056 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -30,6 +30,7 @@
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
 | 30 | 2026-05-31 | Align reader top bars | `aafc95c` | `Feat/align-three-topbars` |
+| 31 | 2026-05-31 | 完善用户系统 | `debf739`, `2bd50ef` | `Feat/improve-user-system` |
 | 29 | 2026-05-27 | Per-feature AI model config for translation, summary, and chat | `425b7ef`, `cbdf6d9` | `Feat/configurable-ai-models-per-feature` |
 | 28 | 2026-05-27 | Source-aware article summaries | `6b5c3da`, `c107216` | `Feat/fulltext-summary-refresh` |
 | 27 | 2026-05-27 | Article floating TOC | `bb3d5bc`, `7c8ddd6` | `Feat/floating-toc-for-articles` |
