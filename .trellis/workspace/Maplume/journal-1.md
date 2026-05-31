@@ -987,3 +987,37 @@ Added per-feature AI model, provider, and API key configuration for translation,
 ### Next Steps
 
 - None - task complete
+
+
+## Session 30: 完善用户系统
+
+**Date**: 2026-05-31
+**Task**: 完善用户系统
+**Branch**: `Feat/improve-user-system`
+
+### Summary
+
+新增账户设置基础版：后端账户资料、邮箱、密码更新接口；前端设置账户 tab；同步用户类型和 auth store；记录账户管理 API 契约。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `debf739` | (see git log) |
+| `2bd50ef` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
