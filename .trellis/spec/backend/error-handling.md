@@ -90,3 +90,67 @@ owned_ids = set(owned_ids_result.scalars().all())
 ```
 
 **Why**: Client-provided IDs can reference resources owned by other users. Without filtering, batch operations silently cross user boundaries — a security vulnerability.
+
+---
+
+## Scenario: Account Management Endpoints
+
+### 1. Scope / Trigger
+- Trigger: authenticated users can update their own profile, email, and password through `/api/auth/me/*` endpoints.
+- These endpoints are cross-layer contracts: backend schemas define validation, the frontend account settings tab submits the payloads, and the auth store must stay synchronized with returned user data.
+
+### 2. Signatures
+- API: `GET /api/auth/me -> UserResponse`.
+- API: `PUT /api/auth/me/profile` with `UserProfileUpdate -> UserResponse`.
+- API: `PUT /api/auth/me/email` with `UserEmailUpdate -> UserResponse`.
+- API: `PUT /api/auth/me/password` with `UserPasswordUpdate -> 204 No Content`.
+- Schema: `UserResponse { id: UUID, email: str, username: str }`.
+- Schema: `UserProfileUpdate { username: str }`, `username` length `3..50`, pattern `^[a-zA-Z0-9_]+$`.
+- Schema: `UserEmailUpdate { email: EmailStr, current_password: str }`, password length `8..128`.
+- Schema: `UserPasswordUpdate { current_password: str, new_password: str }`, both length `8..128`.
+
+### 3. Contracts
+- All account management endpoints require the current access token through `get_current_user`.
+- `PUT /api/auth/me/profile` updates only `username`; it must not require the current password.
+- `PUT /api/auth/me/email` requires the current password because email is the login identifier.
+- `PUT /api/auth/me/password` requires the current password and returns no response body.
+- Updating username or email keeps the current session valid because access and refresh tokens use the stable user id as `sub`.
+- Frontend callers must write the returned `UserResponse` back to the persisted auth store after username/email updates.
+
+### 4. Validation & Error Matrix
+- Missing/invalid access token -> `401 Invalid token`.
+- Current user no longer exists -> `401 User not found`.
+- Duplicate username -> `409 Username already taken`.
+- Duplicate email -> `409 Email already registered`.
+- Incorrect current password for email/password change -> `400 Current password is incorrect`.
+- Pydantic field validation failure -> FastAPI default `422`.
+
+### 5. Good/Base/Bad Cases
+- Good: user changes email with the correct current password; API returns updated `UserResponse`; frontend updates auth store and keeps the user signed in.
+- Base: user changes only username; API returns updated `UserResponse`; tokens remain unchanged.
+- Bad: frontend updates email successfully but does not update auth store, leaving stale account data visible until reload.
+- Bad: email update does not verify the current password, allowing a stolen session to change the login identifier silently.
+
+### 6. Tests Required
+- API integration: profile update rejects duplicate usernames with `409`.
+- API integration: email update rejects wrong current password with `400`.
+- API integration: email update rejects duplicate emails with `409` and succeeds with the correct current password.
+- API integration: password update rejects wrong current password and returns `204` on success.
+- Frontend contract: username/email mutation success writes returned user data to auth state.
+
+### 7. Wrong vs Correct
+#### Wrong
+```python
+@router.put("/me/email")
+async def update_email(body: UserEmailUpdate, user: User = Depends(get_current_user)):
+    user.email = body.email
+```
+
+#### Correct
+```python
+@router.put("/me/email", response_model=UserResponse)
+async def update_email(body: UserEmailUpdate, user: User = Depends(get_current_user)):
+    if not verify_password(body.current_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    user.email = body.email
+```
