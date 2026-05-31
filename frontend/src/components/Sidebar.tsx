@@ -417,7 +417,7 @@ export function Sidebar() {
 
   return (
     <div className="flex h-full min-w-0 flex-col overflow-hidden">
-      <div className="flex min-w-0 items-center justify-between gap-2 px-3 py-2">
+      <div className="flex h-12 min-w-0 items-center justify-between gap-2 border-b px-3">
         <span className="min-w-0 truncate text-sm font-semibold">{t("feeds")}</span>
         <div className="flex shrink-0 items-center gap-0.5">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setReader({ sidebarCollapsed: true })} title="Collapse sidebar (Shift+S)">
@@ -431,8 +431,6 @@ export function Sidebar() {
           </Button>
         </div>
       </div>
-
-      <Separator />
 
       <ScrollArea className="min-w-0 flex-1">
         <div className="min-w-0 space-y-1 p-2">
