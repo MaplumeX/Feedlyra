@@ -987,3 +987,36 @@ Added per-feature AI model, provider, and API key configuration for translation,
 ### Next Steps
 
 - None - task complete
+
+
+## Session 30: Align reader top bars
+
+**Date**: 2026-05-31
+**Task**: Align reader top bars
+**Branch**: `Feat/align-three-topbars`
+
+### Summary
+
+Aligned the sidebar, article list, and article detail top bars to a shared fixed height and border baseline.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `aafc95c` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
