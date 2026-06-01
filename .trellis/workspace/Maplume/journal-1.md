@@ -1153,3 +1153,36 @@ Added a clear article detail toolbar control for toggling read and unread state 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 35: Optimize unread article indicator
+
+**Date**: 2026-06-01
+**Task**: Optimize unread article indicator
+**Branch**: `Feat/optimize-unread-article-indicator`
+
+### Summary
+
+Refactored ArticleRow layout: dot in dedicated gutter column, always-rendered span prevents layout shift, items-center for proper vertical centering, pl-4 on non-title rows for gutter alignment.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3c00bbd` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

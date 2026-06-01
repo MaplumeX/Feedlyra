@@ -70,15 +70,13 @@ function ArticleRow({
     >
       <div className={cn("flex flex-col gap-0.5", showImage ? "flex-1 min-w-0" : "w-full")}>
         {article.feed_title && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 pl-4 text-xs text-muted-foreground">
             <FeedIcon iconUrl={feedIconUrl} className="h-3 w-3" />
             <span className="min-w-0 flex-1 truncate">{article.feed_title}</span>
           </div>
         )}
-        <div className="flex items-start gap-2">
-          {!article.is_read && (
-            <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
-          )}
+        <div className="flex items-center gap-2">
+          <span className={cn("h-2 w-2 shrink-0", !article.is_read && "rounded-full bg-primary")} />
           <span className="flex-1 truncate text-sm">{article.title}</span>
           <button
             className="shrink-0 p-0.5 hover:text-primary"
@@ -93,11 +91,11 @@ function ArticleRow({
           </button>
         </div>
         {article.content_snippet && (
-          <span className="line-clamp-2 text-xs text-muted-foreground">
+          <span className="line-clamp-2 pl-4 text-xs text-muted-foreground">
             {article.content_snippet}
           </span>
         )}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 pl-4 text-xs text-muted-foreground">
           {article.author && <span>{t("by", { author: article.author })}</span>}
           {article.published_at && (
             <span>{new Date(article.published_at).toLocaleDateString(i18n.language)}</span>

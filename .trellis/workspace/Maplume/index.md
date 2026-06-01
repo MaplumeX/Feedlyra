@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 34
+- **Total Sessions**: 35
 - **Last Active**: 2026-06-01
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1155 | Active |
+| `journal-1.md` | ~1188 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 35 | 2026-06-01 | Optimize unread article indicator | `3c00bbd` | `Feat/optimize-unread-article-indicator` |
 | 34 | 2026-06-01 | Article read toggle button | `ec1c08b` | `Feat/article-read-toggle` |
 | 33 | 2026-06-01 | Feed list sorting | `8239d42` | `Feat/feed-list-sorting` |
 | 32 | 2026-06-01 | Change article entry display layout | `6bb4a42` | `Feat/none` |

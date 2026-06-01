@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component structure and styling conventions to verify against"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality checks for the refactor"}
+{"file": ".trellis/tasks/06-01-optimize-unread-article-indicator/prd.md", "reason": "Acceptance criteria to verify"}
