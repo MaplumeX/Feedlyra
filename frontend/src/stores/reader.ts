@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { DEFAULT_FEED_SORT, type FeedSortPreference } from "@/lib/feedSort";
 
 export interface ReaderSettings {
   fontSize: number;
@@ -25,6 +26,7 @@ interface ReaderState {
   articleListFilter: "all" | "unread" | "starred";
   sidebarCollapsed: boolean;
   readerSettings: ReaderSettings;
+  feedSort: FeedSortPreference;
   scrollMarkRead: boolean;
   autoSummarize: boolean;
   chatPanelOpen: boolean;
@@ -43,6 +45,7 @@ export const useReaderStore = create<ReaderState>()(
       articleListFilter: "all",
       sidebarCollapsed: false,
       readerSettings: { ...DEFAULT_READER_SETTINGS },
+      feedSort: { ...DEFAULT_FEED_SORT },
       scrollMarkRead: true,
       autoSummarize: false,
       chatPanelOpen: false,
@@ -58,6 +61,7 @@ export const useReaderStore = create<ReaderState>()(
       partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
         readerSettings: state.readerSettings,
+        feedSort: state.feedSort,
         scrollMarkRead: state.scrollMarkRead,
         autoSummarize: state.autoSummarize,
       }),

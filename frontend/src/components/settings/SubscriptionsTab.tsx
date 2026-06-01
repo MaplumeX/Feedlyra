@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Download, Loader2, MoreHorizontal, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
@@ -26,13 +26,17 @@ import {
   useExportOPML,
 } from "@/api/hooks";
 import { FeedIcon } from "@/components/FeedIcon";
+import { FeedSortMenu } from "@/components/FeedSortMenu";
 import { FeedSettingsDialog } from "@/components/FeedSettingsDialog";
 import type { Feed, Category } from "@/api/types";
+import { sortFeeds } from "@/lib/feedSort";
+import { useReaderStore } from "@/stores/reader";
 
 export function SubscriptionsTab() {
   const { t } = useTranslation("settings");
   const { data: feeds = [], isLoading: feedsLoading } = useFeeds();
   const { data: categories = [] } = useCategories();
+  const { feedSort, set: setReader } = useReaderStore();
   const createCategory = useCreateCategory();
   const deleteFeed = useDeleteFeed();
   const deleteCategory = useDeleteCategory();
@@ -40,6 +44,7 @@ export function SubscriptionsTab() {
   const exportOPML = useExportOPML();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+  const sortedFeeds = useMemo(() => sortFeeds(feeds, feedSort), [feeds, feedSort]);
 
   // Category editing state
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
@@ -235,7 +240,15 @@ export function SubscriptionsTab() {
 
       {/* Feed list */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium">{t("feedList")}</Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label className="text-sm font-medium">{t("feedList")}</Label>
+          <FeedSortMenu
+            value={feedSort}
+            onChange={(nextSort) => setReader({ feedSort: nextSort })}
+            labelNamespace="settings"
+            buttonClassName="h-7 w-7"
+          />
+        </div>
         {feedsLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -245,7 +258,7 @@ export function SubscriptionsTab() {
         ) : (
           <ScrollArea className="max-h-[280px]">
             <div className="space-y-1">
-              {feeds.map((feed) => (
+              {sortedFeeds.map((feed) => (
                 <div
                   key={feed.id}
                   className="group flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50"
