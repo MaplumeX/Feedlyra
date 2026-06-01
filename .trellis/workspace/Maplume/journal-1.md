@@ -1054,3 +1054,36 @@ Aligned the sidebar, article list, and article detail top bars to a shared fixed
 ### Next Steps
 
 - None - task complete
+
+
+## Session 32: Change article entry display layout
+
+**Date**: 2026-06-01
+**Task**: Change article entry display layout
+**Branch**: `Feat/none`
+
+### Summary
+
+在文章条目标题上方添加 Feed 名行，标题下方添加 2 行 content_snippet 摘要，简化 meta 行为仅 author + date
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6bb4a42` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
