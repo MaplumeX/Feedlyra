@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
 import type {
   AIConfig,
@@ -25,6 +25,8 @@ const queryKeys = {
   articles: {
     all: ["articles"] as const,
     list: (params: ArticleListParams) => [...queryKeys.articles.all, params] as const,
+    infiniteList: (params: ArticleListParams) =>
+      [...queryKeys.articles.all, "infinite", params] as const,
     detail: (id: string) => [...queryKeys.articles.all, "detail", id] as const,
   },
   ai: {
@@ -223,7 +225,7 @@ interface ArticleListParams {
   limit?: number;
 }
 
-export function useArticles(params: ArticleListParams = {}) {
+function articleListPath(params: ArticleListParams = {}) {
   const searchParams = new URLSearchParams();
   if (params.feed_id) searchParams.set("feed_id", params.feed_id);
   if (params.read_status) searchParams.set("read_status", params.read_status);
@@ -232,11 +234,27 @@ export function useArticles(params: ArticleListParams = {}) {
   if (params.limit) searchParams.set("limit", String(params.limit));
 
   const qs = searchParams.toString();
-  const path = `/api/articles${qs ? `?${qs}` : ""}`;
+  return `/api/articles${qs ? `?${qs}` : ""}`;
+}
 
+export function useArticles(params: ArticleListParams = {}) {
   return useQuery({
     queryKey: queryKeys.articles.list(params),
-    queryFn: () => api.get<ArticleListResponse>(path),
+    queryFn: () => api.get<ArticleListResponse>(articleListPath(params)),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useInfiniteArticles(params: ArticleListParams = {}) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.articles.infiniteList(params),
+    queryFn: ({ pageParam }) =>
+      api.get<ArticleListResponse>(articleListPath({ ...params, page: pageParam })),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const loadedCount = lastPage.page * lastPage.limit;
+      return loadedCount < lastPage.total ? lastPage.page + 1 : undefined;
+    },
     staleTime: 2 * 60 * 1000,
   });
 }

@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { FeedIcon } from "@/components/FeedIcon";
-import { useArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead, useRefreshAllFeeds } from "@/api/hooks";
+import { useInfiniteArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead, useRefreshAllFeeds } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
 import type { Article } from "@/api/types";
@@ -127,6 +127,21 @@ function ArticleListSkeleton() {
   );
 }
 
+function ArticleListFooter({ isLoadingMore }: { isLoadingMore: boolean }) {
+  if (!isLoadingMore) return null;
+
+  return (
+    <div className="space-y-2 p-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ArticleList() {
   const { t, i18n } = useTranslation("reader");
   const { selectedFeedId, selectedArticleId, articleListFilter, scrollMarkRead, set: setReader } = useReaderStore();
@@ -139,7 +154,13 @@ export function ArticleList() {
     return params;
   }, [selectedFeedId, articleListFilter]);
 
-  const { data, isLoading } = useArticles(queryParams);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteArticles(queryParams);
   const { data: feeds = [] } = useFeeds();
   const toggleRead = useToggleRead();
   const markAllRead = useMarkAllRead();
@@ -154,10 +175,32 @@ export function ArticleList() {
     return map;
   }, [feeds]);
 
-  const articles = data?.items ?? [];
+  const articles = useMemo(
+    () => {
+      const seen = new Set<string>();
+      const flattened: Article[] = [];
+
+      for (const page of data?.pages ?? []) {
+        for (const article of page.items) {
+          if (seen.has(article.id)) continue;
+          seen.add(article.id);
+          flattened.push(article);
+        }
+      }
+
+      return flattened;
+    },
+    [data]
+  );
   const hasUnread = articles.some((a) => !a.is_read);
   const grouped = groupByDate(articles, i18n.language);
   const groupCounts = useMemo(() => grouped.map(g => g.articles.length), [grouped]);
+
+  const loadMoreArticles = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   /** Map a GroupedVirtuoso absolute item index (includes group headers) to the corresponding article.
    *  Returns undefined if the index points to a group header or is out of range. */
@@ -313,7 +356,11 @@ export function ArticleList() {
             );
           }}
           rangeChanged={rangeChanged}
+          endReached={loadMoreArticles}
           followOutput={articleListFilter === "unread" ? "smooth" : undefined}
+          components={{
+            Footer: () => <ArticleListFooter isLoadingMore={isFetchingNextPage} />,
+          }}
           itemContent={(index, groupIndex) => {
             const article = grouped[groupIndex]?.articles[index];
             if (!article) return null;
