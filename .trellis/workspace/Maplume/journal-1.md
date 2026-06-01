@@ -1219,3 +1219,38 @@ Removed date group headings from the article list while keeping per-article publ
 ### Next Steps
 
 - None - task complete
+
+
+## Session 37: Remember original content display state
+
+**Date**: 2026-06-02
+**Task**: Remember original content display state
+**Branch**: `Feat/remember-original-status`
+
+### Summary
+
+Implemented per-article local memory for full/original content display, documented the existing frontend ESLint 9 config gap, and recorded the Trellis task requirements.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1887bfc` | (see git log) |
+| `028ad6b` | (see git log) |
+| `da23c52` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
