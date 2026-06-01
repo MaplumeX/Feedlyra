@@ -1186,3 +1186,36 @@ Refactored ArticleRow layout: dot in dedicated gutter column, always-rendered sp
 ### Next Steps
 
 - None - task complete
+
+
+## Session 36: Fix missing older articles
+
+**Date**: 2026-06-02
+**Task**: Fix missing older articles
+**Branch**: `Feat/show-old-articles`
+
+### Summary
+
+Fixed article list pagination so scrolling loads older articles beyond the first backend page; added frontend hook guidance for infinite queries.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4d280ed` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
