@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 32
+- **Total Sessions**: 33
 - **Last Active**: 2026-06-01
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1089 | Active |
+| `journal-1.md` | ~1122 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 33 | 2026-06-01 | Feed list sorting | `8239d42` | `Feat/feed-list-sorting` |
 | 32 | 2026-06-01 | Change article entry display layout | `6bb4a42` | `Feat/none` |
 | 30 | 2026-05-31 | Align reader top bars | `aafc95c` | `Feat/align-three-topbars` |
 | 31 | 2026-05-31 | 完善用户系统 | `debf739`, `2bd50ef` | `Feat/improve-user-system` |

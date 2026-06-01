@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Rss,
@@ -53,6 +53,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddFeedDialog } from "@/components/AddFeedDialog";
 import { FeedSettingsDialog } from "@/components/FeedSettingsDialog";
 import { FeedIcon } from "@/components/FeedIcon";
+import { FeedSortMenu } from "@/components/FeedSortMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import {
@@ -69,6 +70,7 @@ import {
 import { api } from "@/api/client";
 import type { Feed, Category } from "@/api/types";
 import { useReaderStore } from "@/stores/reader";
+import { sortFeeds } from "@/lib/feedSort";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
@@ -85,7 +87,7 @@ export function Sidebar() {
 
   const renameInputRef = useRef<HTMLInputElement>(null);
 
-  const { selectedFeedId, articleListFilter, set: setReader } = useReaderStore();
+  const { selectedFeedId, articleListFilter, feedSort, set: setReader } = useReaderStore();
   const { data: feeds = [] } = useFeeds();
   const { data: categories = [] } = useCategories();
   const deleteFeed = useDeleteFeed();
@@ -96,6 +98,7 @@ export function Sidebar() {
 
   const totalUnread = feeds.reduce((sum, f) => sum + (f.unread_count ?? 0), 0);
   const totalStarred = useStarredCount();
+  const sortedFeeds = useMemo(() => sortFeeds(feeds, feedSort), [feeds, feedSort]);
 
   useEffect(() => {
     if (renamingCategoryId && renameInputRef.current) {
@@ -181,7 +184,7 @@ export function Sidebar() {
     }
   }
 
-  const uncategorizedFeeds = feeds.filter((f) => f.category_id === null);
+  const uncategorizedFeeds = sortedFeeds.filter((f) => f.category_id === null);
 
   function renderFeedItem(feed: Feed) {
     return (
@@ -336,7 +339,7 @@ export function Sidebar() {
   }
 
   function renderCategoryGroup(category: Category) {
-    const categoryFeeds = feeds.filter((f) => f.category_id === category.id);
+    const categoryFeeds = sortedFeeds.filter((f) => f.category_id === category.id);
     const isRenaming = renamingCategoryId === category.id;
 
     return (
@@ -423,6 +426,12 @@ export function Sidebar() {
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setReader({ sidebarCollapsed: true })} title="Collapse sidebar (Shift+S)">
             <PanelLeftClose className="h-4 w-4" />
           </Button>
+          <FeedSortMenu
+            value={feedSort}
+            onChange={(nextSort) => setReader({ feedSort: nextSort })}
+            labelNamespace="reader"
+            buttonClassName="h-7 w-7"
+          />
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCreateDialogOpen(true)} title={t("createCategory")}>
             <FolderPlus className="h-4 w-4" />
           </Button>
