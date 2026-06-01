@@ -1120,3 +1120,36 @@ Added persisted feed list sorting by name or date added with ascending and desce
 ### Next Steps
 
 - None - task complete
+
+
+## Session 34: Article read toggle button
+
+**Date**: 2026-06-01
+**Task**: Article read toggle button
+**Branch**: `Feat/article-read-toggle`
+
+### Summary
+
+Added a clear article detail toolbar control for toggling read and unread state with localized labels.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ec1c08b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

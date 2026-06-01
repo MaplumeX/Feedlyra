@@ -7,6 +7,8 @@
   "noFeedsYet": "暂无订阅源，点击 + 添加。",
   "all": "全部",
   "markAllRead": "全部标为已读",
+  "markAsRead": "标为已读",
+  "markAsUnread": "标为未读",
   "noArticles": "暂无文章",
   "by": "作者：{{author}}",
   "selectArticle": "选择一篇文章阅读",

@@ -1,6 +1,6 @@
 import DOMPurify from "dompurify";
 import { toast } from "sonner";
-import { ExternalLink, Star, BookOpen, RotateCcw, Sparkles, Languages, MessageSquare, FileText } from "lucide-react";
+import { ExternalLink, Star, BookOpen, Circle, Check, Sparkles, Languages, MessageSquare, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -164,6 +164,7 @@ export function ArticleDetail() {
 
   const sanitizedContent = articleContent.html;
   const tocItems = articleContent.tocItems;
+  const readToggleLabel = article.is_read ? t("markAsUnread") : t("markAsRead");
 
   return (
     <div className="flex h-full flex-col">
@@ -179,12 +180,19 @@ export function ArticleDetail() {
           />
         </Button>
         <Button
-          variant="ghost"
+          variant={article.is_read ? "ghost" : "secondary"}
           size="icon"
           className="h-8 w-8"
+          disabled={toggleRead.isPending}
+          title={readToggleLabel}
+          aria-label={readToggleLabel}
           onClick={() => toggleRead.mutate({ articleId: article.id, read: !article.is_read })}
         >
-          <RotateCcw className="h-4 w-4" />
+          {article.is_read ? (
+            <Circle className="h-4 w-4" />
+          ) : (
+            <Check className="h-4 w-4 text-primary" />
+          )}
         </Button>
         <Separator orientation="vertical" className="h-5" />
         <Button
