@@ -7,6 +7,8 @@
   "noFeedsYet": "No feeds yet. Click + to add one.",
   "all": "All",
   "markAllRead": "Mark All Read",
+  "markAsRead": "Mark as read",
+  "markAsUnread": "Mark as unread",
   "noArticles": "No articles",
   "by": "by {{author}}",
   "selectArticle": "Select an article to read",
