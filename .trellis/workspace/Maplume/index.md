@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 31
-- **Last Active**: 2026-05-31
+- **Total Sessions**: 32
+- **Last Active**: 2026-06-01
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1056 | Active |
+| `journal-1.md` | ~1089 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 32 | 2026-06-01 | Feed list sorting | `8239d42` | `Feat/feed-list-sorting` |
 | 30 | 2026-05-31 | Align reader top bars | `aafc95c` | `Feat/align-three-topbars` |
 | 31 | 2026-05-31 | 完善用户系统 | `debf739`, `2bd50ef` | `Feat/improve-user-system` |
 | 29 | 2026-05-27 | Per-feature AI model config for translation, summary, and chat | `425b7ef`, `cbdf6d9` | `Feat/configurable-ai-models-per-feature` |

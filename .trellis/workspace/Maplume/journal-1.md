@@ -1054,3 +1054,36 @@ Aligned the sidebar, article list, and article detail top bars to a shared fixed
 ### Next Steps
 
 - None - task complete
+
+
+## Session 32: Feed list sorting
+
+**Date**: 2026-06-01
+**Task**: Feed list sorting
+**Branch**: `Feat/feed-list-sorting`
+
+### Summary
+
+Added persisted feed list sorting by name or date added with ascending and descending options across the reader sidebar and subscription settings.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8239d42` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
