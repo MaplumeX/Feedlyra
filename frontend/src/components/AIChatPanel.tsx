@@ -114,7 +114,7 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
   };
 
   return (
-    <div className="flex h-full w-80 flex-col border-l bg-background">
+    <div className="flex h-full w-80 flex-col border-l">
       <div className="flex items-center gap-2 px-3 py-2">
         <h3 className="flex-1 truncate text-sm font-medium">{t("aiChat")}</h3>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClose}>
@@ -142,8 +142,8 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
               className={cn(
                 "rounded-md px-3 py-2 text-sm",
                 msg.role === "user"
-                  ? "bg-primary/10 ml-4"
-                  : "bg-muted mr-4"
+                  ? "bg-chat-user ml-4"
+                  : "bg-chat-ai mr-4"
               )}
             >
               {msg.role === "assistant" ? (

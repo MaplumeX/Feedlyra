@@ -184,7 +184,7 @@ export function ArticleDetail() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-12 items-center gap-2 border-b px-4">
+      <div className="flex h-11 items-center gap-2 border-b px-4">
         <Button
           variant="ghost"
           size="icon"
@@ -314,7 +314,7 @@ export function ArticleDetail() {
             className="mx-auto px-6 py-8"
             style={{ maxWidth: `${readerSettings.contentWidth}px` }}
           >
-            <h1 className="text-2xl font-bold leading-tight">{displayTitle}</h1>
+            <h1 className="text-2xl font-bold leading-tight font-heading">{displayTitle}</h1>
 
             <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
               {article.feed_title && <span>{article.feed_title}</span>}
@@ -375,7 +375,7 @@ export function ArticleDetail() {
 
             {sanitizedContent ? (
               <div
-                className="prose prose-slate max-w-none dark:prose-invert [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_img]:cursor-zoom-in [&_p]:mb-[var(--prose-p-spacing,1.25em)]"
+                className="prose prose-slate max-w-none dark:prose-invert [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_img]:cursor-zoom-in [&_p]:mb-[var(--prose-p-spacing,1.25em)] [&_h1]:font-heading [&_h2]:font-heading [&_h3]:font-heading [&_h4]:font-heading"
                 style={proseStyle}
                 onClick={handleProseClick}
                 dangerouslySetInnerHTML={{ __html: sanitizedContent }}
@@ -417,7 +417,7 @@ export function ArticleDetail() {
 
       {lightboxSrc && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
           onClick={closeLightbox}
         >
           <img

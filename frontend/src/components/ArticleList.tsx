@@ -35,8 +35,8 @@ function ArticleRow({
   return (
     <div
       className={cn(
-        "flex cursor-pointer flex-row border-b px-3 py-2 transition-colors hover:bg-accent/50",
-        isSelected && "bg-accent",
+        "flex cursor-pointer flex-row border-b px-3 py-2 transition-colors duration-100 hover:bg-article-hover/70",
+        isSelected && "bg-article-hover",
         !article.is_read && "font-medium"
       )}
       onClick={onSelect}
@@ -250,14 +250,14 @@ export function ArticleList() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-12 items-center gap-2 border-b px-3">
+      <div className="flex h-11 items-center gap-2 border-b px-3">
         <Tabs
           value={articleListFilter}
           onValueChange={(v) =>
             setReader({ articleListFilter: v as "all" | "unread" | "starred", selectedArticleId: null })
           }
         >
-          <TabsList className="h-8">
+          <TabsList className="h-7">
             <TabsTrigger value="all" className="text-xs px-2">{t("all")}</TabsTrigger>
             <TabsTrigger value="unread" className="text-xs px-2">{t("unread")}</TabsTrigger>
             <TabsTrigger value="starred" className="text-xs px-2">{t("starred")}</TabsTrigger>

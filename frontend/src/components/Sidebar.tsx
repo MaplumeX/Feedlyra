@@ -192,8 +192,8 @@ export function Sidebar() {
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              "group flex w-full min-w-0 cursor-pointer items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm hover:bg-accent",
-              selectedFeedId === feed.id && "bg-accent font-medium"
+              "group flex w-full min-w-0 cursor-pointer items-center gap-2 overflow-hidden rounded-r-md px-2 py-1.5 text-sm transition-colors duration-100 hover:bg-sidebar-hover",
+              selectedFeedId === feed.id && "bg-sidebar-selected font-medium border-l-2 border-primary"
             )}
             onClick={() => selectFeed(feed.id)}
           >
@@ -344,7 +344,7 @@ export function Sidebar() {
 
     return (
       <Collapsible key={category.id} defaultOpen>
-        <div className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent group/cat">
+        <div className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-sidebar-hover group/cat">
           <CollapsibleTrigger asChild>
             <button className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
               <ChevronDown className="h-3 w-3 shrink-0" />
@@ -419,9 +419,9 @@ export function Sidebar() {
   }
 
   return (
-    <div className="flex h-full min-w-0 flex-col overflow-hidden">
-      <div className="flex h-12 min-w-0 items-center justify-between gap-2 border-b px-3">
-        <span className="min-w-0 truncate text-sm font-semibold">{t("feeds")}</span>
+    <div className="flex h-full min-w-0 flex-col overflow-hidden bg-sidebar-bg">
+      <div className="flex h-11 min-w-0 items-center justify-between gap-2 border-b px-3">
+        <span className="min-w-0 truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground font-heading">{t("feeds")}</span>
         <div className="flex shrink-0 items-center gap-0.5">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setReader({ sidebarCollapsed: true })} title="Collapse sidebar (Shift+S)">
             <PanelLeftClose className="h-4 w-4" />
@@ -447,8 +447,8 @@ export function Sidebar() {
             <button
               key={vf.id}
               className={cn(
-                "flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm hover:bg-accent",
-                isVirtualSelected && articleListFilter === vf.filter && "bg-accent font-medium"
+                "flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm transition-colors duration-100 hover:bg-sidebar-hover",
+                isVirtualSelected && articleListFilter === vf.filter && "bg-sidebar-selected font-medium"
               )}
               onClick={() => selectVirtualFolder(vf.filter)}
             >
@@ -470,7 +470,7 @@ export function Sidebar() {
           {/* Uncategorized group */}
           <Collapsible defaultOpen>
             <CollapsibleTrigger asChild>
-              <button className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent">
+              <button className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-sidebar-hover">
                 <ChevronDown className="h-3 w-3 shrink-0" />
                 <span className="min-w-0 truncate">{t("uncategorized")}</span>
                 {uncategorizedFeeds.length > 0 && (
@@ -496,7 +496,7 @@ export function Sidebar() {
 
       <div className="flex items-center gap-1 px-2 py-1.5">
         <button
-          className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors duration-100 hover:bg-sidebar-hover hover:text-foreground"
           onClick={() => setReader({ settingsDialogOpen: true })}
         >
           <Settings className="h-4 w-4 shrink-0" />

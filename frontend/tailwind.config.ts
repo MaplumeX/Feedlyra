@@ -14,6 +14,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        ui: ["var(--font-ui)"],
+        heading: ["var(--font-heading)"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -48,11 +52,23 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        /* Semantic tokens for future theme switching */
+        sidebar: {
+          bg: "hsl(var(--sidebar-bg))",
+          hover: "hsl(var(--sidebar-hover))",
+          selected: "hsl(var(--sidebar-selected))",
+        },
+        "article-hover": "hsl(var(--article-hover))",
+        "chat-user": "hsl(var(--chat-bubble-user))",
+        "chat-ai": "hsl(var(--chat-bubble-ai))",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      transitionDuration: {
+        DEFAULT: "150ms",
       },
     },
   },
