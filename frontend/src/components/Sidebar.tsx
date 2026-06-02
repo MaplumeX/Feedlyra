@@ -347,7 +347,7 @@ export function Sidebar() {
         <div className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-sidebar-hover group/cat">
           <CollapsibleTrigger asChild>
             <button className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
-              <ChevronDown className="h-3 w-3 shrink-0" />
+              <ChevronDown className="h-3 w-3 shrink-0 transition-transform duration-200 [[data-state=closed]>&]:-rotate-90" />
               {isRenaming ? (
                 <input
                   ref={renameInputRef}
@@ -468,7 +468,7 @@ export function Sidebar() {
           <Collapsible defaultOpen>
             <CollapsibleTrigger asChild>
               <button className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-sidebar-hover">
-                <ChevronDown className="h-3 w-3 shrink-0" />
+                <ChevronDown className="h-3 w-3 shrink-0 transition-transform duration-200 [[data-state=closed]>&]:-rotate-90" />
                 <span className="min-w-0 truncate">{t("uncategorized")}</span>
               </button>
             </CollapsibleTrigger>
