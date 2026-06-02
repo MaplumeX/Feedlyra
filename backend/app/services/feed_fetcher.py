@@ -318,7 +318,9 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
             content_value = entry.get("summary", "")
 
         snippet = entry.get("summary", "") or ""
-        if not snippet and content_value:
+        if snippet:
+            snippet = _html_to_text(snippet)
+        elif content_value:
             snippet = _html_to_text(content_value)
 
         if not content_value:
