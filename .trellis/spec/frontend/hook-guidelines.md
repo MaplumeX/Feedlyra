@@ -25,6 +25,27 @@ export function useFeeds() {
 }
 ```
 
+**Infinite query hooks** (paginated list fetching):
+
+Use `useInfiniteQuery` for APIs that return `{ items, total, page, limit }` and are rendered as a single continuous list. Keep server pagination state inside React Query; do not mirror pages or fetched items in Zustand.
+
+```tsx
+export function useInfiniteArticles(params: ArticleListParams = {}) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.articles.infiniteList(params),
+    queryFn: ({ pageParam }) =>
+      api.get<ArticleListResponse>(articleListPath({ ...params, page: pageParam })),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const loadedCount = lastPage.page * lastPage.limit;
+      return loadedCount < lastPage.total ? lastPage.page + 1 : undefined;
+    },
+  });
+}
+```
+
+Components should flatten `data.pages` locally before rendering. If duplicate rows are possible when data changes between page fetches, de-duplicate by stable entity ID during flattening.
+
 **Mutation hooks** (data modification):
 
 ```tsx
