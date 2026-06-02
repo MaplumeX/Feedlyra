@@ -14,7 +14,7 @@ const FONT_OPTIONS = [
   { labelKey: "fontKaiti", value: "kaiti", stack: "'STKaiti', 'KaiTi', serif" },
   { labelKey: "fontGeorgia", value: "georgia", stack: "Georgia, 'Noto Serif', serif" },
   { labelKey: "fontMerriweather", value: "merriweather", stack: "'Merriweather', Georgia, serif" },
-  { labelKey: "fontInter", value: "inter", stack: "'Inter', -apple-system, sans-serif" },
+  { labelKey: "fontOnest", value: "onest", stack: "'Onest', -apple-system, sans-serif" },
 ];
 
 export function getFontStack(fontFamily: string): string {

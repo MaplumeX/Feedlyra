@@ -9,7 +9,7 @@ import { useAuthStore } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Rss } from "lucide-react";
 
 const registerSchema = z
   .object({
@@ -49,14 +49,18 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>{t("register")}</CardTitle>
-          <CardDescription>{t("createAccountTitle")}</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="w-full max-w-sm mx-4">
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Rss className="h-6 w-6" />
+          </div>
+          <h1 className="text-xl font-bold font-heading">Feedlyra</h1>
+        </div>
+        <div className="rounded-lg border bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-semibold font-heading">{t("register")}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t("createAccountTitle")}</p>
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">{t("email")}</Label>
               <Input id="email" type="email" {...register("email")} />
@@ -77,17 +81,15 @@ export function RegisterPage() {
               <Input id="confirmPassword" type="password" {...register("confirmPassword")} />
               {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-2">
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? t("creatingAccount") : t("createAccount")}
             </Button>
-            <p className="text-sm text-muted-foreground">
-              {t("alreadyHaveAccount")} <Link to="/login" className="text-primary underline">{t("login")}</Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
+          </form>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            {t("alreadyHaveAccount")} <Link to="/login" className="text-primary hover:underline">{t("login")}</Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

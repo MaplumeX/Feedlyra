@@ -21,7 +21,7 @@ export function SettingsDialog() {
 
   return (
     <Dialog open={settingsDialogOpen} onOpenChange={(open) => setReader({ settingsDialogOpen: open })}>
-      <DialogContent className={`transition-[max-width] duration-200 max-h-[calc(100vh-4rem)] overflow-y-auto ${activeTab === "subscriptions" ? "sm:max-w-2xl" : "sm:max-w-[480px]"}`}>
+      <DialogContent className={`transition-[max-width] duration-150 max-h-[calc(100vh-4rem)] overflow-y-auto ${activeTab === "subscriptions" ? "sm:max-w-2xl" : "sm:max-w-[480px]"}`}>
         <DialogHeader>
           <DialogTitle>{t("settings")}</DialogTitle>
           <DialogDescription>{t("settingsDescription")}</DialogDescription>

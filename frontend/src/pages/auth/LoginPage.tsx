@@ -9,7 +9,7 @@ import { useAuthStore } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Rss } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -37,14 +37,18 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>{t("login")}</CardTitle>
-          <CardDescription>{t("signInToAccount")}</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="w-full max-w-sm mx-4">
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Rss className="h-6 w-6" />
+          </div>
+          <h1 className="text-xl font-bold font-heading">Feedlyra</h1>
+        </div>
+        <div className="rounded-lg border bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-semibold font-heading">{t("login")}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t("signInToAccount")}</p>
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">{t("email")}</Label>
               <Input id="email" type="email" {...register("email")} />
@@ -55,17 +59,15 @@ export function LoginPage() {
               <Input id="password" type="password" {...register("password")} />
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-2">
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? t("signingIn") : t("signIn")}
             </Button>
-            <p className="text-sm text-muted-foreground">
-              {t("noAccount")} <Link to="/register" className="text-primary underline">{t("register")}</Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
+          </form>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            {t("noAccount")} <Link to="/register" className="text-primary hover:underline">{t("register")}</Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
