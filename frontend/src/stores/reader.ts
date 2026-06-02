@@ -29,11 +29,13 @@ interface ReaderState {
   feedSort: FeedSortPreference;
   scrollMarkRead: boolean;
   autoSummarize: boolean;
+  fullContentArticleIds: Record<string, true>;
   chatPanelOpen: boolean;
   commandPaletteOpen: boolean;
   settingsDialogOpen: boolean;
   set: (partial: Partial<ReaderState>) => void;
   setReaderSetting: <K extends keyof ReaderSettings>(key: K, value: ReaderSettings[K]) => void;
+  setArticleFullContentPreference: (articleId: string, enabled: boolean) => void;
   resetReaderSettings: () => void;
 }
 
@@ -48,12 +50,23 @@ export const useReaderStore = create<ReaderState>()(
       feedSort: { ...DEFAULT_FEED_SORT },
       scrollMarkRead: true,
       autoSummarize: false,
+      fullContentArticleIds: {},
       chatPanelOpen: false,
       commandPaletteOpen: false,
       settingsDialogOpen: false,
       set: (partial) => set(partial),
       setReaderSetting: (key, value) =>
         set((state) => ({ readerSettings: { ...state.readerSettings, [key]: value } })),
+      setArticleFullContentPreference: (articleId, enabled) =>
+        set((state) => {
+          const fullContentArticleIds = { ...state.fullContentArticleIds };
+          if (enabled) {
+            fullContentArticleIds[articleId] = true;
+          } else {
+            delete fullContentArticleIds[articleId];
+          }
+          return { fullContentArticleIds };
+        }),
       resetReaderSettings: () => set({ readerSettings: { ...DEFAULT_READER_SETTINGS } }),
     }),
     {
@@ -64,6 +77,7 @@ export const useReaderStore = create<ReaderState>()(
         feedSort: state.feedSort,
         scrollMarkRead: state.scrollMarkRead,
         autoSummarize: state.autoSummarize,
+        fullContentArticleIds: state.fullContentArticleIds,
       }),
     }
   )

@@ -1188,7 +1188,75 @@ Refactored ArticleRow layout: dot in dedicated gutter column, always-rendered sp
 - None - task complete
 
 
-## Session 36: Fix missing older articles
+## Session 36: Remove article list date headings
+
+**Date**: 2026-06-02
+**Task**: Remove article list date headings
+**Branch**: `Feat/article-date-headings`
+
+### Summary
+
+Removed date group headings from the article list while keeping per-article published dates; frontend build passed, lint is blocked by missing ESLint 9 flat config.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cd34830` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 37: Remember original content display state
+
+**Date**: 2026-06-02
+**Task**: Remember original content display state
+**Branch**: `Feat/remember-original-status`
+
+### Summary
+
+Implemented per-article local memory for full/original content display, documented the existing frontend ESLint 9 config gap, and recorded the Trellis task requirements.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1887bfc` | (see git log) |
+| `028ad6b` | (see git log) |
+| `da23c52` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 38: Fix missing older articles
 
 **Date**: 2026-06-02
 **Task**: Fix missing older articles

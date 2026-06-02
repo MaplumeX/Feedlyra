@@ -124,6 +124,10 @@ export const useReaderStore = create(
 - SSE streaming tests must verify buffer flush behavior with incomplete final chunks
 - Zustand store tests must verify `partialize` excludes temporary state
 
+## Known Quality Gate Gaps
+
+- `npm run lint` currently invokes ESLint 9, but the frontend does not yet have an `eslint.config.(js|mjs|cjs)` file. Treat lint failures that only report the missing config file as an existing project configuration gap, not as a feature regression. Use `npm run build` for TypeScript/build verification until the ESLint flat config is added.
+
 ---
 
 ## Code Review Checklist

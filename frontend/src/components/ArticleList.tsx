@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GroupedVirtuoso } from "react-virtuoso";
+import { Virtuoso } from "react-virtuoso";
 import { Star, CheckCheck, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import i18next from "i18next";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -11,32 +10,6 @@ import { useInfiniteArticles, useFeeds, useToggleRead, useToggleStar, useMarkAll
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
 import type { Article } from "@/api/types";
-
-function formatDate(dateStr: string | null, lng: string): string {
-  if (!dateStr) return "";
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffDays = Math.floor(
-    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
-  );
-  if (diffDays === 0) return i18next.t("common:today");
-  if (diffDays === 1) return i18next.t("common:yesterday");
-  return date.toLocaleDateString(lng, { month: "short", day: "numeric" });
-}
-
-function groupByDate(articles: Article[], lng: string): { label: string; articles: Article[] }[] {
-  const groups: Map<string, Article[]> = new Map();
-  for (const article of articles) {
-    const label = formatDate(article.published_at, lng);
-    const existing = groups.get(label);
-    if (existing) {
-      existing.push(article);
-    } else {
-      groups.set(label, [article]);
-    }
-  }
-  return Array.from(groups.entries()).map(([label, arts]) => ({ label, articles: arts }));
-}
 
 function ArticleRow({
   article,
@@ -143,7 +116,7 @@ function ArticleListFooter({ isLoadingMore }: { isLoadingMore: boolean }) {
 }
 
 export function ArticleList() {
-  const { t, i18n } = useTranslation("reader");
+  const { t } = useTranslation("reader");
   const { selectedFeedId, selectedArticleId, articleListFilter, scrollMarkRead, set: setReader } = useReaderStore();
 
   const queryParams = useMemo(() => {
@@ -193,30 +166,12 @@ export function ArticleList() {
     [data]
   );
   const hasUnread = articles.some((a) => !a.is_read);
-  const grouped = groupByDate(articles, i18n.language);
-  const groupCounts = useMemo(() => grouped.map(g => g.articles.length), [grouped]);
 
   const loadMoreArticles = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
       void fetchNextPage();
     }
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
-
-  /** Map a GroupedVirtuoso absolute item index (includes group headers) to the corresponding article.
-   *  Returns undefined if the index points to a group header or is out of range. */
-  function getArticleByAbsoluteIndex(absoluteIndex: number): Article | undefined {
-    let pos = absoluteIndex;
-    for (const group of grouped) {
-      // pos 0 within this group segment = header
-      if (pos === 0) return undefined; // this is a group header
-      pos -= 1; // skip the header
-      if (pos < group.articles.length) {
-        return group.articles[pos];
-      }
-      pos -= group.articles.length;
-    }
-    return undefined;
-  }
 
   // Scroll mark read state
   const prevRangeRef = useRef<{ startIndex: number; endIndex: number } | null>(null);
@@ -270,7 +225,7 @@ export function ArticleList() {
 
       // Collect unread article IDs that were scrolled past (between prev.startIndex and range.startIndex - 1)
       for (let i = prev.startIndex; i < range.startIndex; i++) {
-        const article = getArticleByAbsoluteIndex(i);
+        const article = articles[i];
         if (article && !article.is_read) {
           pendingIdsRef.current.add(article.id);
         }
@@ -283,7 +238,7 @@ export function ArticleList() {
         debounceTimerRef.current = setTimeout(flushPendingIds, 300);
       }
     },
-    [scrollMarkRead, grouped, flushPendingIds]
+    [scrollMarkRead, articles, flushPendingIds]
   );
 
   function selectArticle(article: Article) {
@@ -334,36 +289,21 @@ export function ArticleList() {
 
       {isLoading ? (
         <ArticleListSkeleton />
-      ) : grouped.length === 0 ? (
+      ) : articles.length === 0 ? (
         <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
           {t("noArticles")}
         </div>
       ) : (
-        <GroupedVirtuoso
+        <Virtuoso
           className="flex-1"
-          groupCounts={groupCounts}
-          groupContent={(groupIndex) => {
-            const group = grouped[groupIndex];
-            if (!group) return null;
-            return (
-              <div className="flex items-center gap-4 bg-background px-3 py-2">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-sm font-semibold text-secondary-foreground whitespace-nowrap">
-                  {group.label}
-                </span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-            );
-          }}
+          data={articles}
           rangeChanged={rangeChanged}
           endReached={loadMoreArticles}
           followOutput={articleListFilter === "unread" ? "smooth" : undefined}
           components={{
             Footer: () => <ArticleListFooter isLoadingMore={isFetchingNextPage} />,
           }}
-          itemContent={(index, groupIndex) => {
-            const article = grouped[groupIndex]?.articles[index];
-            if (!article) return null;
+          itemContent={(_, article) => {
             return (
               <ArticleRow
                 article={article}
