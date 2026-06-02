@@ -47,7 +47,15 @@ function EmptyState() {
 
 export function ArticleDetail() {
   const { t, i18n } = useTranslation("reader");
-  const { selectedArticleId, chatPanelOpen, readerSettings, autoSummarize } = useReaderStore();
+  const {
+    selectedArticleId,
+    chatPanelOpen,
+    readerSettings,
+    autoSummarize,
+    fullContentArticleIds,
+    set: setReader,
+    setArticleFullContentPreference,
+  } = useReaderStore();
   const { data: article, isLoading } = useArticle(selectedArticleId);
   const toggleRead = useToggleRead();
   const toggleStar = useToggleStar();
@@ -55,7 +63,6 @@ export function ArticleDetail() {
   const translateMut = useTranslate();
   const extractContent = useExtractContent();
   const { data: aiConfig } = useAIConfig();
-  const { set: setReader } = useReaderStore();
   const [showTranslation, setShowTranslation] = useState(false);
   const [showFullContent, setShowFullContent] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
@@ -100,11 +107,19 @@ export function ArticleDetail() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [lightboxSrc, closeLightbox]);
 
-  // Reset translation view when switching articles
+  // Reset translation view when switching articles.
   useEffect(() => {
     setShowTranslation(false);
-    setShowFullContent(false);
   }, [selectedArticleId]);
+
+  // Restore the per-article full-content view preference when article data is ready.
+  useEffect(() => {
+    if (!article || article.id !== selectedArticleId) {
+      setShowFullContent(false);
+      return;
+    }
+    setShowFullContent(Boolean(article.full_content && fullContentArticleIds[article.id]));
+  }, [article?.full_content, article?.id, fullContentArticleIds, selectedArticleId]);
 
   // Auto-summarize uses feed content only; full-content summaries are generated on demand.
   useEffect(() => {
@@ -127,8 +142,9 @@ export function ArticleDetail() {
     if (translateMut.isSuccess && article?.translated_content) {
       setShowTranslation(true);
       setShowFullContent(false);
+      setArticleFullContentPreference(article.id, false);
     }
-  }, [translateMut.isSuccess, article?.translated_content]);
+  }, [article?.id, article?.translated_content, setArticleFullContentPreference, translateMut.isSuccess]);
 
   const hasTranslation = !!article?.translated_content;
   const hasFullContent = !!article?.full_content;
@@ -214,7 +230,10 @@ export function ArticleDetail() {
             if (hasTranslation) {
               const nextShowTranslation = !showTranslation;
               setShowTranslation(nextShowTranslation);
-              if (nextShowTranslation) setShowFullContent(false);
+              if (nextShowTranslation) {
+                setShowFullContent(false);
+                setArticleFullContentPreference(article.id, false);
+              }
             } else {
               translateMut.mutate({ articleId: article.id });
             }
@@ -240,17 +259,20 @@ export function ArticleDetail() {
           onClick={() => {
             if (showFullContent) {
               setShowFullContent(false);
+              setArticleFullContentPreference(article.id, false);
               return;
             }
             setShowTranslation(false);
             if (hasFullContent) {
               setShowFullContent(true);
+              setArticleFullContentPreference(article.id, true);
               return;
             }
             extractContent.mutate(article.id, {
               onSuccess: (updatedArticle) => {
                 if (updatedArticle.full_content) {
                   setShowFullContent(true);
+                  setArticleFullContentPreference(updatedArticle.id, true);
                 }
               },
               onError: () => toast.error(t("extractFailed")),
@@ -319,6 +341,7 @@ export function ArticleDetail() {
                   onClick={() => {
                     setShowTranslation(true);
                     setShowFullContent(false);
+                    setArticleFullContentPreference(article.id, false);
                   }}
                 >
                   {article.translation_lang?.toUpperCase() ?? t("translation")}

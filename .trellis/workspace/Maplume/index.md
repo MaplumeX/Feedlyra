@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 36
+- **Total Sessions**: 37
 - **Last Active**: 2026-06-02
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1221 | Active |
+| `journal-1.md` | ~1256 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 37 | 2026-06-02 | Remember original content display state | `1887bfc`, `028ad6b`, `da23c52` | `Feat/remember-original-status` |
 | 36 | 2026-06-02 | Remove article list date headings | `cd34830` | `Feat/article-date-headings` |
 | 35 | 2026-06-01 | Optimize unread article indicator | `3c00bbd` | `Feat/optimize-unread-article-indicator` |
 | 34 | 2026-06-01 | Article read toggle button | `ec1c08b` | `Feat/article-read-toggle` |
