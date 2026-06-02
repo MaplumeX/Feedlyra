@@ -224,7 +224,7 @@ export function ArticleDetail() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className={cn("h-8 w-8", showTranslation && "bg-primary/10 text-primary")}
           disabled={translateMut.isPending}
           onClick={() => {
             if (hasTranslation) {
@@ -332,12 +332,22 @@ export function ArticleDetail() {
 
             {hasTranslation && (
               <div className="mt-2 flex items-center gap-2">
-                <Badge variant={showTranslation ? "default" : "outline"} className="cursor-pointer text-xs" onClick={() => setShowTranslation(false)}>
+                <Badge
+                  variant={showTranslation ? "outline" : "default"}
+                  className={cn(
+                    "cursor-pointer text-xs transition-all",
+                    showTranslation && "opacity-60 hover:opacity-80",
+                  )}
+                  onClick={() => setShowTranslation(false)}
+                >
                   {t("original")}
                 </Badge>
                 <Badge
-                  variant={showTranslation ? "outline" : "default"}
-                  className="cursor-pointer text-xs"
+                  variant={showTranslation ? "default" : "outline"}
+                  className={cn(
+                    "cursor-pointer text-xs transition-all",
+                    !showTranslation && "opacity-60 hover:opacity-80",
+                  )}
                   onClick={() => {
                     setShowTranslation(true);
                     setShowFullContent(false);
