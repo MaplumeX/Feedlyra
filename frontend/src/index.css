@@ -52,44 +52,45 @@
   }
 
   .dark {
-    --background: 224 20% 7%;
-    --foreground: 220 20% 96%;
+    /* Deep cool slate — maintains blue undertone identity from light mode */
+    --background: 225 20% 10%;
+    --foreground: 220 14% 93%;
 
-    --card: 224 20% 7%;
-    --card-foreground: 220 20% 96%;
+    --card: 225 20% 12%;
+    --card-foreground: 220 14% 93%;
 
-    --popover: 224 20% 7%;
-    --popover-foreground: 220 20% 96%;
+    --popover: 225 20% 14%;
+    --popover-foreground: 220 14% 93%;
 
-    --primary: 239 84% 67%;
-    --primary-foreground: 224 20% 7%;
+    --primary: 240 68% 65%;
+    --primary-foreground: 225 20% 10%;
 
-    --secondary: 224 16% 14%;
-    --secondary-foreground: 220 20% 96%;
+    --secondary: 225 16% 16%;
+    --secondary-foreground: 220 14% 93%;
 
-    --muted: 224 16% 14%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 225 16% 16%;
+    --muted-foreground: 220 10% 56%;
 
-    --accent: 224 16% 14%;
-    --accent-foreground: 220 20% 96%;
+    --accent: 225 16% 20%;
+    --accent-foreground: 220 14% 93%;
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 220 20% 96%;
+    --destructive: 0 60% 55%;
+    --destructive-foreground: 220 14% 93%;
 
-    --border: 224 16% 18%;
-    --input: 224 16% 18%;
-    --ring: 239 84% 67%;
+    --border: 225 16% 20%;
+    --input: 225 16% 20%;
+    --ring: 240 68% 65%;
 
     /* === Dark semantic variables === */
-    --sidebar-bg: 224 20% 5%;
-    --sidebar-hover: 224 16% 14%;
-    --sidebar-selected: 224 16% 18%;
-    --article-hover: 224 16% 12%;
-    --chat-bubble-user: 239 84% 67% / 0.12;
-    --chat-bubble-ai: 224 16% 14%;
-    --prose-link: 239 84% 67%;
-    --prose-code-bg: 224 16% 14%;
-    --prose-blockquote-border: 239 84% 67%;
+    --sidebar-bg: 225 22% 7%;
+    --sidebar-hover: 225 16% 14%;
+    --sidebar-selected: 225 16% 20%;
+    --article-hover: 225 16% 14%;
+    --chat-bubble-user: 240 68% 65% / 0.12;
+    --chat-bubble-ai: 225 16% 14%;
+    --prose-link: 240 68% 65%;
+    --prose-code-bg: 225 16% 16%;
+    --prose-blockquote-border: 240 68% 65%;
   }
 }
 
