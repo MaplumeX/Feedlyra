@@ -85,12 +85,82 @@ interface AddFeedDialogProps {
 
 - **Tailwind utility classes** inline in JSX (no CSS modules, no styled-components)
 - Theme via CSS custom properties in `index.css` (`:root` / `.dark`), mapped through `tailwind.config.ts`
+- **Semantic CSS variables** for panel-specific styling (e.g., `--sidebar-bg`, `--article-hover`, `--chat-bubble-user`). See "Semantic CSS Variables Pattern" below.
 - Dark mode via `next-themes` with `attribute="class"`, `defaultTheme="system"`, `enableSystem`
 - ThemeProvider wraps app inside BrowserRouter (next-themes requires router context in SPA)
 - ThemeToggle uses `useTheme()` with `mounted` state guard to prevent hydration mismatch
 - shadcn/ui components for primitives (Button, Badge, DropdownMenu, etc.)
 - Class merging: `cn()` from `src/lib/utils.ts` (combines `clsx` + `tailwind-merge`)
 - shadcn/ui primitives use `class-variance-authority` (cva) for variant styling
+
+### Semantic CSS Variables Pattern
+
+For panel-specific or component-specific colors that differ from the global theme tokens, define semantic CSS variables with light+dark variants in `index.css` and map them in `tailwind.config.ts`:
+
+```css
+/* index.css */
+:root {
+  --sidebar-bg: 220 18% 96%;
+  --sidebar-hover: 220 14% 93%;
+  --article-hover: 220 14% 94%;
+  --chat-bubble-user: 239 84% 58% / 0.08;
+  --chat-bubble-ai: 220 14% 96%;
+}
+.dark {
+  --sidebar-bg: 224 20% 5%;
+  --sidebar-hover: 224 16% 14%;
+  --article-hover: 224 16% 12%;
+  --chat-bubble-user: 239 84% 67% / 0.12;
+  --chat-bubble-ai: 224 16% 14%;
+}
+```
+
+```ts
+// tailwind.config.ts
+colors: {
+  sidebar: {
+    bg: "hsl(var(--sidebar-bg))",
+    hover: "hsl(var(--sidebar-hover))",
+  },
+  "article-hover": "hsl(var(--article-hover))",
+  "chat-user": "hsl(var(--chat-bubble-user))",
+  "chat-ai": "hsl(var(--chat-bubble-ai))",
+}
+```
+
+**Why**: Global theme tokens (`--accent`, `--muted`) serve as shared defaults. Semantic variables let each panel (sidebar, article list, chat) have its own visual identity while remaining dark-mode compatible. This also makes future theme customization easier — changing `--sidebar-bg` only affects the sidebar.
+
+**Key rules**:
+- Every semantic variable MUST have both `:root` and `.dark` variants
+- Use HSL values (same format as shadcn/ui theme tokens) for consistency
+- Alpha transparency uses the `/ 0.X` suffix (e.g., `239 84% 58% / 0.08`)
+- Map in `tailwind.config.ts` with `hsl()` wrapper so Tailwind utilities work (`bg-sidebar-bg`, `bg-chat-user`)
+
+### Google Fonts Integration
+
+When adding or changing Google Fonts:
+
+1. Add `<link>` tags in `index.html` with `display=swap`
+2. Define `--font-ui` and `--font-heading` CSS variables with full system fallback stack
+3. Apply via `body { font-family: var(--font-ui) }` and headings in `index.css`
+4. Add `fontFamily` entries in `tailwind.config.ts` for `font-ui` and `font-heading` utilities
+5. When a reader font option is removed (e.g., Inter → Onest), ensure the font is also removed from the Google Fonts `<link>` if no longer needed, BUT keep it if any existing user preference could reference it
+
+**Gotcha**: If a reader font option references a Google Font, that font MUST be in the Google Fonts link. Removing the font link breaks the option silently (falls back to system font). When replacing a font option, keep the old Google Fonts entry and add the new one.
+
+### Sidebar Selected State with Left Border
+
+When using a left-border indicator for selected items in the sidebar:
+
+```tsx
+// Wrong: rounded-md creates left-side rounding that conflicts with border-l-2
+<div className="rounded-md border-l-2 border-primary bg-sidebar-selected">
+
+// Correct: use rounded-r-md to only round the right side
+<div className="rounded-r-md border-l-2 border-primary bg-sidebar-selected">
+```
+
+**Why**: `border-l-2` + `rounded-md` creates a visible gap between the left border and the container edge. The left side should be flush against the container edge for the indicator to feel "attached". Use `rounded-r-md` (or `rounded-l-md`/`rounded-t-md`/etc.) when combining border indicators with rounding.
 
 ### Prose Content Typography Override
 
