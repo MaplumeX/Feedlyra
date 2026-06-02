@@ -369,9 +369,6 @@ export function Sidebar() {
               )}
             </button>
           </CollapsibleTrigger>
-          <Badge variant="secondary" className="h-4 min-w-4 shrink-0 justify-center px-1 text-[9px]">
-            {category.feed_count ?? categoryFeeds.length}
-          </Badge>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -473,11 +470,6 @@ export function Sidebar() {
               <button className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-sidebar-hover">
                 <ChevronDown className="h-3 w-3 shrink-0" />
                 <span className="min-w-0 truncate">{t("uncategorized")}</span>
-                {uncategorizedFeeds.length > 0 && (
-                  <Badge variant="secondary" className="h-4 min-w-4 shrink-0 justify-center px-1 text-[9px]">
-                    {uncategorizedFeeds.length}
-                  </Badge>
-                )}
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
