@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 39
-- **Last Active**: 2026-06-02
+- **Total Sessions**: 40
+- **Last Active**: 2026-06-03
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1323 | Active |
+| `journal-1.md` | ~1357 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 40 | 2026-06-03 | Fix feed subscription bugs | `da69c4e`, `acbd2c1` | `Feat/fix-add-feed-bugs` |
 | 39 | 2026-06-02 | Redesign UI with Sharp Modern aesthetic | `6889fea`, `0fae293` | `Feat/frontend-design-styling` |
 | 38 | 2026-06-02 | Fix missing older articles | `4d280ed` | `Feat/show-old-articles` |
 | 37 | 2026-06-02 | Remember original content display state | `1887bfc`, `028ad6b`, `da23c52` | `Feat/remember-original-status` |

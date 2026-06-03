@@ -1321,3 +1321,37 @@ Comprehensive visual redesign of Feedlyra from default shadcn/ui slate theme to 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 40: Fix feed subscription bugs
+
+**Date**: 2026-06-03
+**Task**: Fix feed subscription bugs
+**Branch**: `Feat/fix-add-feed-bugs`
+
+### Summary
+
+Fix 4 bugs in feed subscription flow: (1) add_feed returns 202 instead of silently passing on fetch failure, (2) handleMoveFeed uses useUpdateFeed hook instead of direct api.put, (3) add toast notifications for feed add success/warning/error, (4) OPML import triggers background async fetch per feed. Updated specs for 202 partial success pattern, dynamic mutation hook IDs, and background async session pattern.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `da69c4e` | (see git log) |
+| `acbd2c1` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
