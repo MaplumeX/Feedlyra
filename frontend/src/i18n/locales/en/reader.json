@@ -92,6 +92,9 @@
   "expandToc": "Expand table of contents",
   "collapseToc": "Collapse table of contents",
   "systemTheme": "System theme",
+  "feedAddedSuccess": "Feed added successfully",
+  "feedAddedFetchWarning": "Feed added, content will load later",
+  "moveFeedFailed": "Failed to move feed",
   "autoFullText": "Auto Full Text",
   "newArticles": "{{count}} new articles, click to view"
 }

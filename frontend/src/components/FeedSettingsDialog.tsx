@@ -35,7 +35,7 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
   const [title, setTitle] = useState(feed.title);
   const [categoryId, setCategoryId] = useState<string>(feed.category_id ?? UNCATEGORIZED);
   const [autoFullText, setAutoFullText] = useState(feed.auto_full_text);
-  const updateFeed = useUpdateFeed(feed.id);
+  const updateFeed = useUpdateFeed();
   const { data: categories = [] } = useCategories();
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
     if (!trimmedTitle) return;
     if (trimmedTitle === feed.title && catId === feed.category_id && autoFullText === feed.auto_full_text) return;
     updateFeed.mutate(
-      { title: trimmedTitle, category_id: catId, auto_full_text: autoFullText },
+      { feedId: feed.id, title: trimmedTitle, category_id: catId, auto_full_text: autoFullText },
       { onSuccess: () => onOpenChange(false) },
     );
   }

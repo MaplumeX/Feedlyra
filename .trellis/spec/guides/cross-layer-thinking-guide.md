@@ -160,3 +160,36 @@ Create detailed flow docs when:
 - Multiple teams are involved
 - Data format is complex
 - Feature has caused bugs before
+
+---
+
+## Background Async Tasks in FastAPI Request Handlers
+
+When a request handler needs to trigger background work (e.g. fetching RSS content after OPML import), use `asyncio.create_task()` with a **separate database session** from `async_session()` — NOT the request-scoped session from `Depends(get_db)`.
+
+**Why**: The request-scoped `db` session closes after the response is sent. Background tasks that outlive the request will get `MissingGreenlet` or session-closed errors.
+
+```python
+from app.database import async_session
+
+for fid in feed_ids:
+    async def _bg_fetch(feed_id=fid):
+        async with async_session() as bg_db:
+            try:
+                result = await bg_db.execute(select(Feed).where(Feed.id == feed_id))
+                feed = result.scalar_one_or_none()
+                if feed:
+                    await fetch_and_store_feed(feed, bg_db)
+                    await bg_db.commit()
+            except Exception:
+                logger.warning("Background fetch failed for feed %s", feed_id)
+
+    asyncio.create_task(_bg_fetch())
+```
+
+**Checklist**:
+- [ ] Background task creates its own `async_session()` — never uses the request `db`
+- [ ] Default argument captures loop variable (`feed_id=fid`) to avoid closure-over-loop-variable bug
+- [ ] Exceptions are caught and logged — never let background tasks crash silently
+- [ ] No `await` on the `create_task` result — the API returns immediately
+- [ ] Frontend invalidates relevant queries after the API returns so the UI updates when data arrives

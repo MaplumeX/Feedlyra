@@ -30,6 +30,7 @@
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
 | 41 | 2026-06-03 | Add auto-refresh feeds feature | `79183f8` | `Feat/auto-refresh-feeds` |
+| 40 | 2026-06-03 | Fix feed subscription bugs | `da69c4e`, `acbd2c1` | `Feat/fix-add-feed-bugs` |
 | 40 | 2026-06-03 | Add per-feed auto full-text extraction | `3fded12` | `Fix/indianapolis` |
 | 40 | 2026-06-03 | Move account controls from settings to sidebar user menu | `ea24f15` | `Feat/relocate-account-system` |
 | 39 | 2026-06-02 | Redesign UI with Sharp Modern aesthetic | `6889fea`, `0fae293` | `Feat/frontend-design-styling` |
