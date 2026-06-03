@@ -1500,6 +1500,16 @@ Modern redesign of AIChatPanel: resizable panel, message avatars, typing indicat
 
 Converted add_feed endpoint from synchronous blocking (await fetch_and_store_feed) to async background pattern using asyncio.create_task with independent db session. Endpoint now returns 201 immediately after creating feed record, matching the pattern already used by OPML import.
 
+## Session 43: Separate AI chat into independent layout column
+
+**Date**: 2026-06-03
+**Task**: Separate AI chat into independent layout column
+**Branch**: `MaplumeX/ai-chat-separate-tab`
+
+### Summary
+
+Moved AI chat panel from nested sub-panel inside ArticleDetail to a top-level 4th column in the Home layout. Opening chat no longer compresses article reading area. Chat auto-closes on article deselect, stays open on article switch.
+
 ### Main Changes
 
 (Add details)
@@ -1509,6 +1519,8 @@ Converted add_feed endpoint from synchronous blocking (await fetch_and_store_fee
 | Hash | Message |
 |------|---------|
 | `2619161` | (see git log) |
+| `f0aa76a` | (see git log) |
+| `29bd79e` | (see git log) |
 
 ### Testing
 

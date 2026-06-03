@@ -3,9 +3,11 @@ import { Group, Panel, Separator, usePanelRef } from "react-resizable-panels";
 import { Sidebar } from "@/components/Sidebar";
 import { ArticleList } from "@/components/ArticleList";
 import { ArticleDetail } from "@/components/ArticleDetail";
+import { AIChatPanel } from "@/components/AIChatPanel";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useReaderStore } from "@/stores/reader";
+import { useArticle } from "@/api/hooks";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { PanelLeft } from "lucide-react";
@@ -13,6 +15,7 @@ import { PanelLeft } from "lucide-react";
 const SIDEBAR_PANEL_ID = "sidebar";
 const ARTICLE_LIST_PANEL_ID = "article-list";
 const ARTICLE_DETAIL_PANEL_ID = "article-detail";
+const CHAT_PANEL_ID = "ai-chat";
 const LAYOUT_STORAGE_KEY = "providence-layout";
 
 const DEFAULT_SIDEBAR_SIZE = 192;
@@ -31,7 +34,7 @@ function saveLayout(layout: Record<string, number>) {
 }
 
 export function Home() {
-  const { sidebarCollapsed, set: setReader } = useReaderStore();
+  const { sidebarCollapsed, chatPanelOpen, chatPanelWidth, selectedArticleId, set: setReader } = useReaderStore();
 
   useKeyboardShortcuts();
 
@@ -68,6 +71,18 @@ export function Home() {
   const onLayoutChanged = useCallback((layout: Record<string, number>) => {
     saveLayout(layout);
   }, []);
+
+  // Auto-close chat when article is deselected
+  useEffect(() => {
+    if (!selectedArticleId && chatPanelOpen) {
+      setReader({ chatPanelOpen: false });
+    }
+  }, [selectedArticleId, chatPanelOpen, setReader]);
+
+  // Get article title for chat panel
+  const { data: selectedArticle } = useArticle(chatPanelOpen && selectedArticleId ? selectedArticleId : "");
+
+  const showChatPanel = chatPanelOpen && !!selectedArticleId;
 
   return (
     <div className="h-screen w-screen overflow-hidden">
@@ -127,6 +142,27 @@ export function Home() {
         <Panel id={ARTICLE_DETAIL_PANEL_ID}>
           <ArticleDetail />
         </Panel>
+
+        {showChatPanel && (
+          <>
+            <Separator
+              className="relative w-px bg-border transition-colors hover:bg-primary/50 data-[separator=active]:bg-primary"
+            >
+              <div className="absolute inset-y-0 -left-2 -right-2" />
+            </Separator>
+            <Panel
+              id={CHAT_PANEL_ID}
+              defaultSize={chatPanelWidth}
+              minSize={280}
+              maxSize={600}
+              onResize={(size) => {
+                setReader({ chatPanelWidth: size.inPixels });
+              }}
+            >
+              <AIChatPanel articleId={selectedArticleId!} articleTitle={selectedArticle?.title ?? ""} />
+            </Panel>
+          </>
+        )}
       </Group>
 
       <CommandPalette />
