@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 42
+- **Total Sessions**: 43
 - **Last Active**: 2026-06-03
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1522 | Active |
+| `journal-1.md` | ~1523 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 43 | 2026-06-03 | Make add-feed endpoint async background | `2619161` | `MaplumeX/fix-slow-feed-subscription` |
 | 42 | 2026-06-03 | Add loading spinners to AddFeedDialog | `dfc2193` | `Feat/fix-add-feed-ui-freeze` |
 | 42 | 2026-06-03 | Fix new articles banner false positive on initial page load | `9bf9337` | `MaplumeX/fix-new-articles-banner` |
 | 41 | 2026-06-03 | Add auto-refresh feeds feature | `79183f8` | `Feat/auto-refresh-feeds` |

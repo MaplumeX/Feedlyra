@@ -4,7 +4,7 @@ import asyncio
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,7 +39,6 @@ router = APIRouter(prefix="/api/feeds", tags=["feeds"])
 @router.post("", response_model=FeedResponse, status_code=status.HTTP_201_CREATED)
 async def add_feed(
     body: FeedCreate,
-    response: Response,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Feed:
@@ -59,23 +58,29 @@ async def add_feed(
     await db.commit()
     await db.refresh(feed)
 
-    try:
-        await fetch_and_store_feed(feed, db)
-        await db.refresh(feed)
-    except Exception as e:
-        feed.parsing_error_count += 1
-        feed.parsing_error_message = str(e)[:500]
-        await db.commit()
-        await db.refresh(feed)
-        logger.warning("Initial fetch failed for new feed %s: %s", feed.id, e)
+    # Background fetch for the new feed
+    async def _bg_fetch(feed_id=feed.id):  # type: ignore[misc]
+        async with async_session() as bg_db:
+            try:
+                result = await bg_db.execute(select(Feed).where(Feed.id == feed_id))
+                bg_feed = result.scalar_one_or_none()
+                if bg_feed:
+                    await fetch_and_store_feed(bg_feed, bg_db)
+                    if not bg_feed.title:
+                        bg_feed.title = bg_feed.url
+                    await bg_db.commit()
+                    logger.info("Background fetch completed for feed %s", feed_id)
+            except Exception as e:
+                # Reload feed to mark error
+                result = await bg_db.execute(select(Feed).where(Feed.id == feed_id))
+                bg_feed = result.scalar_one_or_none()
+                if bg_feed:
+                    bg_feed.parsing_error_count += 1
+                    bg_feed.parsing_error_message = str(e)[:500]
+                    await bg_db.commit()
+                logger.warning("Background fetch failed for feed %s: %s", feed_id, e)
 
-    if not feed.title:
-        feed.title = body.url
-        await db.commit()
-        await db.refresh(feed)
-
-    if feed.parsing_error_message:
-        response.status_code = status.HTTP_202_ACCEPTED
+    asyncio.create_task(_bg_fetch())
 
     return feed
 
