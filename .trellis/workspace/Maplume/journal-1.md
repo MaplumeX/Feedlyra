@@ -1333,6 +1333,16 @@ Comprehensive visual redesign of Feedlyra from default shadcn/ui slate theme to 
 
 Added auto_full_text boolean field to Feed model. When enabled, opening an article automatically triggers readability-lxml full-text extraction instead of requiring a manual button click. Includes migration 009, backend schema/router updates, frontend auto-extract effect in ArticleDetail, and Switch toggle in FeedSettingsDialog.
 
+## Session 40: Move account controls from settings to sidebar user menu
+
+**Date**: 2026-06-03
+**Task**: Move account controls from settings to sidebar user menu
+**Branch**: `Feat/relocate-account-system`
+
+### Summary
+
+Refactored account system: replaced Settings Account tab with Sidebar user menu (DropdownMenu + sub Dialogs). Created EditUsernameDialog, EditEmailDialog, EditPasswordDialog from AccountSettingsTab. Removed Account tab from SettingsDialog.
+
 ### Main Changes
 
 (Add details)
@@ -1342,6 +1352,7 @@ Added auto_full_text boolean field to Feed model. When enabled, opening an artic
 | Hash | Message |
 |------|---------|
 | `3fded12` | (see git log) |
+| `ea24f15` | (see git log) |
 
 ### Testing
 

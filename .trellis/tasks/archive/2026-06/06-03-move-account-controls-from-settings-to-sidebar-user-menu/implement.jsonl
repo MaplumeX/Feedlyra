@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns, props, composition, styling conventions for creating new dialogs and user menu"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "File layout conventions — where to place new dialog components"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand + React Query usage patterns for user/auth state"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Custom hooks conventions for data fetching (useCurrentUser etc)"}

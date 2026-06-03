@@ -8,14 +8,20 @@ import {
   Clock,
   Trash2,
   ChevronDown,
+  ChevronUp,
   MoreHorizontal,
   Settings,
   PanelLeftClose,
   FolderOpen,
   FolderPlus,
   Pencil,
+  User,
+  LogOut,
+  Mail,
+  KeyRound,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -56,6 +62,9 @@ import { FeedIcon } from "@/components/FeedIcon";
 import { FeedSortMenu } from "@/components/FeedSortMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
+import { EditUsernameDialog } from "@/components/settings/EditUsernameDialog";
+import { EditEmailDialog } from "@/components/settings/EditEmailDialog";
+import { EditPasswordDialog } from "@/components/settings/EditPasswordDialog";
 import {
   useFeeds,
   useDeleteFeed,
@@ -65,17 +74,20 @@ import {
   useCreateCategory,
   useUpdateCategory,
   useDeleteCategory,
+  useCurrentUser,
   queryKeys,
 } from "@/api/hooks";
 import { api } from "@/api/client";
 import type { Feed, Category } from "@/api/types";
 import { useReaderStore } from "@/stores/reader";
+import { useAuthStore } from "@/stores/auth";
 import { sortFeeds } from "@/lib/feedSort";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
   const { t } = useTranslation("reader");
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [feedSettingsFeed, setFeedSettingsFeed] = useState<Feed | null>(null);
@@ -84,6 +96,9 @@ export function Sidebar() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newCategoryTitle, setNewCategoryTitle] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [editUsernameOpen, setEditUsernameOpen] = useState(false);
+  const [editEmailOpen, setEditEmailOpen] = useState(false);
+  const [editPasswordOpen, setEditPasswordOpen] = useState(false);
 
   const renameInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,6 +110,10 @@ export function Sidebar() {
   const createCategory = useCreateCategory();
   const deleteCategory = useDeleteCategory();
   const updateCategory = useUpdateCategory(renamingCategoryId ?? "");
+  const authUser = useAuthStore((state) => state.user);
+  const authLogout = useAuthStore((state) => state.logout);
+  const { data: currentUser } = useCurrentUser();
+  const user = currentUser ?? authUser;
 
   const totalUnread = feeds.reduce((sum, f) => sum + (f.unread_count ?? 0), 0);
   const totalStarred = useStarredCount();
@@ -487,18 +506,57 @@ export function Sidebar() {
       <Separator />
 
       <div className="flex items-center gap-1 px-2 py-1.5">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors duration-100 hover:bg-sidebar-hover hover:text-foreground">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                {user?.username?.charAt(0).toUpperCase() ?? <User className="h-3.5 w-3.5" />}
+              </div>
+              <span className="min-w-0 truncate">{user?.username ?? ""}</span>
+              <ChevronUp className="ml-auto h-3.5 w-3.5 shrink-0 opacity-50" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-56">
+            <DropdownMenuItem onClick={() => setEditUsernameOpen(true)}>
+              <User className="mr-2 h-4 w-4" />
+              {t("editUsername", { ns: "settings" })}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setEditEmailOpen(true)}>
+              <Mail className="mr-2 h-4 w-4" />
+              {t("editEmail", { ns: "settings" })}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setEditPasswordOpen(true)}>
+              <KeyRound className="mr-2 h-4 w-4" />
+              {t("editPassword", { ns: "settings" })}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => {
+                authLogout();
+                navigate("/login");
+              }}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              {t("logout", { ns: "settings" })}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <button
-          className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors duration-100 hover:bg-sidebar-hover hover:text-foreground"
+          className="flex shrink-0 items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors duration-100 hover:bg-sidebar-hover hover:text-foreground"
           onClick={() => setReader({ settingsDialogOpen: true })}
+          title={t("settings", { ns: "settings" })}
         >
-          <Settings className="h-4 w-4 shrink-0" />
-          <span className="min-w-0 truncate">{t("settings", { ns: "settings" })}</span>
+          <Settings className="h-4 w-4" />
         </button>
         <ThemeToggle />
       </div>
 
       <AddFeedDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
       <SettingsDialog />
+      <EditUsernameDialog open={editUsernameOpen} onOpenChange={setEditUsernameOpen} />
+      <EditEmailDialog open={editEmailOpen} onOpenChange={setEditEmailOpen} />
+      <EditPasswordDialog open={editPasswordOpen} onOpenChange={setEditPasswordOpen} />
       {feedSettingsFeed && (
         <FeedSettingsDialog
           feed={feedSettingsFeed}

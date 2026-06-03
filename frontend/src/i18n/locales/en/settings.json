@@ -72,5 +72,8 @@
   "deleteFeed": "Delete",
   "deleteFeedConfirm": "Delete this feed? This cannot be undone.",
   "feedDeleted": "Feed deleted",
-  "uncategorized": "Uncategorized"
+  "uncategorized": "Uncategorized",
+  "editUsername": "Edit Username",
+  "editEmail": "Edit Email",
+  "editPassword": "Edit Password"
 }

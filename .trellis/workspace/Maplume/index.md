@@ -30,6 +30,7 @@
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
 | 40 | 2026-06-03 | Add per-feed auto full-text extraction | `3fded12` | `Fix/indianapolis` |
+| 40 | 2026-06-03 | Move account controls from settings to sidebar user menu | `ea24f15` | `Feat/relocate-account-system` |
 | 39 | 2026-06-02 | Redesign UI with Sharp Modern aesthetic | `6889fea`, `0fae293` | `Feat/frontend-design-styling` |
 | 38 | 2026-06-02 | Fix missing older articles | `4d280ed` | `Feat/show-old-articles` |
 | 37 | 2026-06-02 | Remember original content display state | `1887bfc`, `028ad6b`, `da23c52` | `Feat/remember-original-status` |
