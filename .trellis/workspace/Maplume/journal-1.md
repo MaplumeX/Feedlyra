@@ -1412,6 +1412,16 @@ Added frontend auto-refresh via React Query refetchInterval (2min), NewArticlesB
 - None - task complete
 
 
+## Session 42: Add loading spinners to AddFeedDialog
+
+**Date**: 2026-06-03
+**Task**: Add loading spinners to AddFeedDialog
+**Branch**: `Feat/fix-add-feed-ui-freeze`
+
+### Summary
+
+Fixed the UX where adding a feed showed only a disabled button with no progress feedback. Added Loader2 spinner + text change (Adding.../Finding...) to Add/Find buttons when isPending, and inline spinner to discovered feed items. Added i18n keys for en and zh-CN.
+
 ## Session 42: Fix new articles banner false positive on initial page load
 
 **Date**: 2026-06-03
@@ -1430,6 +1440,7 @@ Fixed the new-articles banner appearing on first page load by adding hasLoadedRe
 
 | Hash | Message |
 |------|---------|
+| `dfc2193` | (see git log) |
 | `9bf9337` | (see git log) |
 
 ### Testing
