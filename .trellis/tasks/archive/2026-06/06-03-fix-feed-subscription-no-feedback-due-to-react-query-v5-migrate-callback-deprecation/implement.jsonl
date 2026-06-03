@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "AddFeedDialog spinner implementation must follow component patterns and guidelines"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "useMutation isPending state usage must align with hook conventions"}
