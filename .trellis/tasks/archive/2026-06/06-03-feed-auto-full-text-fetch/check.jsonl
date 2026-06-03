@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec index for conventions overview"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify migration follows project conventions"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Quality checks for backend changes"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec index for conventions overview"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify component follows project patterns"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality checks for frontend changes"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify type additions follow conventions"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify backend-frontend field consistency"}

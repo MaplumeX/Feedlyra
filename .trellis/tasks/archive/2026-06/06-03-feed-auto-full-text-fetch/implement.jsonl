@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec index for conventions overview"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Migration and column addition conventions"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Know where to put migration and model changes"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec index for conventions overview"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "How to add UI controls like Switch toggles"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Type definition patterns for API fields"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "React Query hook patterns for mutations"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand store patterns for article state"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Ensure backend field maps correctly to frontend type"}
