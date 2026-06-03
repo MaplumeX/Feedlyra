@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec index — sub-agents need this to discover relevant spec files"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Primary spec for building/refactoring components — AIChatPanel extraction and Home layout changes must follow these conventions"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Store adjustments for chatPanelOpen/chatPanelWidth logic — sub-agents need Zustand conventions"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "If any custom hooks are created or modified during the refactor"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Ensure new/modified files go in the right directories"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality bar for the implementation"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Chat panel touches API types and SSE streaming — ensure cross-layer consistency"}
+{"file": ".trellis/tasks/06-03-separate-ai-chat-into-independent-column/prd.md", "reason": "Task requirements and technical approach"}

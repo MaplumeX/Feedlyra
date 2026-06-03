@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify component structure follows conventions after changes"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify store changes follow Zustand conventions"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality verification checklist"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Verify file placement is correct"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify API type consistency after refactor"}
+{"file": ".trellis/tasks/06-03-separate-ai-chat-into-independent-column/prd.md", "reason": "Verify implementation matches acceptance criteria"}
