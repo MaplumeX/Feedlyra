@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
+import { Virtuoso, type VirtuosoHandle, type ItemProps } from "react-virtuoso";
 import { Star, CheckCheck, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
@@ -84,6 +84,38 @@ function ArticleRow({
           onError={() => setImageFailed(true)}
         />
       )}
+    </div>
+  );
+}
+
+// Module-level holder for the IntersectionObserver instance created in ArticleList.
+// This allows the custom Virtuoso Item component to access the observer without prop drilling.
+let articleListObserver: IntersectionObserver | null = null;
+
+function ObservableItem({ children, item, ...props }: ItemProps<Article>) {
+  const prevElRef = useRef<HTMLDivElement | null>(null);
+
+  // Stable ref callback — article ID is read from data-article-id on the DOM element
+  // (set via JSX prop below) so the ref callback doesn't depend on the item prop.
+  // This avoids unobserve/reobserve churn on every item data update (e.g. is_read toggling).
+  const ref = useCallback(
+    (el: HTMLDivElement | null) => {
+      if (prevElRef.current && prevElRef.current !== el) {
+        articleListObserver?.unobserve(prevElRef.current);
+      }
+
+      if (el) {
+        articleListObserver?.observe(el);
+      }
+
+      prevElRef.current = el;
+    },
+    []
+  );
+
+  return (
+    <div {...props} ref={ref} data-article-id={item.id}>
+      {children}
     </div>
   );
 }
@@ -229,16 +261,14 @@ export function ArticleList() {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   // Scroll mark read state
-  const prevRangeRef = useRef<{ startIndex: number; endIndex: number } | null>(null);
-  const isStableRef = useRef(false);
   const pendingIdsRef = useRef<Set<string>>(new Set());
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Reset scroll tracking when feed/filter changes to avoid stale range
-  useEffect(() => {
-    isStableRef.current = false;
-    prevRangeRef.current = null;
-  }, [selectedFeedId, articleListFilter]);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const articlesRef = useRef<readonly Article[]>(articles);
+  const scrollMarkReadRef = useRef(scrollMarkRead);
+  articlesRef.current = articles;
+  scrollMarkReadRef.current = scrollMarkRead;
+  const [scrollerElement, setScrollerElement] = useState<HTMLElement | null>(null);
 
   const flushPendingIds = useCallback(() => {
     const ids = Array.from(pendingIdsRef.current);
@@ -249,6 +279,66 @@ export function ArticleList() {
     }
   }, [batchRead]);
 
+  const flushPendingIdsRef = useRef(flushPendingIds);
+  flushPendingIdsRef.current = flushPendingIds;
+
+  // IntersectionObserver callback: mark as read when article scrolls past the top
+  // Uses refs for scrollMarkRead, articles, and flushPendingIds so the callback identity
+  // stays stable — this prevents unnecessary observer recreation which would lose observed elements.
+  const handleIntersection = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      if (!scrollMarkReadRef.current) return;
+
+      for (const entry of entries) {
+        // Only trigger when article leaves viewport (was visible, now not)
+        if (entry.isIntersecting) continue;
+
+        // Only mark if scrolled out through the top (boundingClientRect.top above root top)
+        const rootBounds = entry.rootBounds;
+        if (!rootBounds) continue;
+        if (entry.boundingClientRect.top >= rootBounds.top) continue;
+
+        const articleId = (entry.target as HTMLElement).dataset.articleId;
+        if (!articleId) continue;
+
+        // Look up article to check if unread
+        const article = articlesRef.current.find((a) => a.id === articleId);
+        if (article && !article.is_read) {
+          pendingIdsRef.current.add(articleId);
+        }
+      }
+
+      if (pendingIdsRef.current.size > 0) {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        debounceTimerRef.current = setTimeout(flushPendingIdsRef.current, 300);
+      }
+    },
+    []
+  );
+
+  // Create/recreate IntersectionObserver when the scroller element becomes available
+  useEffect(() => {
+    if (!scrollerElement) return;
+
+    // Disconnect existing observer if any
+    observerRef.current?.disconnect();
+
+    observerRef.current = new IntersectionObserver(handleIntersection, {
+      root: scrollerElement,
+      rootMargin: "-44px 0px 0px 0px",
+      threshold: 0,
+    });
+    articleListObserver = observerRef.current;
+
+    return () => {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
+      articleListObserver = null;
+    };
+  }, [scrollerElement]);
+
   // Cleanup debounce timer on unmount
   useEffect(() => {
     return () => {
@@ -257,44 +347,6 @@ export function ArticleList() {
       }
     };
   }, []);
-
-  const rangeChanged = useCallback(
-    (range: { startIndex: number; endIndex: number }) => {
-      if (!scrollMarkRead) return;
-
-      // Skip the initial range change to avoid marking on mount/resize
-      if (!isStableRef.current) {
-        isStableRef.current = true;
-        prevRangeRef.current = range;
-        return;
-      }
-
-      const prev = prevRangeRef.current;
-      prevRangeRef.current = range;
-
-      if (!prev) return;
-
-      // Only trigger when scrolling down: startIndex increases
-      // (items above the viewport have been scrolled past)
-      if (range.startIndex <= prev.startIndex) return;
-
-      // Collect unread article IDs that were scrolled past (between prev.startIndex and range.startIndex - 1)
-      for (let i = prev.startIndex; i < range.startIndex; i++) {
-        const article = articles[i];
-        if (article && !article.is_read) {
-          pendingIdsRef.current.add(article.id);
-        }
-      }
-
-      if (pendingIdsRef.current.size > 0) {
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-        }
-        debounceTimerRef.current = setTimeout(flushPendingIds, 300);
-      }
-    },
-    [scrollMarkRead, articles, flushPendingIds]
-  );
 
   function selectArticle(article: Article) {
     setReader({ selectedArticleId: article.id });
@@ -364,11 +416,16 @@ export function ArticleList() {
             ref={virtuosoRef}
             className="flex-1"
             data={articles}
-            rangeChanged={rangeChanged}
+            scrollerRef={(ref) => {
+              if (ref && 'nodeType' in ref) {
+                setScrollerElement(ref as HTMLElement);
+              }
+            }}
             endReached={loadMoreArticles}
             followOutput={articleListFilter === "unread" ? "smooth" : undefined}
             components={{
               Footer: () => <ArticleListFooter isLoadingMore={isFetchingNextPage} />,
+              Item: ObservableItem,
             }}
             itemContent={(_, article) => {
               return (

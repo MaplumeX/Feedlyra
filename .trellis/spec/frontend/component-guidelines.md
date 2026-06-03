@@ -328,61 +328,91 @@ export function FeedIcon({ iconUrl, className }: FeedIconProps) {
 
 **Why**: External URLs can 404 or be blocked by CORS. The `useState` + `onError` pattern switches to a fallback icon once, without repeated re-renders. The `className` prop allows different sizing contexts (sidebar vs article list).
 
-### Virtuoso Scroll-Based Detection Pattern
+### Virtuoso IntersectionObserver Pattern for Scroll Detection
 
-When using `react-virtuoso`'s `rangeChanged` callback for scroll-triggered logic (e.g., mark-as-read on scroll):
+When using `react-virtuoso` for scroll-triggered logic (e.g., mark-as-read on scroll), use `IntersectionObserver` instead of `rangeChanged` for accurate viewport boundary detection.
 
-### Scroll Direction Gotcha
+**Why**: `rangeChanged` is index-based — an article with only 1px visible in the viewport still counts as "in range". `IntersectionObserver` with `rootMargin` and `threshold` provides pixel-accurate control over when items are considered "scrolled past".
 
-In Virtuoso, `startIndex` increasing means the user scrolled **down** (older items entering viewport from the top). This is counter-intuitive — you might expect "scrolling down" to show items lower in the list with decreasing indices.
+#### Core Pattern
+
+1. **Singleton observer** via `useRef` — created when Virtuoso's scroll container is available (`scrollerRef`), with `rootMargin` offsetting for fixed headers
+2. **Module-level holder** — lets the custom `components.Item` access the observer without prop drilling
+3. **Stable callback via refs** — `handleIntersection` uses refs (`scrollMarkReadRef`, `articlesRef`, `flushPendingIdsRef`) instead of direct dependencies, preventing observer recreation that would lose observed elements
+4. **Custom Item component** — observe on mount, unobserve on unmount, article ID via `data-article-id` DOM attribute (not closure)
 
 ```tsx
-// Correct: startIndex increased → user scrolled down → older items scrolled past
-if (range.startIndex > prevRange.startIndex) {
-  // Items between prevRange.startIndex and range.startIndex have left the viewport top
+// Module-level holder — accessible from custom Item component without prop drilling
+let articleListObserver: IntersectionObserver | null = null;
+
+function ObservableItem({ children, item, ...props }: ItemProps<Article>) {
+  const prevElRef = useRef<HTMLDivElement | null>(null);
+
+  // Stable ref callback (deps=[]) — article ID read from data-article-id on the DOM element,
+  // not from the item prop, to avoid unobserve/reobserve churn on data updates (e.g. is_read toggle)
+  const ref = useCallback((el: HTMLDivElement | null) => {
+    if (prevElRef.current && prevElRef.current !== el) {
+      articleListObserver?.unobserve(prevElRef.current);
+    }
+    if (el) {
+      articleListObserver?.observe(el);
+    }
+    prevElRef.current = el;
+  }, []);
+
+  return (
+    <div {...props} ref={ref} data-article-id={item.id}>
+      {children}
+    </div>
+  );
 }
+
+// In ArticleList:
+const scrollMarkReadRef = useRef(scrollMarkRead);
+const articlesRef = useRef<readonly Article[]>(articles);
+scrollMarkReadRef.current = scrollMarkRead;
+articlesRef.current = articles;
+
+const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
+  if (!scrollMarkReadRef.current) return;
+  for (const entry of entries) {
+    if (entry.isIntersecting) continue; // Still visible
+    if (!entry.rootBounds) continue;
+    if (entry.boundingClientRect.top >= entry.rootBounds.top) continue; // Scrolled down out, not up
+    const articleId = (entry.target as HTMLElement).dataset.articleId;
+    if (!articleId) continue;
+    const article = articlesRef.current.find((a) => a.id === articleId);
+    if (article && !article.is_read) {
+      pendingIdsRef.current.add(articleId);
+    }
+  }
+  // ... debounce + flush
+}, []);
+
+useEffect(() => {
+  if (!scrollerElement) return;
+  observerRef.current?.disconnect();
+  observerRef.current = new IntersectionObserver(handleIntersection, {
+    root: scrollerElement,
+    rootMargin: "-44px 0px 0px 0px", // Offset for fixed header height
+    threshold: 0,
+  });
+  articleListObserver = observerRef.current;
+  return () => { observerRef.current?.disconnect(); observerRef.current = null; articleListObserver = null; };
+}, [scrollerElement]);
 ```
 
-### Required Guards
+#### Key Rules
 
-1. **isStable flag**: Virtuoso fires `rangeChanged` on mount and resize. Track a stability flag that becomes true only after the first user-driven scroll:
-   ```tsx
-   const isStableRef = useRef(false);
-   // Set to true only on the second rangeChanged call (first is initialization)
-   ```
+1. **Ref-based stable callback**: `handleIntersection` must have deps `[]` — use refs for all values that change (`scrollMarkReadRef`, `articlesRef`, `flushPendingIdsRef`). If the callback depends on changing values, `useEffect` recreates the observer, calling `disconnect()` which **drops all observed elements** without re-observing them.
 
-2. **Debounce cleanup**: Always clean up debounce timers on unmount:
-   ```tsx
-   useEffect(() => {
-     return () => {
-       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-     };
-   }, []);
-   ```
+2. **`data-article-id` on DOM, not in closure**: The ref callback in `ObservableItem` must be stable (deps `[]`). Set the article ID via `data-article-id={item.id}` on the JSX element and read it from `entry.target.dataset.articleId` in the observer callback. Putting `item` in the ref callback's deps causes unobserve/reobserve churn on every data update (e.g., `is_read` toggling).
 
-3. **Ref reset on data change**: When the underlying list changes (feed/filter switch), reset `prevRangeRef` and `isStableRef` — stale refs cause false scroll-direction detection:
-   ```tsx
-   useEffect(() => {
-     prevRangeRef.current = null;
-     isStableRef.current = false;
-   }, [selectedFeedId, articleListFilter]);
-   ```
+3. **`rootMargin` for header offset**: Use negative top margin matching the fixed header height (`-44px` for `h-11`). This ensures the observer's "visible" boundary starts below the header, matching what the user actually sees.
 
-4. **Map absolute indices in GroupedVirtuoso**: `GroupedVirtuoso`'s `rangeChanged` reports absolute indices that include group headers. For example, with `groupCounts=[3,2,4]`, index 0 is Group 0's header, index 1 is the first article. When iterating scrolled-past items, map the absolute index back to the article (skip header indices):
-   ```tsx
-   function getArticleByAbsoluteIndex(absoluteIndex: number): Article | undefined {
-     let pos = absoluteIndex;
-     for (const group of grouped) {
-       if (pos === 0) return undefined; // this is a group header
-       pos -= 1; // skip the header
-       if (pos < group.articles.length) {
-         return group.articles[pos];
-       }
-       pos -= group.articles.length;
-     }
-     return undefined;
-   }
-   ```
+4. **Scroll direction guard**: Only mark as read when `boundingClientRect.top < rootBounds.top` (article scrolled upward out of view) AND `isIntersecting` is `false` (left the zone). This prevents marking on upward scroll.
+
+5. **`scrollerRef` not `scrollRef`**: Virtuoso's `scrollerRef` returns the actual scrolling container element (needed as the observer's `root`). It may return a `Window` object in some Virtuoso configurations — guard with `'nodeType' in ref` check.
 
 ### Virtuoso Component Reuse State Leak
 

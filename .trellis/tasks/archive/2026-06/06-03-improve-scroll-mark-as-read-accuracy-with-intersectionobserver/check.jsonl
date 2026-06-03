@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns — verify custom Item component follows conventions"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Code quality standards — lint/typecheck/correctness verification"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Hook patterns — verify useBatchRead usage is correct"}
+{"file": ".trellis/tasks/06-03-improve-scroll-mark-as-read-accuracy-with-intersectionobserver/prd.md", "reason": "Task PRD — verify all acceptance criteria are met"}

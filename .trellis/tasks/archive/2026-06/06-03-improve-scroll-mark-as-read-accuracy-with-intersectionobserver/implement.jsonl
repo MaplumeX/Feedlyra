@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns, Virtuoso components.Item customization conventions — needed for custom observer Item wrapper"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Mutation hook patterns, query invalidation — needed for useBatchRead integration"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand store patterns, scrollMarkRead setting reference — needed for toggling observer behavior"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Code standards and forbidden patterns — check during implementation"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Frontend-backend data flow — batch-read API + React Query invalidation consistency"}
+{"file": ".trellis/tasks/06-03-improve-scroll-mark-as-read-accuracy-with-intersectionobserver/prd.md", "reason": "Task PRD with requirements, decisions, and technical approach"}
