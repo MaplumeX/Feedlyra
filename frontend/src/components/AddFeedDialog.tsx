@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useAddFeed, useDiscoverFeeds, useCategories } from "@/api/hooks";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import type { DiscoveredFeed } from "@/api/types";
 
 interface AddFeedDialogProps {
@@ -44,10 +45,18 @@ export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
     addFeed.mutate(
       { url: feedUrl.trim(), category_id: categoryId === UNCATEGORIZED ? null : categoryId },
       {
-        onSuccess: () => {
+        onSuccess: (feed) => {
+          if (feed.parsing_error_message) {
+            toast.warning(t("feedAddedFetchWarning"));
+          } else {
+            toast.success(t("feedAddedSuccess"));
+          }
           setFeedUrl("");
           setCategoryId(UNCATEGORIZED);
           onOpenChange(false);
+        },
+        onError: (error) => {
+          toast.error(error.message);
         },
       },
     );
@@ -66,11 +75,19 @@ export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
     addFeed.mutate(
       { url, category_id: categoryId === UNCATEGORIZED ? null : categoryId },
       {
-        onSuccess: () => {
+        onSuccess: (feed) => {
+          if (feed.parsing_error_message) {
+            toast.warning(t("feedAddedFetchWarning"));
+          } else {
+            toast.success(t("feedAddedSuccess"));
+          }
           setWebsiteUrl("");
           setDiscoveredFeeds([]);
           setCategoryId(UNCATEGORIZED);
           onOpenChange(false);
+        },
+        onError: (error) => {
+          toast.error(error.message);
         },
       },
     );

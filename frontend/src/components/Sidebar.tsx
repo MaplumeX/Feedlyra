@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Rss,
   Plus,
@@ -65,9 +64,9 @@ import {
   useCreateCategory,
   useUpdateCategory,
   useDeleteCategory,
-  queryKeys,
+  useUpdateFeed,
 } from "@/api/hooks";
-import { api } from "@/api/client";
+import { toast } from "sonner";
 import type { Feed, Category } from "@/api/types";
 import { useReaderStore } from "@/stores/reader";
 import { sortFeeds } from "@/lib/feedSort";
@@ -75,7 +74,6 @@ import { cn } from "@/lib/utils";
 
 export function Sidebar() {
   const { t } = useTranslation("reader");
-  const qc = useQueryClient();
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [feedSettingsFeed, setFeedSettingsFeed] = useState<Feed | null>(null);
@@ -92,6 +90,7 @@ export function Sidebar() {
   const { data: categories = [] } = useCategories();
   const deleteFeed = useDeleteFeed();
   const refreshFeed = useRefreshFeed();
+  const updateFeed = useUpdateFeed();
   const createCategory = useCreateCategory();
   const deleteCategory = useDeleteCategory();
   const updateCategory = useUpdateCategory(renamingCategoryId ?? "");
@@ -172,16 +171,13 @@ export function Sidebar() {
     setRenameValue(category.title);
   }
 
-  async function handleMoveFeed(feedId: string, categoryId: string | null) {
+  function handleMoveFeed(feedId: string, categoryId: string | null) {
     const feed = feeds.find((f) => f.id === feedId);
     if (!feed) return;
-    try {
-      await api.put(`/api/feeds/${feedId}`, { title: feed.title, category_id: categoryId });
-      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
-      qc.invalidateQueries({ queryKey: queryKeys.categories.list() });
-    } catch (e) {
-      console.error("Failed to move feed:", e);
-    }
+    updateFeed.mutate(
+      { feedId, title: feed.title, category_id: categoryId },
+      { onError: () => toast.error(t("moveFeedFailed")) },
+    );
   }
 
   const uncategorizedFeeds = sortedFeeds.filter((f) => f.category_id === null);

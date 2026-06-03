@@ -33,7 +33,7 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
   const { t } = useTranslation("reader");
   const [title, setTitle] = useState(feed.title);
   const [categoryId, setCategoryId] = useState<string>(feed.category_id ?? UNCATEGORIZED);
-  const updateFeed = useUpdateFeed(feed.id);
+  const updateFeed = useUpdateFeed();
   const { data: categories = [] } = useCategories();
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
     if (!trimmedTitle) return;
     if (trimmedTitle === feed.title && catId === feed.category_id) return;
     updateFeed.mutate(
-      { title: trimmedTitle, category_id: catId },
+      { feedId: feed.id, title: trimmedTitle, category_id: catId },
       { onSuccess: () => onOpenChange(false) },
     );
   }

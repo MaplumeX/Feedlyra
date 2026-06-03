@@ -91,5 +91,8 @@
   "tableOfContents": "Contents",
   "expandToc": "Expand table of contents",
   "collapseToc": "Collapse table of contents",
-  "systemTheme": "System theme"
+  "systemTheme": "System theme",
+  "feedAddedSuccess": "Feed added successfully",
+  "feedAddedFetchWarning": "Feed added, content will load later",
+  "moveFeedFailed": "Failed to move feed"
 }
