@@ -92,5 +92,14 @@
   "expandToc": "Expand table of contents",
   "collapseToc": "Collapse table of contents",
   "systemTheme": "System theme",
-  "autoFullText": "Auto Full Text"
+  "autoFullText": "Auto Full Text",
+  "suggestSummarize": "Summarize this article",
+  "suggestKeyPoints": "Extract key points",
+  "suggestExplainSimply": "Explain in simple terms",
+  "suggestTranslate": "Translate this article",
+  "chatEmptyTitle": "Ask about this article",
+  "chatEmptySubtitle": "Choose a suggestion or type your own question.",
+  "copyMessage": "Copy",
+  "copied": "Copied!",
+  "regenerate": "Regenerate"
 }
