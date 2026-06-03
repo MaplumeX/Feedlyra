@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, X, Loader2 } from "lucide-react";
+import { Send, X, Bot, User, Copy, Check, RefreshCw, MessageSquareText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatHistory } from "@/api/hooks";
 import { streamChat } from "@/api/sse";
 import { MarkdownContent } from "@/components/MarkdownContent";
@@ -31,14 +30,216 @@ function updateLastAssistant(messages: ChatMessage[], content: string): ChatMess
   return updated;
 }
 
+// --- Sub-components ---
+
+function UserAvatar() {
+  return (
+    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-chat-user">
+      <User className="h-4 w-4 text-primary" />
+    </div>
+  );
+}
+
+function AssistantAvatar() {
+  return (
+    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
+      <Bot className="h-4 w-4 text-primary" />
+    </div>
+  );
+}
+
+function TypingIndicator() {
+  return (
+    <span className="chat-cursor-blink inline-block h-4 w-0.5 bg-foreground/70" />
+  );
+}
+
+const SUGGESTION_KEYS = [
+  "suggestSummarize",
+  "suggestKeyPoints",
+  "suggestExplainSimply",
+  "suggestTranslate",
+] as const;
+
+function ChatEmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) => void }) {
+  const { t } = useTranslation("reader");
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-8">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+        <MessageSquareText className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <div className="text-center">
+        <p className="text-sm font-medium">{t("chatEmptyTitle")}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("chatEmptySubtitle")}</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2 w-full max-w-xs">
+        {SUGGESTION_KEYS.map((key) => (
+          <button
+            key={key}
+            type="button"
+            className="rounded-md border bg-background px-3 py-2 text-left text-xs text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            onClick={() => onSuggestionClick(t(key))}
+          >
+            {t(key)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ChatMessageBubble({
+  msg,
+  isStreaming,
+  onCopy,
+  onRegenerate,
+}: {
+  msg: ChatMessage;
+  isStreaming: boolean;
+  onCopy: (text: string) => void;
+  onRegenerate: (msg: ChatMessage) => void;
+}) {
+  const { t } = useTranslation("reader");
+  const [hovered, setHovered] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isAssistant = msg.role === "assistant";
+
+  const handleCopy = () => {
+    onCopy(msg.content);
+    setCopied(true);
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopied(false), 1500);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
+  return (
+    <div
+      className="group flex gap-2.5"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {isAssistant ? <AssistantAvatar /> : <UserAvatar />}
+      <div className="min-w-0 flex-1">
+        <div
+          className={cn(
+            "rounded-lg px-3 py-2 text-sm",
+            isAssistant ? "bg-chat-ai" : "bg-chat-user"
+          )}
+        >
+          {isAssistant ? (
+            <div className="relative">
+              <MarkdownContent content={msg.content} />
+              {isStreaming && <TypingIndicator />}
+            </div>
+          ) : (
+            <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+          )}
+        </div>
+        {hovered && !isStreaming && msg.content && (
+          <div className="mt-1 flex gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={handleCopy}
+              title={copied ? t("copied") : t("copyMessage")}
+            >
+              {copied ? (
+                <Check className="h-3 w-3 text-primary" />
+              ) : (
+                <Copy className="h-3 w-3" />
+              )}
+            </Button>
+            {isAssistant && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => onRegenerate(msg)}
+                title={t("regenerate")}
+              >
+                <RefreshCw className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChatInput({
+  onSend,
+  isStreaming,
+}: {
+  onSend: (text: string) => void;
+  isStreaming: boolean;
+}) {
+  const { t } = useTranslation("reader");
+  const [input, setInput] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }, [input]);
+
+  const handleSend = () => {
+    const trimmed = input.trim();
+    if (!trimmed || isStreaming) return;
+    onSend(trimmed);
+    setInput("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <div className="flex items-end gap-2 border-t p-3">
+      <textarea
+        ref={textareaRef}
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={t("askAboutArticle")}
+        disabled={isStreaming}
+        rows={1}
+        className="flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+      />
+      <Button
+        size="icon"
+        className="h-8 w-8 shrink-0"
+        onClick={handleSend}
+        disabled={isStreaming || !input.trim()}
+      >
+        <Send className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
+// --- Main component ---
+
 export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
   const { t } = useTranslation("reader");
   const { data: chatHistory, isLoading } = useChatHistory(articleId);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
   const { set: setReader } = useReaderStore();
 
   // Sync server history into local state
@@ -48,63 +249,93 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
     }
   }, [chatHistory]);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages or streaming content
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollViewportRef.current) {
+      scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
     }
   }, [messages]);
 
-  const handleSend = useCallback(async () => {
-    const trimmed = input.trim();
-    if (!trimmed || isStreaming) return;
+  const doStream = useCallback(
+    async (text: string) => {
+      setIsStreaming(true);
 
-    const userMsg: ChatMessage = {
-      id: `temp-${Date.now()}`,
-      role: "user",
-      content: trimmed,
-      created_at: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
-    setIsStreaming(true);
+      const assistantMsg: ChatMessage = {
+        id: `temp-assistant-${Date.now()}`,
+        role: "assistant",
+        content: "",
+        created_at: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
 
-    const assistantMsg: ChatMessage = {
-      id: `temp-assistant-${Date.now()}`,
-      role: "assistant",
-      content: "",
-      created_at: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, assistantMsg]);
+      const controller = await streamChat(
+        articleId,
+        text,
+        (chunk) => {
+          setMessages((prev) => {
+            const last = prev.length > 0 ? prev[prev.length - 1] : undefined;
+            if (last && last.role === "assistant") {
+              return updateLastAssistant(prev, last.content + chunk);
+            }
+            return prev;
+          });
+        },
+        () => {
+          setIsStreaming(false);
+        },
+        (error) => {
+          setIsStreaming(false);
+          setMessages((prev) => {
+            const last = prev.length > 0 ? prev[prev.length - 1] : undefined;
+            if (last && last.role === "assistant") {
+              return updateLastAssistant(prev, `Error: ${error.message}`);
+            }
+            return prev;
+          });
+        },
+      );
+      abortRef.current = controller;
+    },
+    [articleId],
+  );
 
-    const controller = await streamChat(
-      articleId,
-      trimmed,
-      (chunk) => {
-        setMessages((prev) => {
-          const last = prev.length > 0 ? prev[prev.length - 1] : undefined;
-          if (last && last.role === "assistant") {
-            return updateLastAssistant(prev, last.content + chunk);
-          }
-          return prev;
-        });
-      },
-      () => {
-        setIsStreaming(false);
-      },
-      (error) => {
-        setIsStreaming(false);
-        setMessages((prev) => {
-          const last = prev.length > 0 ? prev[prev.length - 1] : undefined;
-          if (last && last.role === "assistant") {
-            return updateLastAssistant(prev, `Error: ${error.message}`);
-          }
-          return prev;
-        });
-      },
-    );
-    abortRef.current = controller;
-  }, [articleId, input, isStreaming]);
+  const handleSend = useCallback(
+    (text: string) => {
+      if (isStreaming) return;
+      const userMsg: ChatMessage = {
+        id: `temp-${Date.now()}`,
+        role: "user",
+        content: text,
+        created_at: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, userMsg]);
+      doStream(text);
+    },
+    [doStream, isStreaming],
+  );
+
+  const handleCopy = useCallback((text: string) => {
+    navigator.clipboard.writeText(text);
+  }, []);
+
+  const handleRegenerate = useCallback(
+    (assistantMsg: ChatMessage) => {
+      // Prevent regenerate while streaming
+      if (isStreaming) return;
+
+      // Find the user message right before this assistant message
+      const idx = messages.indexOf(assistantMsg);
+      if (idx < 1) return;
+      const prevMsg = messages[idx - 1];
+      if (!prevMsg || prevMsg.role !== "user") return;
+
+      // Remove the assistant message and re-send
+      const userText = prevMsg.content;
+      setMessages((prev) => prev.slice(0, idx));
+      doStream(userText);
+    },
+    [doStream, isStreaming, messages],
+  );
 
   const handleClose = () => {
     if (abortRef.current) {
@@ -113,73 +344,48 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
     setReader({ chatPanelOpen: false });
   };
 
+  const setScrollViewport = useCallback((node: HTMLDivElement | null) => {
+    scrollViewportRef.current = node;
+  }, []);
+
   return (
-    <div className="flex h-full w-80 flex-col border-l">
-      <div className="flex items-center gap-2 px-3 py-2">
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <div className="flex items-center gap-2 border-b px-3 py-2">
         <h3 className="flex-1 truncate text-sm font-medium">{t("aiChat")}</h3>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
-      <div className="px-3 pb-2 text-xs text-muted-foreground truncate" title={articleTitle}>
+      <div className="px-3 pb-1.5 text-xs text-muted-foreground truncate" title={articleTitle}>
         {articleTitle}
       </div>
-      <Separator />
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-4">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      {/* Messages or empty state */}
+      {isLoading ? (
+        <div className="flex flex-1 items-center justify-center">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      ) : messages.length === 0 ? (
+        <ChatEmptyState onSuggestionClick={handleSend} />
+      ) : (
+        <ScrollArea className="flex-1" viewportRef={setScrollViewport}>
+          <div className="space-y-4 px-3 py-3">
+            {messages.map((msg) => (
+              <ChatMessageBubble
+                key={msg.id}
+                msg={msg}
+                isStreaming={isStreaming && msg === messages[messages.length - 1] && msg.role === "assistant"}
+                onCopy={handleCopy}
+                onRegenerate={handleRegenerate}
+              />
+            ))}
           </div>
-        ) : messages.length === 0 ? (
-          <p className="text-center text-xs text-muted-foreground py-4">
-            {t("askQuestions")}
-          </p>
-        ) : (
-          messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={cn(
-                "rounded-md px-3 py-2 text-sm",
-                msg.role === "user"
-                  ? "bg-chat-user ml-4"
-                  : "bg-chat-ai mr-4"
-              )}
-            >
-              {msg.role === "assistant" ? (
-                <MarkdownContent content={msg.content} />
-              ) : (
-                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-              )}
-            </div>
-          ))
-        )}
-      </div>
+        </ScrollArea>
+      )}
 
-      <Separator />
-      <div className="flex items-center gap-2 p-3">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          placeholder={t("askAboutArticle")}
-          className="h-8 text-sm"
-          disabled={isStreaming}
-        />
-        <Button
-          size="icon"
-          className="h-8 w-8 shrink-0"
-          onClick={handleSend}
-          disabled={isStreaming || !input.trim()}
-        >
-          <Send className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* Input */}
+      <ChatInput onSend={handleSend} isStreaming={isStreaming} />
     </div>
   );
 }

@@ -31,6 +31,7 @@ interface ReaderState {
   autoSummarize: boolean;
   fullContentArticleIds: Record<string, true>;
   chatPanelOpen: boolean;
+  chatPanelWidth: number;
   commandPaletteOpen: boolean;
   settingsDialogOpen: boolean;
   set: (partial: Partial<ReaderState>) => void;
@@ -52,6 +53,7 @@ export const useReaderStore = create<ReaderState>()(
       autoSummarize: false,
       fullContentArticleIds: {},
       chatPanelOpen: false,
+      chatPanelWidth: 360,
       commandPaletteOpen: false,
       settingsDialogOpen: false,
       set: (partial) => set(partial),
@@ -78,6 +80,7 @@ export const useReaderStore = create<ReaderState>()(
         scrollMarkRead: state.scrollMarkRead,
         autoSummarize: state.autoSummarize,
         fullContentArticleIds: state.fullContentArticleIds,
+        chatPanelWidth: state.chatPanelWidth,
       }),
     }
   )

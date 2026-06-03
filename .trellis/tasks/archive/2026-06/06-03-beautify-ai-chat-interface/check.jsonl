@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify dark mode, a11y, and responsive requirements are met"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Check component naming, file placement, and prop interface conventions"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Check type correctness for new message action handlers"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Verify no unnecessary duplication — reuse shadcn/MardownContent where possible"}

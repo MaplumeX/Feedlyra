@@ -203,6 +203,20 @@ Group (orientation="horizontal")
   └── Panel#article-detail: (flexible, takes remaining space)
 ```
 
+When the AI chat panel is open, a fourth Panel appears inside the article-detail area:
+
+```
+Group (orientation="horizontal") — inside article-detail Panel
+  ├── Panel#article-content: (flexible)
+  ├── Separator
+  └── Panel#ai-chat:        minSize=280, maxSize=600, defaultSize=360
+```
+
+**Chat panel behavior**:
+- Dynamically appears/disappears based on `chatPanelOpen` state in the reader store
+- Width persisted via `chatPanelWidth` in Zustand (included in `partialize`)
+- When toggled off, the Panel is unmounted entirely (not collapsed) — layout reverts to full-width article content
+
 **Collapse behavior**: When `sidebarCollapsed` is true, the sidebar Panel collapses to 40px via `collapsible` + `collapsedSize={40}`. Controlled by Zustand store (`sidebarCollapsed`), toggled via Shift+S shortcut and Command Palette.
 
 **Persistence**: Layout saved to localStorage via `onLayoutChanged` callback; restored via `defaultLayout` prop on mount.
@@ -613,3 +627,51 @@ import { MarkdownContent } from "@/components/MarkdownContent";
 ```
 
 **Why**: Without this script, the page renders with light CSS variables first, then flashes to dark when next-themes applies the `.dark` class after React mounts. The inline script reads the same `localStorage` key (`"theme"`) that next-themes uses and applies the class synchronously before first paint.
+
+### Chat Message Hover Actions
+
+For inline actions that appear on message hover (copy, regenerate, etc.), use a group-hover pattern with `opacity-0 group-hover:opacity-100` transition:
+
+```tsx
+<div className="group relative">
+  {/* Message content */}
+  <div className="...">
+    <MarkdownContent content={msg.content} />
+  </div>
+  {/* Hover actions — absolutely positioned */}
+  <div className="absolute -top-3 right-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+    <Button variant="ghost" size="icon" className="h-6 w-6" title={t("copyMessage")} onClick={handleCopy}>
+      <Copy className="h-3 w-3" />
+    </Button>
+  </div>
+</div>
+```
+
+**Key details**:
+- `group` on the outer container, `group-hover:opacity-100` on the action bar
+- `transition-opacity` for smooth fade-in
+- Always include `title` attribute on icon-only buttons (accessibility)
+- For copy feedback: track `copied` state with `setTimeout`, clean up on unmount via `useRef`
+
+### Chat Regenerate Pattern
+
+Regenerate (re-send last user message) is a client-only operation — no new API endpoint needed:
+
+```tsx
+function handleRegenerate(assistantMsgId: string) {
+  if (isStreaming) return;
+  const assistantIdx = messages.findIndex(m => m.id === assistantMsgId);
+  if (assistantIdx <= 0) return;
+  const prevUserMsg = messages[assistantIdx - 1];
+  if (prevUserMsg?.role !== "user") return;
+  // Remove the assistant message from local state
+  const updated = messages.filter(m => m.id !== assistantMsgId);
+  setMessages(updated);
+  // Re-send the previous user message via streamChat
+  // (same flow as a normal send, minus adding a new user message)
+}
+```
+
+**Why**: Regenerate simply trims the last assistant response and re-triggers the SSE stream with the same user input. This avoids backend changes and keeps the chat history consistent — the server's last message gets overwritten on the next sync.
+
+**Gotcha**: Always guard with `if (isStreaming) return` even if the UI already hides the button during streaming — prevents race conditions from rapid clicks or programmatic triggers.
