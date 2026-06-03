@@ -9,11 +9,13 @@ from pydantic import BaseModel, Field
 class FeedCreate(BaseModel):
     url: str = Field(max_length=2048)
     category_id: UUID | None = None
+    auto_full_text: bool = False
 
 
 class FeedUpdate(BaseModel):
     title: str | None = Field(None, max_length=500)
     category_id: UUID | None = None
+    auto_full_text: bool | None = None
 
 
 class FeedResponse(BaseModel):
@@ -27,6 +29,7 @@ class FeedResponse(BaseModel):
     parsing_error_message: str | None
     checked_at: datetime | None
     created_at: datetime
+    auto_full_text: bool = False
 
     model_config = {"from_attributes": True}
 
