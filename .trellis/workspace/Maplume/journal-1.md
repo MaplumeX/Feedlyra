@@ -1488,3 +1488,37 @@ Modern redesign of AIChatPanel: resizable panel, message avatars, typing indicat
 ### Next Steps
 
 - None - task complete
+
+
+## Session 43: Separate AI chat into independent layout column
+
+**Date**: 2026-06-03
+**Task**: Separate AI chat into independent layout column
+**Branch**: `MaplumeX/ai-chat-separate-tab`
+
+### Summary
+
+Moved AI chat panel from nested sub-panel inside ArticleDetail to a top-level 4th column in the Home layout. Opening chat no longer compresses article reading area. Chat auto-closes on article deselect, stays open on article switch.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f0aa76a` | (see git log) |
+| `29bd79e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
