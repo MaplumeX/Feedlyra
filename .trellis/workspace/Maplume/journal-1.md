@@ -1490,6 +1490,16 @@ Modern redesign of AIChatPanel: resizable panel, message avatars, typing indicat
 - None - task complete
 
 
+## Session 43: Make add-feed endpoint async background
+
+**Date**: 2026-06-03
+**Task**: Make add-feed endpoint async background
+**Branch**: `MaplumeX/fix-slow-feed-subscription`
+
+### Summary
+
+Converted add_feed endpoint from synchronous blocking (await fetch_and_store_feed) to async background pattern using asyncio.create_task with independent db session. Endpoint now returns 201 immediately after creating feed record, matching the pattern already used by OPML import.
+
 ## Session 43: Separate AI chat into independent layout column
 
 **Date**: 2026-06-03
@@ -1508,6 +1518,7 @@ Moved AI chat panel from nested sub-panel inside ArticleDetail to a top-level 4t
 
 | Hash | Message |
 |------|---------|
+| `2619161` | (see git log) |
 | `f0aa76a` | (see git log) |
 | `29bd79e` | (see git log) |
 
