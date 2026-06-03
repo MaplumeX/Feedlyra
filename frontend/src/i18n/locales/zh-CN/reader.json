@@ -91,5 +91,6 @@
   "tableOfContents": "目录",
   "expandToc": "展开目录",
   "collapseToc": "收起目录",
-  "systemTheme": "跟随系统"
+  "systemTheme": "跟随系统",
+  "autoFullText": "自动获取全文"
 }

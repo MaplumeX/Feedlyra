@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { useArticle, useToggleRead, useToggleStar, useSummarize, useTranslate, useAIConfig, useExtractContent } from "@/api/hooks";
+import { useArticle, useToggleRead, useToggleStar, useSummarize, useTranslate, useAIConfig, useExtractContent, useFeeds } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { AIChatPanel } from "@/components/AIChatPanel";
 import { MarkdownContent } from "@/components/MarkdownContent";
@@ -57,6 +57,7 @@ export function ArticleDetail() {
     setArticleFullContentPreference,
   } = useReaderStore();
   const { data: article, isLoading } = useArticle(selectedArticleId);
+  const { data: feeds } = useFeeds();
   const toggleRead = useToggleRead();
   const toggleStar = useToggleStar();
   const summarize = useSummarize();
@@ -70,6 +71,7 @@ export function ArticleDetail() {
   const [scrollViewport, setScrollViewport] = useState<HTMLDivElement | null>(null);
   const [articleElement, setArticleElement] = useState<HTMLElement | null>(null);
   const autoSummarizeTriggeredRef = useRef<string | null>(null);
+  const autoExtractTriggeredRef = useRef<string | null>(null);
 
   const setScrollViewportRef = useCallback((node: HTMLDivElement | null) => {
     setScrollViewport(node);
@@ -135,6 +137,29 @@ export function ArticleDetail() {
   // Reset auto-summarize trigger ref when article changes
   useEffect(() => {
     autoSummarizeTriggeredRef.current = null;
+  }, [selectedArticleId]);
+
+  // Auto-extract full content when feed has auto_full_text=True
+  const feedAutoFullText = feeds?.find((f) => f.id === article?.feed_id)?.auto_full_text ?? false;
+  useEffect(() => {
+    if (!article || !feedAutoFullText || article.full_content) return;
+    if (extractContent.isPending) return;
+    if (autoExtractTriggeredRef.current === article.id) return;
+    if (fullContentArticleIds[article.id]) return;
+    autoExtractTriggeredRef.current = article.id;
+    extractContent.mutate(article.id, {
+      onSuccess: (updatedArticle) => {
+        if (updatedArticle.full_content) {
+          setShowFullContent(true);
+          setArticleFullContentPreference(updatedArticle.id, true);
+        }
+      },
+    });
+  }, [article, feedAutoFullText, extractContent, fullContentArticleIds, setArticleFullContentPreference]);
+
+  // Reset auto-extract trigger ref when article changes
+  useEffect(() => {
+    autoExtractTriggeredRef.current = null;
   }, [selectedArticleId]);
 
   // Auto-switch to translation view after successful translation

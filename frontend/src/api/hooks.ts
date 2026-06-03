@@ -141,7 +141,7 @@ export function useRefreshFeed() {
 export function useUpdateFeed(feedId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { title: string; category_id?: string | null }) => api.put(`/api/feeds/${feedId}`, data),
+    mutationFn: (data: { title: string; category_id?: string | null; auto_full_text?: boolean }) => api.put(`/api/feeds/${feedId}`, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
       qc.invalidateQueries({ queryKey: queryKeys.articles.all });
