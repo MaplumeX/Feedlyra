@@ -24,6 +24,7 @@ FastAPI's default `{"detail": "message"}` JSON shape. No custom error envelope o
 
 | Code | Usage |
 |------|-------|
+| `202` | Accepted — resource created but async processing incomplete (e.g. feed added but initial fetch failed) |
 | `400` | Bad Request — invalid OPML, missing AI config, connection test failure |
 | `401` | Unauthorized — invalid credentials/tokens |
 | `403` | Forbidden — batch operation contains resources not owned by user |
@@ -71,7 +72,7 @@ yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
 ## Common Mistakes
 
-- **Bare `except Exception: pass`** — Several places (notably `add_feed`, `_extract_full_text`, `_html_to_text`) silently swallow errors. This hides real bugs. See [[quality-guidelines]] for the forbidden pattern and correct alternative.
+- **Bare `except Exception: pass`** — Several places (notably `_extract_full_text`, `_html_to_text`) silently swallow errors. This hides real bugs. See [[quality-guidelines]] for the forbidden pattern and correct alternative. The `add_feed` endpoint was fixed to use 202 + `parsing_error_message` instead of silent pass (see Design Decision below).
 - **Returning plaintext API keys in error responses** — Even error responses can leak secrets in logs/middleware. Use `has_api_key: bool` instead.
 - **Batch endpoints without ownership validation** — When an endpoint accepts a list of resource IDs (e.g., `article_ids: UUID[]`), always verify the resources belong to the current user. Without this, any user can operate on other users' data.
 
@@ -153,4 +154,45 @@ async def update_email(body: UserEmailUpdate, user: User = Depends(get_current_u
     if not verify_password(body.current_password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     user.email = body.email
+```
+
+---
+
+## Design Decision: Partial Success with 202 Accepted
+
+**Context**: `POST /api/feeds` creates a feed and immediately fetches its content. When the initial fetch fails (network error, invalid URL, parse error), the resource is still created but incomplete.
+
+**Options Considered**:
+1. Return 502 and reject the feed — prevents broken entries but rejects valid URLs with transient failures
+2. Return 201 silently — hides the failure from the user (the old bug)
+3. Return 202 Accepted — feed is created, client knows content is pending
+
+**Decision**: Return HTTP 202 with `parsing_error_message` set on the response body. The route decorator still declares `status_code=201`; the handler uses FastAPI's `Response.status_code` to override to 202 when `feed.parsing_error_message` is truthy. Frontend checks `parsing_error_message` on the returned feed object to show a warning toast.
+
+**Why 202 over 502**: RSS URLs are often temporarily unreachable. Rejecting the subscription would force users to retry manually. The 202 pattern preserves the feed entry for automatic retry on the next refresh cycle.
+
+**Key insight**: `fetch_and_store_feed` handles some error types internally (HTTP >= 400, parse errors) without throwing — it sets `parsing_error_message` and returns normally. Only network/timeout errors throw. The 202 trigger must check `feed.parsing_error_message` (not a boolean flag) to cover both paths.
+
+```python
+@router.post("", response_model=FeedResponse, status_code=status.HTTP_201_CREATED)
+async def add_feed(body: FeedCreate, response: Response, ...):
+    feed = Feed(...)
+    db.add(feed)
+    await db.commit()
+    await db.refresh(feed)
+
+    try:
+        await fetch_and_store_feed(feed, db)
+        await db.refresh(feed)
+    except Exception as e:
+        feed.parsing_error_count += 1
+        feed.parsing_error_message = str(e)[:500]
+        await db.commit()
+        await db.refresh(feed)
+        logger.warning("Initial fetch failed for new feed %s: %s", feed.id, e)
+
+    if feed.parsing_error_message:
+        response.status_code = status.HTTP_202_ACCEPTED
+
+    return feed
 ```

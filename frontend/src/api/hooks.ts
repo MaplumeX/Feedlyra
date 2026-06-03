@@ -84,6 +84,7 @@ export function useFeeds() {
     queryKey: queryKeys.feeds.list(),
     queryFn: () => api.get<Feed[]>("/api/feeds"),
     staleTime: 2 * 60 * 1000,
+    refetchInterval: 2 * 60 * 1000,
   });
 }
 
@@ -138,10 +139,11 @@ export function useRefreshFeed() {
   });
 }
 
-export function useUpdateFeed(feedId: string) {
+export function useUpdateFeed() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { title: string; category_id?: string | null; auto_full_text?: boolean }) => api.put(`/api/feeds/${feedId}`, data),
+    mutationFn: ({ feedId, ...data }: { feedId: string; title: string; category_id?: string | null; auto_full_text?: boolean }) =>
+      api.put(`/api/feeds/${feedId}`, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
       qc.invalidateQueries({ queryKey: queryKeys.articles.all });
@@ -256,6 +258,7 @@ export function useInfiniteArticles(params: ArticleListParams = {}) {
       return loadedCount < lastPage.total ? lastPage.page + 1 : undefined;
     },
     staleTime: 2 * 60 * 1000,
+    refetchInterval: 2 * 60 * 1000,
   });
 }
 

@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify add_feed 202 response follows backend error handling conventions"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Verify no silent exception handling remains, OPML async task safety"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Verify handleMoveFeed refactor uses hooks correctly per conventions"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify toast usage pattern consistency with existing components"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify React Query invalidation is correct after 202/201 responses"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify 202 status code contract is consistent between backend and frontend"}

@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Bug 1 needs correct error handling pattern for add_feed fetch failure (202 vs error)"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Ensure backend changes meet quality standards, especially silent exception handling"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Bug 2 refactors handleMoveFeed to use useUpdateFeed hook, needs hook conventions"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Bug 3 adds toast notifications and Bug 2 modifies Sidebar, need component patterns"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Bug 2 involves React Query mutation state management in Sidebar"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Bug 1 changes backend response code (202) which frontend must handle, cross-layer contract"}

@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Rules for writing React Query hooks — need to follow conventions when adding refetchInterval"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns for the new banner component"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "State management conventions — understanding React Query + Zustand patterns"}
+{"file": ".trellis/tasks/06-03-add-auto-refresh-feeds-feature/prd.md", "reason": "Task PRD with requirements and technical approach"}

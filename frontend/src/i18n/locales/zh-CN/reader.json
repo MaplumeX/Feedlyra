@@ -101,5 +101,9 @@
   "chatEmptySubtitle": "选择一个建议或输入你的问题。",
   "copyMessage": "复制",
   "copied": "已复制！",
-  "regenerate": "重新生成"
+  "regenerate": "重新生成",
+  "feedAddedSuccess": "订阅成功",
+  "feedAddedFetchWarning": "订阅成功，内容稍后加载",
+  "moveFeedFailed": "移动订阅源失败",
+  "newArticles": "{{count}} 篇新文章，点击查看"
 }

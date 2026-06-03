@@ -101,5 +101,9 @@
   "chatEmptySubtitle": "Choose a suggestion or type your own question.",
   "copyMessage": "Copy",
   "copied": "Copied!",
-  "regenerate": "Regenerate"
+  "regenerate": "Regenerate",
+  "feedAddedSuccess": "Feed added successfully",
+  "feedAddedFetchWarning": "Feed added, content will load later",
+  "moveFeedFailed": "Failed to move feed",
+  "newArticles": "{{count}} new articles, click to view"
 }
