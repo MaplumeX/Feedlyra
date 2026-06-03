@@ -1533,3 +1533,36 @@ Moved AI chat panel from nested sub-panel inside ArticleDetail to a top-level 4t
 ### Next Steps
 
 - None - task complete
+
+
+## Session 44: Remove ArticleSummary generation from fetch_and_store_feed
+
+**Date**: 2026-06-03
+**Task**: Remove ArticleSummary generation from fetch_and_store_feed
+**Branch**: `MaplumeX/remove-article-summary-from-fetch-feed`
+
+### Summary
+
+Deleted the auto-summarization block (lines 354-397) from fetch_and_store_feed(), decoupling feed fetching from ArticleSummary generation. On-demand summarization via /api/ai/articles/{id}/summarize remains intact.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9e191fa` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

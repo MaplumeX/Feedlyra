@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 43
+- **Total Sessions**: 44
 - **Last Active**: 2026-06-03
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1550 | Active |
+| `journal-1.md` | ~1568 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 44 | 2026-06-03 | Remove ArticleSummary generation from fetch_and_store_feed | `9e191fa` | `MaplumeX/remove-article-summary-from-fetch-feed` |
 | 43 | 2026-06-03 | Make add-feed endpoint async background | `2619161` | `MaplumeX/fix-slow-feed-subscription` |
 | 43 | 2026-06-03 | Separate AI chat into independent layout column | `f0aa76a`, `29bd79e` | `MaplumeX/ai-chat-separate-tab` |
 | 42 | 2026-06-03 | Add loading spinners to AddFeedDialog | `dfc2193` | `Feat/fix-add-feed-ui-freeze` |
