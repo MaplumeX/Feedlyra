@@ -92,5 +92,6 @@
   "expandToc": "展开目录",
   "collapseToc": "收起目录",
   "systemTheme": "跟随系统",
-  "autoFullText": "自动获取全文"
+  "autoFullText": "自动获取全文",
+  "newArticles": "{{count}} 篇新文章，点击查看"
 }

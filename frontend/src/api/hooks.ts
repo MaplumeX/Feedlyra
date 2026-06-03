@@ -84,6 +84,7 @@ export function useFeeds() {
     queryKey: queryKeys.feeds.list(),
     queryFn: () => api.get<Feed[]>("/api/feeds"),
     staleTime: 2 * 60 * 1000,
+    refetchInterval: 2 * 60 * 1000,
   });
 }
 
@@ -256,6 +257,7 @@ export function useInfiniteArticles(params: ArticleListParams = {}) {
       return loadedCount < lastPage.total ? lastPage.page + 1 : undefined;
     },
     staleTime: 2 * 60 * 1000,
+    refetchInterval: 2 * 60 * 1000,
   });
 }
 
