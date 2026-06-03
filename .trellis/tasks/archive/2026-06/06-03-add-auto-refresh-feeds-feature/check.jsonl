@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Verify hook conventions are followed"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify component patterns are followed"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality checks for the frontend changes"}
+{"file": ".trellis/tasks/06-03-add-auto-refresh-feeds-feature/prd.md", "reason": "Check against PRD acceptance criteria"}
