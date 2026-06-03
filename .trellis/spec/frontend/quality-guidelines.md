@@ -39,7 +39,9 @@ function App() {
 }
 ```
 
-### Don't: Virtuoso rangeChanged without stability guard
+### Don't: Use Virtuoso rangeChanged for scroll-triggered logic
+
+> **Superseded**: The project now uses `IntersectionObserver` instead of `rangeChanged` for scroll mark-as-read (commit 7b4d633). This entry is kept as a historical reference.
 
 ```tsx
 // Bad — fires on mount, resize, and data changes, not just user scroll
@@ -50,7 +52,7 @@ function App() {
 
 **Why**: Virtuoso emits `rangeChanged` on initialization, window resize, and data replacement — not only on user scroll. Without an `isStable` guard, these non-user events trigger false positives (e.g., marking articles read on page load).
 
-**Instead**: Use an `isStableRef` that becomes true after the first rangeChanged, and reset it when the data source changes (feed/filter switch).
+**Instead**: Use `IntersectionObserver` with `rootMargin` for pixel-accurate viewport boundary detection. See [[component-guidelines]] for the full IntersectionObserver pattern.
 
 ### Don't: Forget debounce cleanup in scroll handlers
 
@@ -126,7 +128,7 @@ export const useReaderStore = create(
 
 ## Known Quality Gate Gaps
 
-- `npm run lint` currently invokes ESLint 9, but the frontend does not yet have an `eslint.config.(js|mjs|cjs)` file. Treat lint failures that only report the missing config file as an existing project configuration gap, not as a feature regression. Use `npm run build` for TypeScript/build verification until the ESLint flat config is added.
+None currently. ESLint flat config (`eslint.config.js`) is in place; use `npm run lint` and `npm run build` for verification.
 
 ---
 
