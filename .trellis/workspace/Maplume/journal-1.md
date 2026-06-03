@@ -1410,3 +1410,36 @@ Added frontend auto-refresh via React Query refetchInterval (2min), NewArticlesB
 ### Next Steps
 
 - None - task complete
+
+
+## Session 42: Add loading spinners to AddFeedDialog
+
+**Date**: 2026-06-03
+**Task**: Add loading spinners to AddFeedDialog
+**Branch**: `Feat/fix-add-feed-ui-freeze`
+
+### Summary
+
+Fixed the UX where adding a feed showed only a disabled button with no progress feedback. Added Loader2 spinner + text change (Adding.../Finding...) to Add/Find buttons when isPending, and inline spinner to discovered feed items. Added i18n keys for en and zh-CN.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `dfc2193` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 41
+- **Total Sessions**: 42
 - **Last Active**: 2026-06-03
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1389 | Active |
+| `journal-1.md` | ~1445 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 42 | 2026-06-03 | Add loading spinners to AddFeedDialog | `dfc2193` | `Feat/fix-add-feed-ui-freeze` |
 | 41 | 2026-06-03 | Add auto-refresh feeds feature | `79183f8` | `Feat/auto-refresh-feeds` |
 | 40 | 2026-06-03 | Fix feed subscription bugs | `da69c4e`, `acbd2c1` | `Feat/fix-add-feed-bugs` |
 | 40 | 2026-06-03 | Add per-feed auto full-text extraction | `3fded12` | `Fix/indianapolis` |
