@@ -48,7 +48,7 @@ async def add_feed(
         if cat_result.scalar_one_or_none() is None:
             raise HTTPException(status_code=404, detail="Category not found")
 
-    feed = Feed(user_id=user.id, title="", url=body.url, category_id=body.category_id)
+    feed = Feed(user_id=user.id, title="", url=body.url, category_id=body.category_id, auto_full_text=body.auto_full_text)
     db.add(feed)
     await db.commit()
     await db.refresh(feed)
@@ -143,6 +143,8 @@ async def update_feed(
             if cat_result.scalar_one_or_none() is None:
                 raise HTTPException(status_code=404, detail="Category not found")
         feed.category_id = new_cat_id
+    if "auto_full_text" in update_data:
+        feed.auto_full_text = update_data["auto_full_text"]
     await db.commit()
     await db.refresh(feed)
     return feed

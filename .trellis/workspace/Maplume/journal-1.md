@@ -1321,3 +1321,36 @@ Comprehensive visual redesign of Feedlyra from default shadcn/ui slate theme to 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 40: Add per-feed auto full-text extraction
+
+**Date**: 2026-06-03
+**Task**: Add per-feed auto full-text extraction
+**Branch**: `Fix/indianapolis`
+
+### Summary
+
+Added auto_full_text boolean field to Feed model. When enabled, opening an article automatically triggers readability-lxml full-text extraction instead of requiring a manual button click. Includes migration 009, backend schema/router updates, frontend auto-extract effect in ArticleDetail, and Switch toggle in FeedSettingsDialog.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3fded12` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
