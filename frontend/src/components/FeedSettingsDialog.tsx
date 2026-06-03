@@ -20,6 +20,7 @@ import {
 import { useUpdateFeed, useCategories } from "@/api/hooks";
 import { useTranslation } from "react-i18next";
 import type { Feed } from "@/api/types";
+import { Switch } from "@/components/ui/switch";
 
 interface FeedSettingsDialogProps {
   feed: Feed;
@@ -33,21 +34,23 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
   const { t } = useTranslation("reader");
   const [title, setTitle] = useState(feed.title);
   const [categoryId, setCategoryId] = useState<string>(feed.category_id ?? UNCATEGORIZED);
+  const [autoFullText, setAutoFullText] = useState(feed.auto_full_text);
   const updateFeed = useUpdateFeed();
   const { data: categories = [] } = useCategories();
 
   useEffect(() => {
     setTitle(feed.title);
     setCategoryId(feed.category_id ?? UNCATEGORIZED);
-  }, [feed.title, feed.category_id]);
+    setAutoFullText(feed.auto_full_text);
+  }, [feed.title, feed.category_id, feed.auto_full_text]);
 
   function handleSave() {
     const trimmedTitle = title.trim();
     const catId = categoryId === UNCATEGORIZED ? null : categoryId;
     if (!trimmedTitle) return;
-    if (trimmedTitle === feed.title && catId === feed.category_id) return;
+    if (trimmedTitle === feed.title && catId === feed.category_id && autoFullText === feed.auto_full_text) return;
     updateFeed.mutate(
-      { feedId: feed.id, title: trimmedTitle, category_id: catId },
+      { feedId: feed.id, title: trimmedTitle, category_id: catId, auto_full_text: autoFullText },
       { onSuccess: () => onOpenChange(false) },
     );
   }
@@ -100,6 +103,15 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
           </Select>
         </div>
 
+        <div className="flex items-center justify-between">
+          <Label htmlFor="auto-full-text">{t("autoFullText")}</Label>
+          <Switch
+            id="auto-full-text"
+            checked={autoFullText}
+            onCheckedChange={setAutoFullText}
+          />
+        </div>
+
         {updateFeed.isError && (
           <p className="text-sm text-destructive">{updateFeed.error.message}</p>
         )}
@@ -110,7 +122,7 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
           </Button>
           <Button
             onClick={handleSave}
-            disabled={!title.trim() || (title === feed.title && categoryId === (feed.category_id ?? UNCATEGORIZED)) || updateFeed.isPending}
+            disabled={!title.trim() || (title === feed.title && categoryId === (feed.category_id ?? UNCATEGORIZED) && autoFullText === feed.auto_full_text) || updateFeed.isPending}
           >
             {updateFeed.isPending ? t("saving", { ns: "common" }) : t("save", { ns: "common" })}
           </Button>

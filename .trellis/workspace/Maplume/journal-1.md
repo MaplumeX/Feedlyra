@@ -1333,6 +1333,26 @@ Comprehensive visual redesign of Feedlyra from default shadcn/ui slate theme to 
 
 Fix 4 bugs in feed subscription flow: (1) add_feed returns 202 instead of silently passing on fetch failure, (2) handleMoveFeed uses useUpdateFeed hook instead of direct api.put, (3) add toast notifications for feed add success/warning/error, (4) OPML import triggers background async fetch per feed. Updated specs for 202 partial success pattern, dynamic mutation hook IDs, and background async session pattern.
 
+## Session 40: Add per-feed auto full-text extraction
+
+**Date**: 2026-06-03
+**Task**: Add per-feed auto full-text extraction
+**Branch**: `Fix/indianapolis`
+
+### Summary
+
+Added auto_full_text boolean field to Feed model. When enabled, opening an article automatically triggers readability-lxml full-text extraction instead of requiring a manual button click. Includes migration 009, backend schema/router updates, frontend auto-extract effect in ArticleDetail, and Switch toggle in FeedSettingsDialog.
+
+## Session 40: Move account controls from settings to sidebar user menu
+
+**Date**: 2026-06-03
+**Task**: Move account controls from settings to sidebar user menu
+**Branch**: `Feat/relocate-account-system`
+
+### Summary
+
+Refactored account system: replaced Settings Account tab with Sidebar user menu (DropdownMenu + sub Dialogs). Created EditUsernameDialog, EditEmailDialog, EditPasswordDialog from AccountSettingsTab. Removed Account tab from SettingsDialog.
+
 ### Main Changes
 
 (Add details)
@@ -1343,6 +1363,41 @@ Fix 4 bugs in feed subscription flow: (1) add_feed returns 202 instead of silent
 |------|---------|
 | `da69c4e` | (see git log) |
 | `acbd2c1` | (see git log) |
+| `3fded12` | (see git log) |
+| `ea24f15` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 41: Add auto-refresh feeds feature
+
+**Date**: 2026-06-03
+**Task**: Add auto-refresh feeds feature
+**Branch**: `Feat/auto-refresh-feeds`
+
+### Summary
+
+Added frontend auto-refresh via React Query refetchInterval (2min), NewArticlesBanner component with sentinel value pattern to prevent false positives on feed/filter switch and manual refresh.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `79183f8` | (see git log) |
 
 ### Testing
 

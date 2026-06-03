@@ -18,6 +18,7 @@ export interface Feed {
   unread_count?: number;
   category_id: string | null;
   category_name: string | null;
+  auto_full_text: boolean;
 }
 
 export interface Category {
