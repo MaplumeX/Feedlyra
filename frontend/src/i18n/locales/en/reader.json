@@ -96,5 +96,7 @@
   "feedAddedFetchWarning": "Feed added, content will load later",
   "moveFeedFailed": "Failed to move feed",
   "autoFullText": "Auto Full Text",
-  "newArticles": "{{count}} new articles, click to view"
+  "newArticles": "{{count}} new articles, click to view",
+  "adding": "Adding...",
+  "finding": "Finding..."
 }

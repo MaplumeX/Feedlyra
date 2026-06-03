@@ -96,5 +96,7 @@
   "feedAddedFetchWarning": "订阅成功，内容稍后加载",
   "moveFeedFailed": "移动订阅源失败",
   "autoFullText": "自动获取全文",
-  "newArticles": "{{count}} 篇新文章，点击查看"
+  "newArticles": "{{count}} 篇新文章，点击查看",
+  "adding": "添加中...",
+  "finding": "查找中..."
 }

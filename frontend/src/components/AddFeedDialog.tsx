@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 import { useAddFeed, useDiscoverFeeds, useCategories } from "@/api/hooks";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -116,7 +117,8 @@ export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
                 onKeyDown={(e) => e.key === "Enter" && handleAddFeed()}
               />
               <Button onClick={handleAddFeed} disabled={addFeed.isPending || !feedUrl.trim()}>
-                {t("add", { ns: "common" })}
+                {addFeed.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {addFeed.isPending ? t("adding") : t("add", { ns: "common" })}
               </Button>
             </div>
             {addFeed.isError && (
@@ -133,7 +135,8 @@ export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
                 onKeyDown={(e) => e.key === "Enter" && handleDiscover()}
               />
               <Button onClick={handleDiscover} disabled={discoverFeeds.isPending || !websiteUrl.trim()}>
-                {t("find", { ns: "common" })}
+                {discoverFeeds.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {discoverFeeds.isPending ? t("finding") : t("find", { ns: "common" })}
               </Button>
             </div>
 
@@ -150,7 +153,7 @@ export function AddFeedDialog({ open, onOpenChange }: AddFeedDialogProps) {
                     onClick={() => handleSelectDiscovered(f.url)}
                     disabled={addFeed.isPending}
                   >
-                    <span className="flex-1 truncate">{f.title || f.url}</span>
+                    <span className="flex-1 truncate flex items-center gap-2">{addFeed.isPending && <Loader2 className="h-3 w-3 animate-spin shrink-0" />}{f.title || f.url}</span>
                     <span className="text-xs text-muted-foreground truncate max-w-48">{f.url}</span>
                   </button>
                 ))}
