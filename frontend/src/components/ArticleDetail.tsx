@@ -1,7 +1,6 @@
 import DOMPurify from "dompurify";
 import { toast } from "sonner";
 import { ExternalLink, Star, BookOpen, Circle, Check, Sparkles, Languages, MessageSquare, FileText } from "lucide-react";
-import { Group, Panel, Separator as PanelSeparator } from "react-resizable-panels";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +9,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useArticle, useToggleRead, useToggleStar, useSummarize, useTranslate, useAIConfig, useExtractContent, useFeeds } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
-import { AIChatPanel } from "@/components/AIChatPanel";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { ReadingSettingsPopover, getFontStack } from "@/components/ReadingSettingsPopover";
 import { ArticleTableOfContents, createArticleContentWithAnchors } from "@/components/ArticleTableOfContents";
@@ -51,7 +49,6 @@ export function ArticleDetail() {
   const {
     selectedArticleId,
     chatPanelOpen,
-    chatPanelWidth,
     readerSettings,
     autoSummarize,
     fullContentArticleIds,
@@ -335,11 +332,8 @@ export function ArticleDetail() {
       </div>
 
       <div className="relative flex flex-1 overflow-hidden">
-        <Group orientation="horizontal" className="flex-1">
-          <Panel minSize={200}>
-            <div className="relative flex h-full overflow-hidden">
-              <ScrollArea className="flex-1" viewportRef={setScrollViewportRef}>
-                <article
+        <ScrollArea className="flex-1" viewportRef={setScrollViewportRef}>
+          <article
             ref={setArticleElementRef}
             className="mx-auto px-6 py-8"
             style={{ maxWidth: `${readerSettings.contentWidth}px` }}
@@ -446,30 +440,9 @@ export function ArticleDetail() {
           items={tocItems}
           scrollViewport={scrollViewport}
           articleElement={articleElement}
-          forceCompact={chatPanelOpen}
-          reservedRight={chatPanelOpen ? chatPanelWidth : 0}
+          forceCompact={false}
+          reservedRight={0}
         />
-            </div>
-          </Panel>
-
-          {chatPanelOpen && selectedArticleId ? (
-            <>
-              <PanelSeparator className="relative w-px bg-border transition-colors hover:bg-primary/50 data-[separator=active]:bg-primary">
-                <div className="absolute inset-y-0 -left-2 -right-2" />
-              </PanelSeparator>
-              <Panel
-                defaultSize={chatPanelWidth}
-                minSize={280}
-                maxSize={600}
-                onResize={(size) => {
-                  setReader({ chatPanelWidth: size.inPixels });
-                }}
-              >
-                <AIChatPanel articleId={selectedArticleId} articleTitle={article.title} />
-              </Panel>
-            </>
-          ) : null}
-        </Group>
       </div>
 
       {lightboxSrc && (
