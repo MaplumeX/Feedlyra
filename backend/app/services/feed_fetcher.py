@@ -351,51 +351,6 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
     feed.next_check_at = _compute_next_check(feed)
     await db.commit()
 
-    # Trigger background summarization for new articles if user has AI config
-    if new_articles:
-        try:
-            from app.models.ai import ArticleSummary
-            from app.models.user import User
-            from app.services.article_summary import (
-                SUMMARY_SOURCE_FEED,
-                get_summary_content,
-                get_summary_content_hash,
-            )
-            from app.services.llm import generate_summary, get_user_llm_client, get_user_model
-
-            user_result = await db.execute(select(User).where(User.id == feed.user_id))
-            feed_user = user_result.scalar_one_or_none()
-            if feed_user:
-                try:
-                    client = get_user_llm_client(feed_user, "summary")
-                    model = get_user_model(feed_user, "summary")
-                    for article in new_articles:
-                        try:
-                            content = get_summary_content(article, SUMMARY_SOURCE_FEED)
-                            if not content:
-                                continue
-                            summary = await generate_summary(client, model, article.title, content)
-                            now = datetime.now(timezone.utc)
-                            article_summary = ArticleSummary(
-                                article_id=article.id,
-                                source=SUMMARY_SOURCE_FEED,
-                                content_hash=get_summary_content_hash(content),
-                                summary=summary,
-                                model=model,
-                                created_at=now,
-                                updated_at=now,
-                            )
-                            db.add(article_summary)
-                        except Exception:
-                            logger.exception("Failed to summarize article %s", article.id)
-                    await db.commit()
-                except ValueError:
-                    logger.warning("User %s has no valid AI config, skipping summarization", feed.user_id)
-                except Exception:
-                    logger.exception("Failed to generate summaries for feed %s", feed.id)
-        except Exception:
-            logger.exception("Error during background summarization setup for feed %s", feed.id)
-
 
 async def refresh_all_feeds(db: AsyncSession, user_id: UUID) -> dict[str, int]:
     result = await db.execute(select(Feed).where(Feed.user_id == user_id))
