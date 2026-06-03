@@ -200,22 +200,19 @@ Group (orientation="horizontal")
   ├── Separator
   ├── Panel#article-list:   minSize=180, maxSize=400, defaultSize=280
   ├── Separator
-  └── Panel#article-detail: (flexible, takes remaining space)
-```
-
-When the AI chat panel is open, a fourth Panel appears inside the article-detail area:
-
-```
-Group (orientation="horizontal") — inside article-detail Panel
-  ├── Panel#article-content: (flexible)
-  ├── Separator
-  └── Panel#ai-chat:        minSize=280, maxSize=600, defaultSize=360
+  ├── Panel#article-detail: (flexible, takes remaining space)
+  ├── Separator (conditional, only when chat panel is open)
+  └── Panel#ai-chat:       minSize=280, maxSize=600, defaultSize=360 (conditional)
 ```
 
 **Chat panel behavior**:
-- Dynamically appears/disappears based on `chatPanelOpen` state in the reader store
+- The AI chat panel is a top-level Panel in the main Group, not nested inside article-detail
+- Only renders when `chatPanelOpen` is true AND `selectedArticleId` is non-null
+- When toggled off, the Panel is unmounted entirely (not collapsed) — article-detail takes full width
+- When no article is selected, the chat toggle button is disabled (`selectedArticleId` guard)
+- When the selected article is deselected, the chat panel auto-closes (useEffect in Home.tsx)
 - Width persisted via `chatPanelWidth` in Zustand (included in `partialize`)
-- When toggled off, the Panel is unmounted entirely (not collapsed) — layout reverts to full-width article content
+- `onResize` callback on the chat Panel updates `chatPanelWidth` in the store
 
 **Collapse behavior**: When `sidebarCollapsed` is true, the sidebar Panel collapses to 40px via `collapsible` + `collapsedSize={40}`. Controlled by Zustand store (`sidebarCollapsed`), toggled via Shift+S shortcut and Command Palette.
 
