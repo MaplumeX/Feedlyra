@@ -1410,3 +1410,36 @@ Added frontend auto-refresh via React Query refetchInterval (2min), NewArticlesB
 ### Next Steps
 
 - None - task complete
+
+
+## Session 42: Fix new articles banner false positive on initial page load
+
+**Date**: 2026-06-03
+**Task**: Fix new articles banner false positive on initial page load
+**Branch**: `MaplumeX/fix-new-articles-banner`
+
+### Summary
+
+Fixed the new-articles banner appearing on first page load by adding hasLoadedRef + isLoading guard to skip the 0→realTotal jump. Updated hook-guidelines spec with the fallback-value-before-data-arrives gotcha.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9bf9337` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
