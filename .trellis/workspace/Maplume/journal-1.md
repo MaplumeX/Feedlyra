@@ -1365,3 +1365,36 @@ Refactored account system: replaced Settings Account tab with Sidebar user menu 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 41: Add auto-refresh feeds feature
+
+**Date**: 2026-06-03
+**Task**: Add auto-refresh feeds feature
+**Branch**: `Feat/auto-refresh-feeds`
+
+### Summary
+
+Added frontend auto-refresh via React Query refetchInterval (2min), NewArticlesBanner component with sentinel value pattern to prevent false positives on feed/filter switch and manual refresh.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `79183f8` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

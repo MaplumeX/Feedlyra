@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Virtuoso } from "react-virtuoso";
+import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { Star, CheckCheck, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { FeedIcon } from "@/components/FeedIcon";
-import { useInfiniteArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead, useRefreshAllFeeds } from "@/api/hooks";
+import { useInfiniteArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead, useRefreshAllFeeds, queryKeys } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
 import type { Article } from "@/api/types";
@@ -115,6 +116,18 @@ function ArticleListFooter({ isLoadingMore }: { isLoadingMore: boolean }) {
   );
 }
 
+function NewArticlesBanner({ count, onClick }: { count: number; onClick: () => void }) {
+  const { t } = useTranslation("reader");
+  return (
+    <button
+      className="flex w-full items-center justify-center gap-1.5 border-b bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+      onClick={onClick}
+    >
+      {t("newArticles", { count })}
+    </button>
+  );
+}
+
 export function ArticleList() {
   const { t } = useTranslation("reader");
   const { selectedFeedId, selectedArticleId, articleListFilter, scrollMarkRead, set: setReader } = useReaderStore();
@@ -139,6 +152,41 @@ export function ArticleList() {
   const markAllRead = useMarkAllRead();
   const batchRead = useBatchRead();
   const refreshAll = useRefreshAllFeeds();
+  const queryClient = useQueryClient();
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+
+  // New articles detection
+  // acknowledgedTotal tracks the total article count the user has "seen".
+  // During feed/filter transitions we store -1 as a sentinel so that when the
+  // new data arrives (currentTotal changes) we acknowledge it immediately
+  // instead of showing a false-positive banner.
+  const acknowledgedTotalRef = useRef<number>(-1);
+  const [newArticlesCount, setNewArticlesCount] = useState(0);
+  const currentTotal = data?.pages?.[0]?.total ?? 0;
+
+  // Mark acknowledged total as stale on feed/filter change
+  useEffect(() => {
+    acknowledgedTotalRef.current = -1;
+    setNewArticlesCount(0);
+  }, [selectedFeedId, articleListFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Also reset on manual refresh / mark-all-read so these don't trigger a false banner
+  useEffect(() => {
+    if (refreshAll.isSuccess || markAllRead.isSuccess) {
+      acknowledgedTotalRef.current = -1;
+      setNewArticlesCount(0);
+    }
+  }, [refreshAll.isSuccess, markAllRead.isSuccess]);
+
+  // Detect new articles from background refetch
+  useEffect(() => {
+    if (acknowledgedTotalRef.current === -1) {
+      // First data arrival after a feed/filter switch — acknowledge it
+      acknowledgedTotalRef.current = currentTotal;
+    } else if (currentTotal > acknowledgedTotalRef.current) {
+      setNewArticlesCount(currentTotal - acknowledgedTotalRef.current);
+    }
+  }, [currentTotal]);
 
   const feedIconMap = useMemo(() => {
     const map = new Map<string, string | null>();
@@ -248,6 +296,13 @@ export function ArticleList() {
     }
   }
 
+  function handleNewArticlesClick() {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
+    acknowledgedTotalRef.current = -1;
+    setNewArticlesCount(0);
+    virtuosoRef.current?.scrollToIndex(0);
+  }
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-11 items-center gap-2 border-b px-3">
@@ -294,26 +349,32 @@ export function ArticleList() {
           {t("noArticles")}
         </div>
       ) : (
-        <Virtuoso
-          className="flex-1"
-          data={articles}
-          rangeChanged={rangeChanged}
-          endReached={loadMoreArticles}
-          followOutput={articleListFilter === "unread" ? "smooth" : undefined}
-          components={{
-            Footer: () => <ArticleListFooter isLoadingMore={isFetchingNextPage} />,
-          }}
-          itemContent={(_, article) => {
-            return (
-              <ArticleRow
-                article={article}
-                feedIconUrl={feedIconMap.get(article.feed_id) ?? null}
-                isSelected={selectedArticleId === article.id}
-                onSelect={() => selectArticle(article)}
-              />
-            );
-          }}
-        />
+        <div className="flex min-h-0 flex-1 flex-col">
+          {newArticlesCount > 0 && (
+            <NewArticlesBanner count={newArticlesCount} onClick={handleNewArticlesClick} />
+          )}
+          <Virtuoso
+            ref={virtuosoRef}
+            className="flex-1"
+            data={articles}
+            rangeChanged={rangeChanged}
+            endReached={loadMoreArticles}
+            followOutput={articleListFilter === "unread" ? "smooth" : undefined}
+            components={{
+              Footer: () => <ArticleListFooter isLoadingMore={isFetchingNextPage} />,
+            }}
+            itemContent={(_, article) => {
+              return (
+                <ArticleRow
+                  article={article}
+                  feedIconUrl={feedIconMap.get(article.feed_id) ?? null}
+                  isSelected={selectedArticleId === article.id}
+                  onSelect={() => selectArticle(article)}
+                />
+              );
+            }}
+          />
+        </div>
       )}
     </div>
   );

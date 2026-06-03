@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 40
+- **Total Sessions**: 41
 - **Last Active**: 2026-06-03
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1356 | Active |
+| `journal-1.md` | ~1389 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 41 | 2026-06-03 | Add auto-refresh feeds feature | `79183f8` | `Feat/auto-refresh-feeds` |
 | 40 | 2026-06-03 | Add per-feed auto full-text extraction | `3fded12` | `Fix/indianapolis` |
 | 40 | 2026-06-03 | Move account controls from settings to sidebar user menu | `ea24f15` | `Feat/relocate-account-system` |
 | 39 | 2026-06-02 | Redesign UI with Sharp Modern aesthetic | `6889fea`, `0fae293` | `Feat/frontend-design-styling` |

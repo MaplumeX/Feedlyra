@@ -92,5 +92,6 @@
   "expandToc": "Expand table of contents",
   "collapseToc": "Collapse table of contents",
   "systemTheme": "System theme",
-  "autoFullText": "Auto Full Text"
+  "autoFullText": "Auto Full Text",
+  "newArticles": "{{count}} new articles, click to view"
 }
