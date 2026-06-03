@@ -47,7 +47,7 @@ Also writes `access_token` to `localStorage` directly for the API client to read
 
 ### Reader store (`src/stores/reader.ts`)
 
-Partially persisted — user preferences (`sidebarCollapsed`, `readerSettings`, `scrollMarkRead`, `autoSummarize`, `chatPanelWidth`) survive reload, temporary UI state does not:
+Partially persisted — user preferences (`sidebarCollapsed`, `readerSettings`, `scrollMarkRead`, `autoSummarize`, `feedSort`, `fullContentArticleIds`, `chatPanelWidth`) survive reload, temporary UI state does not:
 
 ```tsx
 interface ReaderSettings {
@@ -64,11 +64,13 @@ export const useReaderStore = create<ReaderState>()(
     (set) => ({
       selectedFeedId: null,
       selectedArticleId: null,
-      sidebarCollapsed: false,
+      articleListFilter: "all" as const,
       sidebarCollapsed: false,
       readerSettings: { ...DEFAULT_READER_SETTINGS },
+      feedSort: { ...DEFAULT_FEED_SORT },
       scrollMarkRead: true,
       autoSummarize: false,
+      fullContentArticleIds: {},
       chatPanelOpen: false,
       chatPanelWidth: 360,
       commandPaletteOpen: false,
@@ -80,8 +82,10 @@ export const useReaderStore = create<ReaderState>()(
       partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
         readerSettings: state.readerSettings,
+        feedSort: state.feedSort,
         scrollMarkRead: state.scrollMarkRead,
         autoSummarize: state.autoSummarize,
+        fullContentArticleIds: state.fullContentArticleIds,
         chatPanelWidth: state.chatPanelWidth,
       }),
     }
@@ -89,7 +93,7 @@ export const useReaderStore = create<ReaderState>()(
 );
 ```
 
-Uses a generic `set` action for simple updates, plus specific typed actions (`setReaderSetting`, `resetReaderSettings`) for complex nested state.
+Uses a generic `set` action for simple updates, plus specific typed actions (`setReaderSetting`, `setArticleFullContentPreference`, `resetReaderSettings`) for complex nested state.
 
 ---
 
@@ -107,7 +111,7 @@ All API data flows through `useQuery`/`useMutation` hooks in `src/api/hooks.ts`.
 |-------------|----------------|-------------------|
 | Auth tokens | API responses | Form input values |
 | UI toggles (panels, modals) | Any fetched/cached data | Hover/focus state |
-| User preferences (sidebar collapsed, reader settings, auto-summarize) | | Transient animation state |
+| User preferences (sidebar collapsed, reader settings, auto-summarize, feed sort) | | Transient animation state |
 
 ---
 

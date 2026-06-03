@@ -18,6 +18,7 @@ frontend/
 ├── package.json
 ├── vite.config.ts             # Vite build config
 ├── tsconfig.json              # TypeScript config (strict mode)
+├── eslint.config.js           # ESLint flat config
 ├── tailwind.config.ts         # Tailwind CSS config
 ├── postcss.config.js
 ├── components.json            # shadcn/ui CLI config
@@ -31,17 +32,29 @@ frontend/
     │   ├── sse.ts             # Server-Sent Events stream reader
     │   └── types.ts           # API response interfaces
     ├── components/
-    │   ├── Sidebar.tsx        # Feature component
-    │   ├── ArticleList.tsx
-    │   ├── ArticleDetail.tsx
-    │   ├── AIChatPanel.tsx
+    │   ├── Sidebar.tsx        # Feed list sidebar
+    │   ├── ArticleList.tsx    # Virtualized article list with grouping
+    │   ├── ArticleDetail.tsx  # Article reader with TOC
+    │   ├── ArticleTableOfContents.tsx
+    │   ├── AIChatPanel.tsx    # AI chat sidebar panel
     │   ├── AddFeedDialog.tsx
+    │   ├── FeedIcon.tsx       # Favicon with onerror fallback
+    │   ├── FeedSortMenu.tsx
+    │   ├── FeedSettingsDialog.tsx
     │   ├── CommandPalette.tsx
-    │   ├── ProtectedRoute.tsx
+    │   ├── MarkdownContent.tsx # Shared markdown → sanitized HTML renderer
+    │   ├── ProtectedRoute.tsx  # Auth guard
+    │   ├── ReadingSettingsPopover.tsx
+    │   ├── ThemeProvider.tsx
+    │   ├── ThemeToggle.tsx
     │   ├── settings/
     │   │   ├── SettingsDialog.tsx
     │   │   ├── GeneralSettingsTab.tsx
-    │   │   └── AISettingsTab.tsx
+    │   │   ├── AISettingsTab.tsx
+    │   │   ├── EditEmailDialog.tsx
+    │   │   ├── EditPasswordDialog.tsx
+    │   │   ├── EditUsernameDialog.tsx
+    │   │   └── SubscriptionsTab.tsx
     │   └── ui/                # shadcn/ui primitives (auto-generated)
     │       ├── button.tsx
     │       ├── card.tsx
@@ -56,6 +69,7 @@ frontend/
     │       └── zh-CN/         # { common, auth, reader, settings }.json
     ├── lib/
     │   ├── utils.ts           # cn() utility (clsx + tailwind-merge)
+    │   ├── feedSort.ts        # Feed sort preference types + defaults
     │   └── i18n-zod.ts        # Zod error map with i18n integration
     ├── pages/
     │   ├── Home.tsx           # Main reader page (3-panel layout)

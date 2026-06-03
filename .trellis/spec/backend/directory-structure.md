@@ -22,7 +22,14 @@ backend/
 │   ├── env.py              # Async Alembic migration runner
 │   └── versions/
 │       ├── 001_initial_schema.py
-│       └── 002_user_ai_config.py
+│       ├── 002_user_ai_config.py
+│       ├── 003_feed_icon_url.py
+│       ├── 004_categories.py
+│       ├── 005_article_image_url.py
+│       ├── 006_article_full_content.py
+│       ├── 007_article_summaries.py
+│       ├── 008_per_feature_ai_config.py
+│       └── 009_feed_auto_full_text.py
 └── app/
     ├── __init__.py
     ├── main.py             # FastAPI app factory, lifespan, CORS, router includes
@@ -34,26 +41,30 @@ backend/
     │   ├── base.py         # DeclarativeBase, TimestampMixin, UUIDMixin
     │   ├── user.py         # User model
     │   ├── feed.py         # Feed model
+    │   ├── category.py     # Category model
     │   ├── article.py      # Article, ReadStatus, StarredArticle models
-    │   └── ai.py           # ArticleAIData, ArticleChat, ChatMessage models
+    │   └── ai.py           # ArticleAIData, ArticleSummary, ArticleChat, ChatMessage models
     ├── schemas/
     │   ├── __init__.py
     │   ├── auth.py         # RegisterRequest, LoginRequest, TokenResponse
-    │   ├── user.py         # UserResponse
+    │   ├── user.py         # UserResponse, UserProfileUpdate, UserEmailUpdate, UserPasswordUpdate
     │   ├── feed.py         # FeedCreate, FeedUpdate, FeedResponse
+    │   ├── category.py     # CategoryCreate, CategoryUpdate, CategoryResponse
     │   ├── article.py      # ArticleResponse, ArticleListResponse
     │   └── ai.py           # AI config, summary, translation, chat schemas
     ├── routers/
     │   ├── __init__.py
     │   ├── auth.py         # /api/auth/*
     │   ├── feeds.py        # /api/feeds/*
+    │   ├── categories.py   # /api/categories/*
     │   ├── articles.py     # /api/articles/*
     │   └── ai.py           # /api/ai/*
     └── services/
         ├── __init__.py
-        ├── auth.py         # JWT + bcrypt password handling
-        ├── feed_fetcher.py # RSS fetch, parse, OPML, periodic refresh
-        └── llm.py          # OpenAI client, summary, translation, chat streaming
+        ├── auth.py              # JWT + bcrypt password handling
+        ├── feed_fetcher.py      # RSS fetch, parse, OPML, periodic refresh
+        ├── article_summary.py   # Summary content selection, content hash
+        └── llm.py               # OpenAI client, summary, translation, chat streaming
 ```
 
 ---
