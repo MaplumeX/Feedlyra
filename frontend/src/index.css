@@ -173,4 +173,13 @@
   .prose a:hover {
     border-bottom-color: hsl(var(--prose-link));
   }
+
+  /* === Chat typing indicator === */
+  @keyframes chat-cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  .chat-cursor-blink {
+    animation: chat-cursor-blink 1s step-end infinite;
+  }
 }

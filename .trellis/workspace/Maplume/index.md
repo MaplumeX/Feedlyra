@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1445 | Active |
+| `journal-1.md` | ~1522 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -30,6 +30,7 @@
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
 | 42 | 2026-06-03 | Add loading spinners to AddFeedDialog | `dfc2193` | `Feat/fix-add-feed-ui-freeze` |
+| 42 | 2026-06-03 | Fix new articles banner false positive on initial page load | `9bf9337` | `MaplumeX/fix-new-articles-banner` |
 | 41 | 2026-06-03 | Add auto-refresh feeds feature | `79183f8` | `Feat/auto-refresh-feeds` |
 | 40 | 2026-06-03 | Fix feed subscription bugs | `da69c4e`, `acbd2c1` | `Feat/fix-add-feed-bugs` |
 | 40 | 2026-06-03 | Add per-feed auto full-text extraction | `3fded12` | `Fix/indianapolis` |

@@ -161,12 +161,14 @@ export function ArticleList() {
   // new data arrives (currentTotal changes) we acknowledge it immediately
   // instead of showing a false-positive banner.
   const acknowledgedTotalRef = useRef<number>(-1);
+  const hasLoadedRef = useRef(false);
   const [newArticlesCount, setNewArticlesCount] = useState(0);
   const currentTotal = data?.pages?.[0]?.total ?? 0;
 
   // Mark acknowledged total as stale on feed/filter change
   useEffect(() => {
     acknowledgedTotalRef.current = -1;
+    hasLoadedRef.current = false;
     setNewArticlesCount(0);
   }, [selectedFeedId, articleListFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -174,6 +176,7 @@ export function ArticleList() {
   useEffect(() => {
     if (refreshAll.isSuccess || markAllRead.isSuccess) {
       acknowledgedTotalRef.current = -1;
+      hasLoadedRef.current = false;
       setNewArticlesCount(0);
     }
   }, [refreshAll.isSuccess, markAllRead.isSuccess]);
@@ -181,12 +184,16 @@ export function ArticleList() {
   // Detect new articles from background refetch
   useEffect(() => {
     if (acknowledgedTotalRef.current === -1) {
-      // First data arrival after a feed/filter switch — acknowledge it
+      // Skip while still loading — we only want to acknowledge data that
+      // has actually arrived so the "0 → realTotal" jump on fresh load
+      // is never misidentified as new articles.
+      if (isLoading) return;
       acknowledgedTotalRef.current = currentTotal;
-    } else if (currentTotal > acknowledgedTotalRef.current) {
+      hasLoadedRef.current = true;
+    } else if (hasLoadedRef.current && currentTotal > acknowledgedTotalRef.current) {
       setNewArticlesCount(currentTotal - acknowledgedTotalRef.current);
     }
-  }, [currentTotal]);
+  }, [currentTotal, isLoading]);
 
   const feedIconMap = useMemo(() => {
     const map = new Map<string, string | null>();

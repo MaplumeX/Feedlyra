@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component structure and naming conventions for new chat sub-components"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand store patterns for chat panel state and resizable panel integration"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality bar for UI changes: a11y, dark mode, responsive behavior"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "File placement for new component files under src/components/"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Type patterns for message actions and event handlers"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse existing shadcn components and MarkdownContent instead of reinventing"}

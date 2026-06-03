@@ -1422,6 +1422,16 @@ Added frontend auto-refresh via React Query refetchInterval (2min), NewArticlesB
 
 Fixed the UX where adding a feed showed only a disabled button with no progress feedback. Added Loader2 spinner + text change (Adding.../Finding...) to Add/Find buttons when isPending, and inline spinner to discovered feed items. Added i18n keys for en and zh-CN.
 
+## Session 42: Fix new articles banner false positive on initial page load
+
+**Date**: 2026-06-03
+**Task**: Fix new articles banner false positive on initial page load
+**Branch**: `MaplumeX/fix-new-articles-banner`
+
+### Summary
+
+Fixed the new-articles banner appearing on first page load by adding hasLoadedRef + isLoading guard to skip the 0→realTotal jump. Updated hook-guidelines spec with the fallback-value-before-data-arrives gotcha.
+
 ### Main Changes
 
 (Add details)
@@ -1431,6 +1441,41 @@ Fixed the UX where adding a feed showed only a disabled button with no progress 
 | Hash | Message |
 |------|---------|
 | `dfc2193` | (see git log) |
+| `9bf9337` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 43: Beautify AI chat interface
+
+**Date**: 2026-06-03
+**Task**: Beautify AI chat interface
+**Branch**: `Feat/beautify-ai-chat-ui`
+
+### Summary
+
+Modern redesign of AIChatPanel: resizable panel, message avatars, typing indicator, multiline input, suggested prompts, copy/regenerate actions, dark mode support. Updated code-spec with four-panel layout and chat patterns.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9dfa0dc` | (see git log) |
+| `74b51b0` | (see git log) |
 
 ### Testing
 
