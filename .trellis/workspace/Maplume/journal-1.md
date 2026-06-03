@@ -1321,3 +1321,36 @@ Comprehensive visual redesign of Feedlyra from default shadcn/ui slate theme to 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 40: Move account controls from settings to sidebar user menu
+
+**Date**: 2026-06-03
+**Task**: Move account controls from settings to sidebar user menu
+**Branch**: `Feat/relocate-account-system`
+
+### Summary
+
+Refactored account system: replaced Settings Account tab with Sidebar user menu (DropdownMenu + sub Dialogs). Created EditUsernameDialog, EditEmailDialog, EditPasswordDialog from AccountSettingsTab. Removed Account tab from SettingsDialog.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ea24f15` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
