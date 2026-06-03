@@ -1533,3 +1533,36 @@ Moved AI chat panel from nested sub-panel inside ArticleDetail to a top-level 4t
 ### Next Steps
 
 - None - task complete
+
+
+## Session 44: Improve scroll mark-as-read accuracy with IntersectionObserver
+
+**Date**: 2026-06-04
+**Task**: Improve scroll mark-as-read accuracy with IntersectionObserver
+**Branch**: `MaplumeX/fix-scroll-read-boundary`
+
+### Summary
+
+Replaced Virtuoso rangeChanged with IntersectionObserver for scroll mark-as-read. Uses rootMargin -44px to offset header, threshold:0 for pixel-accurate boundary detection. Custom ObservableItem component manages observe/unobserve lifecycle. Ref-based stable callback prevents observer recreation churn.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `944b121` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
