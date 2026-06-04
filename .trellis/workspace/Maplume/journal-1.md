@@ -1598,3 +1598,37 @@ Replaced Virtuoso rangeChanged with IntersectionObserver for scroll mark-as-read
 ### Next Steps
 
 - None - task complete
+
+
+## Session 46: Add bottom spacer for scroll-mark-read on last items
+
+**Date**: 2026-06-04
+**Task**: Add bottom spacer for scroll-mark-read on last items
+**Branch**: `MaplumeX/scroll-mark-last-items`
+
+### Summary
+
+Added a calc(100vh - 44px) spacer div in ArticleListFooter so the last articles can scroll above the viewport and be marked as read by the IntersectionObserver. Also updated component-guidelines spec with the footer spacer gotcha.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e62e495` | (see git log) |
+| `8a90631` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
