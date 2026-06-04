@@ -137,6 +137,35 @@ elif isinstance(icon, str):
 
 ---
 
+### Gotcha: Account for separator overhead when budgeting string join length
+
+```python
+# Bad — separator length not counted, output can exceed max_chars with many parts
+budget = max_chars
+parts = []
+for part in segments:
+    if len(part) <= budget:
+        parts.append(part)
+        budget -= len(part)  # ignores separator cost
+return "\n\n".join(parts)  # actual length > max_chars!
+```
+
+**Why**: `"\n\n".join(parts)` adds `len(sep) * (len(parts) - 1)` bytes not accounted for in per-part budget deductions. With many small parts, the overhead is significant.
+
+**Instead**:
+```python
+SEPARATOR_LEN = len("\n\n")
+budget = max_chars
+parts = []
+for part in segments:
+    cost = len(part) + (SEPARATOR_LEN if parts else 0)
+    if cost <= budget:
+        parts.append(part)
+        budget -= cost
+```
+
+---
+
 ### Gotcha: Return `resp.url` after redirect, not the constructed URL
 
 ```python

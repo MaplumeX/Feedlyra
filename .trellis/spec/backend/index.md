@@ -34,6 +34,7 @@ This directory contains guidelines for backend development in the Feedlyra proje
 - **Encryption of secrets**: User AI API keys are encrypted at rest with Fernet (key derived from `SECRET_KEY` via SHA256)
 - **No tests, no linting, no CI** — currently not configured
 - **Content extraction**: Use `readability-lxml` + httpx for web content extraction. Sync library calls wrapped in `run_in_executor()`. Never use `trafilatura.fetch_url()` — always use httpx for HTTP requests (proxy support). See `feed_fetcher.py:_fetch_and_extract_content` for the pattern.
+- **Summary content extraction**: For LLM summarization, use `extract_content_for_summary()` instead of simple `content[:N]` truncation. It preserves first/last paragraphs and extracts first sentences from middle paragraphs, ensuring conclusions aren't lost. Falls back to simple truncation when no paragraph structure detected.
 
 ---
 
