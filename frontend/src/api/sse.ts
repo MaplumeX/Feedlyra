@@ -41,6 +41,47 @@ async function createChatFetch(
   return res;
 }
 
+export async function truncateChatMessages(
+  articleId: string,
+  afterMessageId: string,
+): Promise<void> {
+  const token = localStorage.getItem("access_token");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const url = `${API_BASE}/api/ai/articles/${articleId}/chat/messages/truncate`;
+  const reqBody = { after: afterMessageId };
+
+  let res = await fetch(url, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(reqBody),
+  });
+
+  if (res.status === 401) {
+    const newToken = await refreshTokenIfNeeded();
+    if (!newToken) throw new Error("Session expired");
+
+    res = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${newToken}`,
+      },
+      body: JSON.stringify(reqBody),
+    });
+  }
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(error.detail ?? "Failed to truncate messages");
+  }
+}
+
 export async function streamChat(
   articleId: string,
   message: string,

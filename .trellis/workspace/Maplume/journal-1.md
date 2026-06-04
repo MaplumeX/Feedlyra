@@ -1668,6 +1668,17 @@ Replace simple content[:8000] truncation with smart paragraph extraction: preser
 - None - task complete
 
 
+<<<<<<< HEAD
+## Session 48: Upgrade AI Chat: Smart Context + Message Edit + Stop Generation
+
+**Date**: 2026-06-04
+**Task**: Upgrade AI Chat: Smart Context + Message Edit + Stop Generation
+**Branch**: `MaplumeX/upgrade-ai-chat`
+
+### Summary
+
+Upgraded AI chat with smart paragraph extraction (20k chars) replacing raw 8k truncation; sliding window history summarization (keep last 6 turns, lazy-summarize older when >8 turns); stop generation button with stream cleanup; message edit (truncate+re-submit with proper async ordering); message truncation PUT endpoint; ArticleChat.history_summary column + migration; spec updates for database guidelines and cross-layer guide.
+=======
 ## Session 48: Adapt auto-summarize to use full content when auto_full_text is enabled
 
 **Date**: 2026-06-04
@@ -1677,6 +1688,7 @@ Replace simple content[:8000] truncation with smart paragraph extraction: preser
 ### Summary
 
 Modified ArticleDetail.tsx auto-summarize useEffect to coordinate with auto-extract when feedAutoFullText is true: waits for full-text extraction to complete, then generates source=full summary; falls back to source=feed on extraction failure. Non-auto-full-text feeds unaffected.
+>>>>>>> origin/main
 
 ### Main Changes
 
@@ -1686,6 +1698,7 @@ Modified ArticleDetail.tsx auto-summarize useEffect to coordinate with auto-extr
 
 | Hash | Message |
 |------|---------|
+| `c6886b9` | (see git log) |
 | `a3e407a` | (see git log) |
 
 ### Testing

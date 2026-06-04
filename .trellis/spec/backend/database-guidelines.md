@@ -251,3 +251,66 @@ summary = await generate_summary(client, model, article.title, article.readable_
 content = get_summary_content(article, summary_source)
 summary = await generate_summary(client, model, article.title, content)
 ```
+
+---
+
+## Scenario: Chat History Summarization & Message Truncation
+
+### 1. Scope / Trigger
+- Trigger: long chat conversations need smarter context management than a hardcoded message cap; message editing requires server-side history truncation.
+
+### 2. Signatures
+- DB: `article_chats.history_summary: Text | null` — cached LLM-generated summary of older conversation turns.
+- API: `PUT /api/ai/articles/{article_id}/chat/messages/truncate` — body: `{after: UUID}`, deletes the anchor message and all subsequent messages in the chat.
+- Service: `summarize_chat_history(client, model, messages) -> str` — generates a 2-3 sentence summary of older history.
+- Service: `build_chat_messages(..., history_summary: str | None = None)` — accepts optional summary to inject.
+
+### 3. Contracts
+- `history_summary` is lazy-computed: only when chat exceeds 8 turns (16 messages), and only if not already cached.
+- Summarization covers messages beyond the last 6 turns (12 messages); the recent 6 turns are sent in full.
+- On summarize failure, chat proceeds without summary (graceful degradation).
+- Message truncation (`PUT .../truncate`) deletes the anchor message AND all messages after it (`created_at >= anchor.created_at`).
+- Truncation invalidates `history_summary` (sets to NULL) since history changed.
+- Only user-role messages can be used as anchors (server validates `anchor.role == "user"`).
+
+### 4. Validation & Error Matrix
+- Article not owned by user -> `404 Article not found`.
+- Chat not found -> `404 Chat not found`.
+- Anchor message not found in this chat -> `404 Message not found`.
+- Anchor message is not a user message -> `400 Can only truncate from a user message`.
+- Summarization LLM call fails -> proceed without summary, log warning.
+
+### 5. Good/Base/Bad Cases
+- Good: 20-turn conversation triggers summarization, older turns compressed, recent 6 turns preserved verbatim.
+- Base: < 8 turns, no summarization needed, full history sent.
+- Bad: summarization fails, but chat still works with recent 6 turns only (older context lost but not broken).
+
+### 6. Tests Required
+- Unit: `build_chat_messages` includes `history_summary` as system message when provided.
+- Unit: `build_chat_messages` uses `extract_content_for_summary` instead of raw truncation.
+- API integration: `PUT .../truncate` deletes anchor + subsequent messages, preserves earlier ones.
+- API integration: `PUT .../truncate` sets `history_summary = NULL`.
+- API integration: first chat request past 8 turns computes and caches `history_summary`.
+
+### 7. Wrong vs Correct
+#### Wrong
+```python
+# Truncating only messages AFTER the anchor — leaves stale user message content
+await db.execute(
+    sql_delete(ChatMessage).where(
+        ChatMessage.chat_id == chat.id,
+        ChatMessage.created_at > anchor.created_at,
+    )
+)
+```
+
+#### Correct
+```python
+# Delete anchor + subsequent — next chat request creates fresh user message
+await db.execute(
+    sql_delete(ChatMessage).where(
+        ChatMessage.chat_id == chat.id,
+        ChatMessage.created_at >= anchor.created_at,
+    )
+)
+```

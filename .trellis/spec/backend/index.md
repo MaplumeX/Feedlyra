@@ -35,6 +35,8 @@ This directory contains guidelines for backend development in the Feedlyra proje
 - **No tests, no linting, no CI** — currently not configured
 - **Content extraction**: Use `readability-lxml` + httpx for web content extraction. Sync library calls wrapped in `run_in_executor()`. Never use `trafilatura.fetch_url()` — always use httpx for HTTP requests (proxy support). See `feed_fetcher.py:_fetch_and_extract_content` for the pattern.
 - **Summary content extraction**: For LLM summarization, use `extract_content_for_summary()` instead of simple `content[:N]` truncation. It preserves first/last paragraphs and extracts first sentences from middle paragraphs, ensuring conclusions aren't lost. Falls back to simple truncation when no paragraph structure detected.
+- **Chat content extraction**: Chat feature reuses `extract_content_for_summary()` with a 20000-char limit (vs 8000 for summary). Same smart paragraph extraction, wider window for Q&A context.
+- **Chat history summarization**: When chat exceeds 8 turns, older turns beyond the last 6 are summarized via LLM and cached in `article_chats.history_summary`. Lazy + cached — only computed once per chat.
 
 ---
 

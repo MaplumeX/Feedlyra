@@ -107,5 +107,9 @@
   "moveFeedFailed": "Failed to move feed",
   "newArticles": "{{count}} new articles, click to view",
   "adding": "Adding...",
-  "finding": "Finding..."
+  "finding": "Finding...",
+  "stopGeneration": "Stop generating",
+  "editMessage": "Edit message",
+  "cancelEdit": "Cancel",
+  "confirmEdit": "Send"
 }

@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify new UI elements (stop button, edit mode) follow component guidelines"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Check for forbidden patterns in new frontend code"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Check for forbidden patterns in new backend code"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify migration follows ORM patterns and migration conventions"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify data flow consistency: DB schema ↔ API schema ↔ TypeScript types ↔ UI state"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Verify extract_content_for_summary reuse, no duplication with summary feature"}
+{"file": ".trellis/tasks/06-04-upgrade-ai-chat-context-and-ux/prd.md", "reason": "Verify all acceptance criteria met, no scope creep"}
