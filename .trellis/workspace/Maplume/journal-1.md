@@ -1666,3 +1666,36 @@ Replace simple content[:8000] truncation with smart paragraph extraction: preser
 ### Next Steps
 
 - None - task complete
+
+
+## Session 48: Adapt auto-summarize to use full content when auto_full_text is enabled
+
+**Date**: 2026-06-04
+**Task**: Adapt auto-summarize to use full content when auto_full_text is enabled
+**Branch**: `MaplumeX/auto-summary-fulltext-fetch`
+
+### Summary
+
+Modified ArticleDetail.tsx auto-summarize useEffect to coordinate with auto-extract when feedAutoFullText is true: waits for full-text extraction to complete, then generates source=full summary; falls back to source=feed on extraction failure. Non-auto-full-text feeds unaffected.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a3e407a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
