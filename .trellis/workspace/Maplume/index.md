@@ -30,6 +30,7 @@
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
 | 48 | 2026-06-04 | Upgrade AI Chat: Smart Context + Message Edit + Stop Generation | `c6886b9` | `MaplumeX/upgrade-ai-chat` |
+| 48 | 2026-06-04 | Adapt auto-summarize to use full content when auto_full_text is enabled | `a3e407a` | `MaplumeX/auto-summary-fulltext-fetch` |
 | 47 | 2026-06-04 | Optimize LLM Summary Generation | `2e3766c`, `c48ec10` | `MaplumeX/optimize-llm-summary-gen` |
 | 46 | 2026-06-04 | Add bottom spacer for scroll-mark-read on last items | `e62e495`, `8a90631` | `MaplumeX/scroll-mark-last-items` |
 | 45 | 2026-06-04 | Improve scroll mark-as-read accuracy with IntersectionObserver | `944b121` | `MaplumeX/fix-scroll-read-boundary` |
