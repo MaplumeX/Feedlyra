@@ -16,7 +16,7 @@ from app.services.article_summary import extract_content_for_summary
 
 logger = logging.getLogger(__name__)
 
-MAX_CONTENT_CHARS = 8000
+MAX_CONTENT_CHARS = 20000
 
 Feature = Literal["translate", "summary", "chat"]
 
@@ -41,9 +41,10 @@ TRANSLATION_SYSTEM_PROMPT = (
 
 CHAT_SYSTEM_PROMPT = (
     "You are an AI assistant helping a user understand an article. "
-    "Answer questions based solely on the article content below. "
-    "If the answer is not in the article, say so. "
-    "Use the same language as the user's question.\n\n"
+    "Answer questions based on the article content below. "
+    "If the answer is not in the article, say so clearly. "
+    "Use the same language as the user's question.\n"
+    "Be concise but thorough. When referencing the article, quote relevant parts.\n\n"
     "ARTICLE:\n{article_content}"
 )
 
@@ -149,6 +150,25 @@ async def translate_article(
     return translated_title, translated_content
 
 
+async def summarize_chat_history(
+    client: AsyncOpenAI,
+    model: str,
+    messages: list[dict],
+) -> str:
+    """Summarize older chat history into a brief paragraph."""
+    conversation = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
+    response = await client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": "Summarize the following conversation in 2-3 sentences, preserving key topics and conclusions discussed. Write in the same language as the conversation."},
+            {"role": "user", "content": conversation},
+        ],
+        temperature=0.3,
+        max_tokens=300,
+    )
+    return response.choices[0].message.content or ""
+
+
 async def stream_chat(
     client: AsyncOpenAI,
     model: str,
@@ -176,15 +196,19 @@ def build_chat_messages(
     article_content: str,
     chat_history: list[dict],
     new_message: str,
+    history_summary: str | None = None,
 ) -> list[dict]:
     """Build messages list for chat API call."""
-    truncated = article_content[:MAX_CONTENT_CHARS] if article_content else ""
-    system_prompt = CHAT_SYSTEM_PROMPT.format(article_content=truncated)
+    extracted = extract_content_for_summary(article_content, MAX_CONTENT_CHARS)
+    system_prompt = CHAT_SYSTEM_PROMPT.format(article_content=extracted)
 
     messages: list[dict] = [{"role": "system", "content": system_prompt}]
 
-    # Add recent chat history (last 10 turns to stay within context)
-    for msg in chat_history[-20:]:
+    if history_summary:
+        messages.append({"role": "system", "content": f"Previous conversation summary:\n{history_summary}"})
+
+    # Add recent chat history (last 6 turns / 12 messages)
+    for msg in chat_history[-12:]:
         messages.append({"role": msg["role"], "content": msg["content"]})
 
     messages.append({"role": "user", "content": new_message})

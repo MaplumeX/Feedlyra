@@ -125,3 +125,26 @@ for fid in feed_ids:
 - [ ] Exceptions are caught and logged — never let background tasks crash silently
 - [ ] No `await` on the `create_task` result — the API returns immediately
 - [ ] Frontend invalidates relevant queries after the API returns so the UI updates when data arrives
+
+---
+
+## Message Editing: Ordering Dependency Between Truncate and New Request
+
+When the user edits a message, the frontend must:
+1. Call `PUT /api/ai/articles/{id}/chat/messages/truncate` to delete the old anchor + subsequent messages server-side
+2. Wait for the truncate response
+3. Then send `POST /api/ai/articles/{id}/chat` with the new message
+
+**Common mistake**: fire-and-forget the truncate, then immediately send the new chat request. The new chat request may arrive before the truncate completes, causing it to read stale history and produce a response based on deleted messages context.
+
+**Correct pattern**:
+```typescript
+// Wait for truncate to complete before sending new message
+await truncateChatMessages(articleId, msgId);
+doStream(editedText);
+```
+
+**Checklist**:
+- [ ] Truncate API call is `await`ed before the next chat request
+- [ ] Frontend trims local state immediately (optimistic update) but waits for server confirmation before triggering new LLM call
+

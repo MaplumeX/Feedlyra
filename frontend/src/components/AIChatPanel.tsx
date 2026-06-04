@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, X, Bot, User, Copy, Check, RefreshCw, MessageSquareText } from "lucide-react";
+import { Send, X, Bot, User, Copy, Check, RefreshCw, MessageSquareText, Square, Pencil } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatHistory } from "@/api/hooks";
-import { streamChat } from "@/api/sse";
+import { streamChat, truncateChatMessages } from "@/api/sse";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { useReaderStore } from "@/stores/reader";
 import type { ChatMessage } from "@/api/types";
@@ -91,19 +91,42 @@ function ChatEmptyState({ onSuggestionClick }: { onSuggestionClick: (text: strin
 function ChatMessageBubble({
   msg,
   isStreaming,
+  editingMsgId,
   onCopy,
   onRegenerate,
+  onEdit,
 }: {
   msg: ChatMessage;
   isStreaming: boolean;
+  editingMsgId: string | null;
   onCopy: (text: string) => void;
   onRegenerate: (msg: ChatMessage) => void;
+  onEdit: (msgId: string, newText: string) => void;
 }) {
   const { t } = useTranslation("reader");
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [editText, setEditText] = useState("");
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isAssistant = msg.role === "assistant";
+  const isEditing = editingMsgId === msg.id;
+  const canEdit = msg.role === "user" && !msg.id.startsWith("temp-");
+
+  // Auto-resize textarea when editing
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [isEditing, editText]);
+
+  // Initialize edit text when entering edit mode
+  useEffect(() => {
+    if (isEditing) {
+      setEditText(msg.content);
+    }
+  }, [isEditing, msg.content]);
 
   const handleCopy = () => {
     onCopy(msg.content);
@@ -117,6 +140,65 @@ function ChatMessageBubble({
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     };
   }, []);
+
+  const confirmEdit = () => {
+    const trimmed = editText.trim();
+    if (!trimmed) return;
+    onEdit(msg.id, trimmed);
+  };
+
+  const cancelEdit = () => {
+    // Reset by setting editingMsgId to null is handled by parent
+    onEdit("", "");
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      confirmEdit();
+    }
+    if (e.key === "Escape") {
+      cancelEdit();
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex gap-2.5">
+        <UserAvatar />
+        <div className="min-w-0 flex-1">
+          <div className="rounded-lg bg-chat-user px-3 py-2">
+            <textarea
+              ref={textareaRef}
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={handleEditKeyDown}
+              rows={1}
+              className="w-full resize-none rounded border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+          <div className="mt-1 flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={confirmEdit}
+            >
+              {t("confirmEdit")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={cancelEdit}
+            >
+              {t("cancelEdit")}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -156,6 +238,17 @@ function ChatMessageBubble({
                 <Copy className="h-3 w-3" />
               )}
             </Button>
+            {canEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => onEdit(msg.id, "")}
+                title={t("editMessage")}
+              >
+                <Pencil className="h-3 w-3" />
+              </Button>
+            )}
             {isAssistant && (
               <Button
                 variant="ghost"
@@ -177,9 +270,11 @@ function ChatMessageBubble({
 function ChatInput({
   onSend,
   isStreaming,
+  onStop,
 }: {
   onSend: (text: string) => void;
   isStreaming: boolean;
+  onStop: () => void;
 }) {
   const { t } = useTranslation("reader");
   const [input, setInput] = useState("");
@@ -219,14 +314,25 @@ function ChatInput({
         rows={1}
         className="flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
       />
-      <Button
-        size="icon"
-        className="h-8 w-8 shrink-0"
-        onClick={handleSend}
-        disabled={isStreaming || !input.trim()}
-      >
-        <Send className="h-4 w-4" />
-      </Button>
+      {isStreaming ? (
+        <Button
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          onClick={onStop}
+          title={t("stopGeneration")}
+        >
+          <Square className="h-4 w-4" />
+        </Button>
+      ) : (
+        <Button
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          onClick={handleSend}
+          disabled={!input.trim()}
+        >
+          <Send className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 }
@@ -238,6 +344,7 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
   const { data: chatHistory, isLoading } = useChatHistory(articleId);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
   const { set: setReader } = useReaderStore();
@@ -337,6 +444,70 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
     [doStream, isStreaming, messages],
   );
 
+  const handleStop = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+    // Clean up the last assistant message if it's empty
+    setMessages((prev) => {
+      const last = prev.length > 0 ? prev[prev.length - 1] : undefined;
+      if (last && last.role === "assistant" && !last.content.trim()) {
+        return prev.slice(0, -1);
+      }
+      return prev;
+    });
+    setIsStreaming(false);
+  }, []);
+
+  const handleEdit = useCallback(
+    (msgId: string, newText: string) => {
+      // Cancel edit: empty msgId signals cancel
+      if (!msgId) {
+        setEditingMsgId(null);
+        return;
+      }
+
+      // Enter edit mode: empty newText signals "start editing"
+      if (!newText) {
+        setEditingMsgId(msgId);
+        return;
+      }
+
+      // Confirm edit: truncate messages after the edited one, then re-submit
+      if (isStreaming) return;
+
+      const msgIdx = messages.findIndex((m) => m.id === msgId);
+      if (msgIdx < 0) return;
+
+      // Keep messages before the edited one (the anchor itself is deleted server-side)
+      const truncatedMessages = messages.slice(0, msgIdx);
+
+      // Add the new user message so it appears in the UI before the response streams in
+      const editedUserMsg: ChatMessage = {
+        id: `temp-${Date.now()}`,
+        role: "user",
+        content: newText,
+        created_at: new Date().toISOString(),
+      };
+      setMessages([...truncatedMessages, editedUserMsg]);
+      setEditingMsgId(null);
+
+      // Truncate server-side history (delete anchor and all messages after it).
+      // Must await so the new chat request sees the trimmed history.
+      truncateChatMessages(articleId, msgId)
+        .then(() => {
+          doStream(newText);
+        })
+        .catch(() => {
+          // Server truncation failed — still try to send the message
+          // because the server re-reads history on each request
+          doStream(newText);
+        });
+    },
+    [doStream, isStreaming, messages, articleId],
+  );
+
   const handleClose = () => {
     if (abortRef.current) {
       abortRef.current.abort();
@@ -376,8 +547,10 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
                 key={msg.id}
                 msg={msg}
                 isStreaming={isStreaming && msg === messages[messages.length - 1] && msg.role === "assistant"}
+                editingMsgId={editingMsgId}
                 onCopy={handleCopy}
                 onRegenerate={handleRegenerate}
+                onEdit={handleEdit}
               />
             ))}
           </div>
@@ -385,7 +558,7 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
       )}
 
       {/* Input */}
-      <ChatInput onSend={handleSend} isStreaming={isStreaming} />
+      <ChatInput onSend={handleSend} isStreaming={isStreaming} onStop={handleStop} />
     </div>
   );
 }

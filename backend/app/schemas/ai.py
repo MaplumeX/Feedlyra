@@ -40,6 +40,10 @@ class ChatHistoryResponse(BaseModel):
     messages: list[ChatMessageResponse]
 
 
+class TruncateChatMessagesRequest(BaseModel):
+    after: UUID
+
+
 class FeatureAIConfigUpdate(BaseModel):
     enabled: bool | None = None
     base_url: str | None = Field(default=None, max_length=500)

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import delete as sql_delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session
@@ -34,6 +34,7 @@ from app.schemas.ai import (
     SummarizeResponse,
     TranslateRequest,
     TranslateResponse,
+    TruncateChatMessagesRequest,
 )
 from app.services.llm import (
     Feature,
@@ -43,6 +44,7 @@ from app.services.llm import (
     get_user_llm_client,
     get_user_model,
     stream_chat,
+    summarize_chat_history,
     translate_article,
 )
 
@@ -376,10 +378,30 @@ async def chat_with_article(
     history_msgs = history_result.scalars().all()
     if history_msgs and history_msgs[-1].id == user_msg.id:
         history_msgs = history_msgs[:-1]
-    chat_history = [{"role": m.role, "content": m.content} for m in history_msgs]
+    chat_history_dicts = [{"role": m.role, "content": m.content} for m in history_msgs]
+
+    # Determine history summary and trimmed history
+    HISTORY_FULL_TURNS = 6
+    SUMMARY_THRESHOLD = 8
+    history_summary = chat.history_summary
+    if len(chat_history_dicts) > SUMMARY_THRESHOLD * 2:
+        older = chat_history_dicts[:-HISTORY_FULL_TURNS * 2]
+        recent = chat_history_dicts[-HISTORY_FULL_TURNS * 2:]
+        if not history_summary and older:
+            try:
+                client_for_summary = get_user_llm_client(user, "chat")
+                model_for_summary = get_user_model(user, "chat")
+                history_summary = await summarize_chat_history(client_for_summary, model_for_summary, older)
+                chat.history_summary = history_summary
+                await db.commit()
+            except ValueError:
+                logger.warning("Failed to summarize chat history (missing API config), proceeding without summary")
+            except Exception:
+                logger.exception("Failed to summarize chat history, proceeding without summary")
+        chat_history_dicts = recent
 
     # Build messages for LLM
-    messages = build_chat_messages(article.title, article.readable_content, chat_history, body.message)
+    messages = build_chat_messages(article.title, article.readable_content, chat_history_dicts, body.message, history_summary=history_summary)
 
     # Create LLM client
     try:
@@ -468,3 +490,64 @@ async def get_chat_history(
             for m in messages
         ],
     }
+
+
+@router.put("/articles/{article_id}/chat/messages/truncate")
+async def truncate_chat_messages(
+    article_id: UUID,
+    body: TruncateChatMessagesRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Truncate chat messages from the specified one onwards.
+
+    Deletes the anchor message and all subsequent messages, then invalidates
+    the history summary cache. Used for message edit: after truncating, the
+    caller sends a new chat request which creates a fresh user message.
+    The caller should await this before sending the new chat request.
+    """
+    # Verify article belongs to user
+    result = await db.execute(
+        select(Article).join(Feed, Feed.id == Article.feed_id).where(
+            Feed.user_id == user.id, Article.id == article_id
+        )
+    )
+    article = result.scalar_one_or_none()
+    if article is None:
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    # Get chat
+    chat_result = await db.execute(
+        select(ArticleChat).where(
+            ArticleChat.article_id == article_id,
+            ArticleChat.user_id == user.id,
+        )
+    )
+    chat = chat_result.scalar_one_or_none()
+    if chat is None:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    # Find the anchor message
+    anchor_result = await db.execute(
+        select(ChatMessage).where(ChatMessage.id == body.after, ChatMessage.chat_id == chat.id)
+    )
+    anchor = anchor_result.scalar_one_or_none()
+    if anchor is None:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    if anchor.role != "user":
+        raise HTTPException(status_code=400, detail="Can only truncate from a user message")
+
+    # Delete the anchor message and all messages after it
+    await db.execute(
+        sql_delete(ChatMessage).where(
+            ChatMessage.chat_id == chat.id,
+            ChatMessage.created_at >= anchor.created_at,
+        )
+    )
+
+    # Invalidate cached history summary since history changed
+    chat.history_summary = None
+    await db.commit()
+
+    return {"status": "ok"}
