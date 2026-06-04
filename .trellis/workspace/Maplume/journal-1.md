@@ -1632,3 +1632,37 @@ Added a calc(100vh - 44px) spacer div in ArticleListFooter so the last articles 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 47: Optimize LLM Summary Generation
+
+**Date**: 2026-06-04
+**Task**: Optimize LLM Summary Generation
+**Branch**: `MaplumeX/optimize-llm-summary-gen`
+
+### Summary
+
+Replace simple content[:8000] truncation with smart paragraph extraction: preserve first/last paragraphs, extract first sentences from middle paragraphs, fallback to simple truncation when no paragraph structure. Fixed separator overhead budget bug. Added 13 unit tests. Updated spec with gotcha and convention.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2e3766c` | (see git log) |
+| `c48ec10` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
