@@ -332,33 +332,42 @@ export function FeedIcon({ iconUrl, className }: FeedIconProps) {
 
 When using `react-virtuoso` for scroll-triggered logic (e.g., mark-as-read on scroll), use `IntersectionObserver` instead of `rangeChanged` for accurate viewport boundary detection.
 
-**Why**: `rangeChanged` is index-based — an article with only 1px visible in the viewport still counts as "in range". `IntersectionObserver` with `rootMargin` and `threshold` provides pixel-accurate control over when items are considered "scrolled past".
+**Why**: `rangeChanged` is index-based — an article with only 1px visible in the viewport still counts as "in range". `IntersectionObserver` with the correct scroller root, `threshold`, and `rootMargin` only when needed provides pixel-accurate control over when items are considered "scrolled past".
 
 #### Core Pattern
 
-1. **Singleton observer** via `useRef` — created when Virtuoso's scroll container is available (`scrollerRef`), with `rootMargin` offsetting for fixed headers
-2. **Module-level holder** — lets the custom `components.Item` access the observer without prop drilling
-3. **Stable callback via refs** — `handleIntersection` uses refs (`scrollMarkReadRef`, `articlesRef`, `flushPendingIdsRef`) instead of direct dependencies, preventing observer recreation that would lose observed elements
-4. **Custom Item component** — observe on mount, unobserve on unmount, article ID via `data-article-id` DOM attribute (not closure)
+1. **Component-owned observer** via `useRef` — created when Virtuoso's scroll container is available (`scrollerRef`)
+2. **Virtuoso `context` registration** — pass `registerElement` / `unregisterElement` into the custom `components.Item`; do not use a module-level observer holder
+3. **Mounted element set** — keep mounted item elements in a ref-backed set and observe all of them when the observer becomes available, so rows rendered before observer creation are not missed
+4. **Stable callback via refs** — `handleIntersection` uses refs (`scrollMarkReadRef`, unread IDs, `flushPendingIdsRef`) instead of direct dependencies, preventing observer recreation churn
+5. **Custom Item component** — register on mount, unregister on unmount, article ID via `data-article-id` DOM attribute (not closure)
+6. **Scroll direction guard** — only queue read marks during recent downward user scrolling
 
 ```tsx
-// Module-level holder — accessible from custom Item component without prop drilling
-let articleListObserver: IntersectionObserver | null = null;
+interface ArticleListVirtuosoContext {
+  registerArticleElement: (element: HTMLDivElement) => void;
+  unregisterArticleElement: (element: HTMLDivElement) => void;
+}
 
-function ObservableItem({ children, item, ...props }: ItemProps<Article>) {
+function ObservableItem({
+  children,
+  item,
+  context,
+  ...props
+}: ItemProps<Article> & ContextProp<ArticleListVirtuosoContext>) {
   const prevElRef = useRef<HTMLDivElement | null>(null);
 
-  // Stable ref callback (deps=[]) — article ID read from data-article-id on the DOM element,
+  // Stable ref callback — article ID read from data-article-id on the DOM element,
   // not from the item prop, to avoid unobserve/reobserve churn on data updates (e.g. is_read toggle)
   const ref = useCallback((el: HTMLDivElement | null) => {
     if (prevElRef.current && prevElRef.current !== el) {
-      articleListObserver?.unobserve(prevElRef.current);
+      context.unregisterArticleElement(prevElRef.current);
     }
     if (el) {
-      articleListObserver?.observe(el);
+      context.registerArticleElement(el);
     }
     prevElRef.current = el;
-  }, []);
+  }, [context]);
 
   return (
     <div {...props} ref={ref} data-article-id={item.id}>
@@ -369,24 +378,37 @@ function ObservableItem({ children, item, ...props }: ItemProps<Article>) {
 
 // In ArticleList:
 const scrollMarkReadRef = useRef(scrollMarkRead);
-const articlesRef = useRef<readonly Article[]>(articles);
+const unreadArticleIdsRef = useRef(unreadArticleIds);
+const observedElementsRef = useRef<Set<HTMLDivElement>>(new Set());
+const scrollDirectionRef = useRef<"down" | "up" | null>(null);
 scrollMarkReadRef.current = scrollMarkRead;
-articlesRef.current = articles;
+unreadArticleIdsRef.current = unreadArticleIds;
 
 const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
   if (!scrollMarkReadRef.current) return;
+  if (scrollDirectionRef.current !== "down") return;
   for (const entry of entries) {
     if (entry.isIntersecting) continue; // Still visible
     if (!entry.rootBounds) continue;
-    if (entry.boundingClientRect.top >= entry.rootBounds.top) continue; // Scrolled down out, not up
-    const articleId = (entry.target as HTMLElement).dataset.articleId;
+    if (entry.boundingClientRect.bottom > entry.rootBounds.top) continue; // Not fully above top
+    if (!(entry.target instanceof HTMLElement)) continue;
+    const articleId = entry.target.dataset.articleId;
     if (!articleId) continue;
-    const article = articlesRef.current.find((a) => a.id === articleId);
-    if (article && !article.is_read) {
+    if (unreadArticleIdsRef.current.has(articleId)) {
       pendingIdsRef.current.add(articleId);
     }
   }
   // ... debounce + flush
+}, []);
+
+const registerArticleElement = useCallback((element: HTMLDivElement) => {
+  observedElementsRef.current.add(element);
+  observerRef.current?.observe(element);
+}, []);
+
+const unregisterArticleElement = useCallback((element: HTMLDivElement) => {
+  observedElementsRef.current.delete(element);
+  observerRef.current?.unobserve(element);
 }, []);
 
 useEffect(() => {
@@ -394,23 +416,24 @@ useEffect(() => {
   observerRef.current?.disconnect();
   observerRef.current = new IntersectionObserver(handleIntersection, {
     root: scrollerElement,
-    rootMargin: "-44px 0px 0px 0px", // Offset for fixed header height
     threshold: 0,
   });
-  articleListObserver = observerRef.current;
-  return () => { observerRef.current?.disconnect(); observerRef.current = null; articleListObserver = null; };
-}, [scrollerElement]);
+  for (const element of observedElementsRef.current) {
+    observerRef.current.observe(element);
+  }
+  return () => { observerRef.current?.disconnect(); observerRef.current = null; };
+}, [handleIntersection, scrollerElement]);
 ```
 
 #### Key Rules
 
-1. **Ref-based stable callback**: `handleIntersection` must have deps `[]` — use refs for all values that change (`scrollMarkReadRef`, `articlesRef`, `flushPendingIdsRef`). If the callback depends on changing values, `useEffect` recreates the observer, calling `disconnect()` which **drops all observed elements** without re-observing them.
+1. **Ref-based stable callback**: `handleIntersection` should be stable — use refs for values that change (`scrollMarkReadRef`, unread IDs, `flushPendingIdsRef`). If the callback depends on frequently changing values, `useEffect` recreates the observer, calling `disconnect()` which drops observed elements unless you re-observe the mounted element set.
 
-2. **`data-article-id` on DOM, not in closure**: The ref callback in `ObservableItem` must be stable (deps `[]`). Set the article ID via `data-article-id={item.id}` on the JSX element and read it from `entry.target.dataset.articleId` in the observer callback. Putting `item` in the ref callback's deps causes unobserve/reobserve churn on every data update (e.g., `is_read` toggling).
+2. **`data-article-id` on DOM, not in closure**: The ref callback in `ObservableItem` must not depend on `item`. Set the article ID via `data-article-id={item.id}` on the JSX element and read it from `entry.target.dataset.articleId` in the observer callback. Putting `item` in the ref callback's deps causes unobserve/reobserve churn on every data update (e.g., `is_read` toggling).
 
-3. **`rootMargin` for header offset**: Use negative top margin matching the fixed header height (`-44px` for `h-11`). This ensures the observer's "visible" boundary starts below the header, matching what the user actually sees.
+3. **`rootMargin` only for overlaying headers**: Do not blindly use `-44px`. If the toolbar/header is outside the Virtuoso scroller, the scroller root already starts below it and `rootMargin` should be omitted. Use a negative top margin only when a fixed/sticky header overlays the scroller's visible content.
 
-4. **Scroll direction guard**: Only mark as read when `boundingClientRect.top < rootBounds.top` (article scrolled upward out of view) AND `isIntersecting` is `false` (left the zone). This prevents marking on upward scroll.
+4. **Scroll direction guard**: Only mark as read when recent user scroll direction is downward, `boundingClientRect.bottom <= rootBounds.top` (article fully left above the scroller), and `isIntersecting` is `false`. This prevents marking on upward scroll, mount, resize, or data replacement.
 
 5. **`scrollerRef` not `scrollRef`**: Virtuoso's `scrollerRef` returns the actual scrolling container element (needed as the observer's `root`). It may return a `Window` object in some Virtuoso configurations — guard with `'nodeType' in ref` check.
 
@@ -432,7 +455,7 @@ function ArticleListFooter({ isLoadingMore }: { isLoadingMore: boolean }) {
 }
 ```
 
-**Why**: `calc(100vh - 44px)` gives exactly one viewport of scroll room minus the header, matching the observer's `rootMargin: "-44px 0px 0px 0px"`. Without this spacer, the last N articles (whose combined height < viewport height) can never be marked as read by scrolling.
+**Why**: The footer spacer gives roughly one viewport of scroll room. Without this spacer, the last N articles (whose combined height < viewport height) can never be marked as read by scrolling.
 
 ### Virtuoso Component Reuse State Leak
 

@@ -52,7 +52,7 @@ function App() {
 
 **Why**: Virtuoso emits `rangeChanged` on initialization, window resize, and data replacement — not only on user scroll. Without an `isStable` guard, these non-user events trigger false positives (e.g., marking articles read on page load).
 
-**Instead**: Use `IntersectionObserver` with `rootMargin` for pixel-accurate viewport boundary detection. See [[component-guidelines]] for the full IntersectionObserver pattern.
+**Instead**: Use `IntersectionObserver` against Virtuoso's actual scroller root for pixel-accurate viewport boundary detection. Add `rootMargin` only when a fixed/sticky header overlays the scroller content. See [[component-guidelines]] for the full IntersectionObserver pattern.
 
 ### Don't: Forget debounce cleanup in scroll handlers
 
