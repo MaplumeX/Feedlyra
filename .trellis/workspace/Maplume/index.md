@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 45
+- **Total Sessions**: 46
 - **Last Active**: 2026-06-04
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1600 | Active |
+| `journal-1.md` | ~1634 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 46 | 2026-06-04 | Add bottom spacer for scroll-mark-read on last items | `e62e495`, `8a90631` | `MaplumeX/scroll-mark-last-items` |
 | 45 | 2026-06-04 | Improve scroll mark-as-read accuracy with IntersectionObserver | `944b121` | `MaplumeX/fix-scroll-read-boundary` |
 | 44 | 2026-06-03 | Remove ArticleSummary generation from fetch_and_store_feed | `9e191fa` | `MaplumeX/remove-article-summary-from-fetch-feed` |
 | 43 | 2026-06-03 | Make add-feed endpoint async background | `2619161` | `MaplumeX/fix-slow-feed-subscription` |
