@@ -1712,3 +1712,36 @@ Modified ArticleDetail.tsx auto-summarize useEffect to coordinate with auto-extr
 ### Next Steps
 
 - None - task complete
+
+
+## Session 49: Fix scroll mark-read precision
+
+**Date**: 2026-06-04
+**Task**: Fix scroll mark-read precision
+**Branch**: `MaplumeX/san-diego-v1`
+
+### Summary
+
+Improved article-list scroll mark-as-read precision by making IntersectionObserver registration component-owned, adding downward-scroll guards, removing the incorrect scroller root offset, and updating frontend specs.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b8bc190` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
