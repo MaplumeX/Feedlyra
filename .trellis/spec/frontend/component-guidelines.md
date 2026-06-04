@@ -414,6 +414,26 @@ useEffect(() => {
 
 5. **`scrollerRef` not `scrollRef`**: Virtuoso's `scrollerRef` returns the actual scrolling container element (needed as the observer's `root`). It may return a `Window` object in some Virtuoso configurations — guard with `'nodeType' in ref` check.
 
+6. **Footer spacer for last items**: The IntersectionObserver only marks items read when they scroll out **above** the viewport. Without extra scroll space at the bottom, the last items can never scroll high enough to exit the top. Always render a spacer div in `Virtuoso`'s `Footer` component with `height: calc(100vh - <header-height>px)` so the last items can scroll past the viewport. The spacer must render even when the loading skeleton is not showing — a `null` footer means no bottom scroll room.
+
+```tsx
+// Footer component — spacer is always present, loading skeleton is conditional
+function ArticleListFooter({ isLoadingMore }: { isLoadingMore: boolean }) {
+  return (
+    <>
+      {isLoadingMore && (
+        <div className="space-y-2 p-3">
+          {/* skeleton items */}
+        </div>
+      )}
+      <div style={{ height: 'calc(100vh - 44px)' }} />
+    </>
+  );
+}
+```
+
+**Why**: `calc(100vh - 44px)` gives exactly one viewport of scroll room minus the header, matching the observer's `rootMargin: "-44px 0px 0px 0px"`. Without this spacer, the last N articles (whose combined height < viewport height) can never be marked as read by scrolling.
+
 ### Virtuoso Component Reuse State Leak
 
 When using `react-virtuoso`, component instances are **reused** when scrolling — the same `ArticleRow` instance may render item A, then item B. Any `useState` tracking per-item state (e.g., image load failure) will **persist across items** unless explicitly reset.
