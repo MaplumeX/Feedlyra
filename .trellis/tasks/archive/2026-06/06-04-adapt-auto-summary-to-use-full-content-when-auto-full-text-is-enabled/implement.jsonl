@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec index — implement agent needs to know available frontend guidelines"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns for ArticleDetail.tsx modifications"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "useEffect coordination patterns for serializing extract + summarize"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Reader store structure for fullContentArticleIds and autoSummarize"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend quality standards for the change"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Frontend-backend data flow for summarize API source parameter"}

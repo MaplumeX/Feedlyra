@@ -122,16 +122,34 @@ export function ArticleDetail() {
     setShowFullContent(Boolean(article.full_content && fullContentArticleIds[article.id]));
   }, [article?.full_content, article?.id, fullContentArticleIds, selectedArticleId]);
 
-  // Auto-summarize uses feed content only; full-content summaries are generated on demand.
+  const feedAutoFullText = feeds?.find((f) => f.id === article?.feed_id)?.auto_full_text ?? false;
+
+  // Auto-summarize: when the feed has auto_full_text, wait for full-text extraction
+  // and use full content as source; otherwise use feed content as source.
   useEffect(() => {
-    if (!article || !autoSummarize || article.summaries?.feed) return;
+    if (!article || !autoSummarize) return;
     if (summarize.isPending) return;
     if (autoSummarizeTriggeredRef.current === article.id) return;
     const aiReady = aiConfig?.base_url && aiConfig?.has_api_key && aiConfig?.model;
     if (!aiReady) return;
+
+    if (feedAutoFullText) {
+      if (article.full_content) {
+        if (article.summaries?.full) return;
+        autoSummarizeTriggeredRef.current = article.id;
+        summarize.mutate({ articleId: article.id, source: "full" });
+      } else if (autoExtractTriggeredRef.current === article.id && !extractContent.isPending) {
+        if (article.summaries?.feed) return;
+        autoSummarizeTriggeredRef.current = article.id;
+        summarize.mutate({ articleId: article.id, source: "feed" });
+      }
+      return;
+    }
+
+    if (article.summaries?.feed) return;
     autoSummarizeTriggeredRef.current = article.id;
     summarize.mutate({ articleId: article.id, source: "feed" });
-  }, [article, autoSummarize, aiConfig, summarize]);
+  }, [article, autoSummarize, aiConfig, summarize, feedAutoFullText, extractContent]);
 
   // Reset auto-summarize trigger ref when article changes
   useEffect(() => {
@@ -139,7 +157,6 @@ export function ArticleDetail() {
   }, [selectedArticleId]);
 
   // Auto-extract full content when feed has auto_full_text=True
-  const feedAutoFullText = feeds?.find((f) => f.id === article?.feed_id)?.auto_full_text ?? false;
   useEffect(() => {
     if (!article || !feedAutoFullText || article.full_content) return;
     if (extractContent.isPending) return;
