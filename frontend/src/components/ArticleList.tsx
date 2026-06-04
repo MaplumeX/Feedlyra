@@ -2,12 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Virtuoso, type VirtuosoHandle, type ItemProps } from "react-virtuoso";
 import { Star, CheckCheck, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { FeedIcon } from "@/components/FeedIcon";
-import { useInfiniteArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead, useRefreshAllFeeds, queryKeys } from "@/api/hooks";
+import { useInfiniteArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead, useRefreshAllFeeds } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
 import type { Article } from "@/api/types";
@@ -187,22 +186,21 @@ export function ArticleList() {
   const markAllRead = useMarkAllRead();
   const batchRead = useBatchRead();
   const refreshAll = useRefreshAllFeeds();
-  const queryClient = useQueryClient();
   const virtuosoRef = useRef<VirtuosoHandle>(null);
 
   // New articles detection
-  // acknowledgedTotal tracks the total article count the user has "seen".
-  // During feed/filter transitions we store -1 as a sentinel so that when the
-  // new data arrives (currentTotal changes) we acknowledge it immediately
-  // instead of showing a false-positive banner.
-  const acknowledgedTotalRef = useRef<number>(-1);
+  // acknowledgedArticleIds tracks the set of article IDs the user has "seen".
+  // When refetchInterval brings in new articles, we hide them from the rendered
+  // list and show a banner instead. Only after the user clicks the banner do we
+  // acknowledge the new IDs and render them.
+  const acknowledgedArticleIdsRef = useRef<Set<string>>(new Set());
   const hasLoadedRef = useRef(false);
   const [newArticlesCount, setNewArticlesCount] = useState(0);
   const currentTotal = data?.pages?.[0]?.total ?? 0;
 
-  // Mark acknowledged total as stale on feed/filter change
+  // Mark acknowledged as stale on feed/filter change
   useEffect(() => {
-    acknowledgedTotalRef.current = -1;
+    acknowledgedArticleIdsRef.current = new Set();
     hasLoadedRef.current = false;
     setNewArticlesCount(0);
   }, [selectedFeedId, articleListFilter]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -210,25 +208,39 @@ export function ArticleList() {
   // Also reset on manual refresh / mark-all-read so these don't trigger a false banner
   useEffect(() => {
     if (refreshAll.isSuccess || markAllRead.isSuccess) {
-      acknowledgedTotalRef.current = -1;
+      acknowledgedArticleIdsRef.current = new Set();
       hasLoadedRef.current = false;
       setNewArticlesCount(0);
     }
   }, [refreshAll.isSuccess, markAllRead.isSuccess]);
 
-  // Detect new articles from background refetch
+  // Detect new articles from background refetch: on first load, acknowledge all;
+  // on subsequent refetches, find IDs not yet acknowledged.
   useEffect(() => {
-    if (acknowledgedTotalRef.current === -1) {
-      // Skip while still loading — we only want to acknowledge data that
-      // has actually arrived so the "0 → realTotal" jump on fresh load
-      // is never misidentified as new articles.
-      if (isLoading) return;
-      acknowledgedTotalRef.current = currentTotal;
-      hasLoadedRef.current = true;
-    } else if (hasLoadedRef.current && currentTotal > acknowledgedTotalRef.current) {
-      setNewArticlesCount(currentTotal - acknowledgedTotalRef.current);
+    if (isLoading) return;
+
+    const allIds: string[] = [];
+    for (const page of data?.pages ?? []) {
+      for (const article of page.items) {
+        allIds.push(article.id);
+      }
     }
-  }, [currentTotal, isLoading]);
+
+    if (!hasLoadedRef.current) {
+      // First load: acknowledge everything
+      acknowledgedArticleIdsRef.current = new Set(allIds);
+      hasLoadedRef.current = true;
+      setNewArticlesCount(0);
+    } else {
+      // Subsequent refetch: find new IDs
+      const acknowledged = acknowledgedArticleIdsRef.current;
+      const newIds = allIds.filter((id) => !acknowledged.has(id));
+      if (newIds.length > 0) {
+        setNewArticlesCount(newIds.length);
+        // Do NOT add newIds to acknowledged yet — that happens on banner click
+      }
+    }
+  }, [currentTotal, isLoading, data]);
 
   const feedIconMap = useMemo(() => {
     const map = new Map<string, string | null>();
@@ -242,18 +254,21 @@ export function ArticleList() {
     () => {
       const seen = new Set<string>();
       const flattened: Article[] = [];
+      const acknowledged = acknowledgedArticleIdsRef.current;
 
       for (const page of data?.pages ?? []) {
         for (const article of page.items) {
           if (seen.has(article.id)) continue;
           seen.add(article.id);
+          // Hide articles not yet acknowledged (shown via banner instead)
+          if (newArticlesCount > 0 && !acknowledged.has(article.id)) continue;
           flattened.push(article);
         }
       }
 
       return flattened;
     },
-    [data]
+    [data, newArticlesCount]
   );
   const hasUnread = articles.some((a) => !a.is_read);
 
@@ -359,8 +374,12 @@ export function ArticleList() {
   }
 
   function handleNewArticlesClick() {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
-    acknowledgedTotalRef.current = -1;
+    // Acknowledge all article IDs currently in data so they render
+    for (const page of data?.pages ?? []) {
+      for (const article of page.items) {
+        acknowledgedArticleIdsRef.current.add(article.id);
+      }
+    }
     setNewArticlesCount(0);
     virtuosoRef.current?.scrollToIndex(0);
   }
