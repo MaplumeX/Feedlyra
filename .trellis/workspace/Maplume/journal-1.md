@@ -1666,3 +1666,36 @@ Replace simple content[:8000] truncation with smart paragraph extraction: preser
 ### Next Steps
 
 - None - task complete
+
+
+## Session 48: Upgrade AI Chat: Smart Context + Message Edit + Stop Generation
+
+**Date**: 2026-06-04
+**Task**: Upgrade AI Chat: Smart Context + Message Edit + Stop Generation
+**Branch**: `MaplumeX/upgrade-ai-chat`
+
+### Summary
+
+Upgraded AI chat with smart paragraph extraction (20k chars) replacing raw 8k truncation; sliding window history summarization (keep last 6 turns, lazy-summarize older when >8 turns); stop generation button with stream cleanup; message edit (truncate+re-submit with proper async ordering); message truncation PUT endpoint; ArticleChat.history_summary column + migration; spec updates for database guidelines and cross-layer guide.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c6886b9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
