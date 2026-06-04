@@ -12,6 +12,7 @@ from openai import AsyncOpenAI
 
 from app.config import settings
 from app.models.user import User
+from app.services.article_summary import extract_content_for_summary
 
 logger = logging.getLogger(__name__)
 
@@ -95,8 +96,8 @@ def get_user_model(user: User, feature: Feature | None = None) -> str:
 
 async def generate_summary(client: AsyncOpenAI, model: str, title: str, content: str) -> str:
     """Generate article summary."""
-    truncated = content[:MAX_CONTENT_CHARS] if content else ""
-    user_message = f"Title: {title}\n\nContent:\n{truncated}"
+    extracted = extract_content_for_summary(content, MAX_CONTENT_CHARS)
+    user_message = f"Title: {title}\n\nContent:\n{extracted}"
 
     response = await client.chat.completions.create(
         model=model,

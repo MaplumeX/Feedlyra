@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec index for validation against conventions"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Quality checks for the new code"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify no frontend changes needed for this backend-only change"}
+{"file": ".trellis/tasks/06-04-optimize-llm-summary-generation/prd.md", "reason": "PRD to validate implementation against requirements"}
