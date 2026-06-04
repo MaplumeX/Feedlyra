@@ -4,6 +4,7 @@ import base64
 import hashlib
 import json
 import logging
+import re
 from collections.abc import AsyncIterator
 from typing import Literal
 
@@ -36,7 +37,10 @@ Rules:
 TRANSLATION_SYSTEM_PROMPT = (
     "You are a professional translator. "
     "Translate the following article to {target_lang}. "
-    "Preserve the original formatting and structure."
+    "Preserve the original formatting and structure.\n\n"
+    "Output ONLY the translated text in this exact format:\n"
+    "<translated_title>translated title here</translated_title>\n\n<translated_content>translated content here</translated_content>\n"
+    "Do NOT add any extra text, labels, or explanations."
 )
 
 CHAT_SYSTEM_PROMPT = (
@@ -121,7 +125,7 @@ async def translate_article(
 ) -> tuple[str, str]:
     """Translate article title and content to target language."""
     truncated = content[:MAX_CONTENT_CHARS] if content else ""
-    user_message = f"Title: {title}\n\nContent:\n{truncated}"
+    user_message = f"<title>{title}</title>\n\n<content>{truncated}</content>"
 
     system_prompt = TRANSLATION_SYSTEM_PROMPT.format(target_lang=target_lang)
 
@@ -139,12 +143,24 @@ async def translate_article(
     translated_title = title
     translated_content = result
 
-    # Try to split title and content if the model returns them separately
-    if "\n" in result:
-        lines = result.split("\n", 1)
-        if lines[0].strip() and len(lines) > 1 and lines[1].strip():
-            translated_title = lines[0].strip()
-            translated_content = lines[1].strip()
+    # Try to extract from XML tags first
+    title_match = re.search(r"<translated_title>(.*?)</translated_title>", result, re.DOTALL)
+    content_match = re.search(r"<translated_content>(.*?)</translated_content>", result, re.DOTALL)
+    if title_match and content_match:
+        translated_title = title_match.group(1).strip()
+        translated_content = content_match.group(1).strip()
+    elif result.strip():
+        # Fallback: split by blank line (title \\n\\n content)
+        if "\n\n" in result:
+            parts = result.split("\n\n", 1)
+            if parts[0].strip() and parts[1].strip():
+                translated_title = parts[0].strip()
+                translated_content = parts[1].strip()
+        elif "\n" in result:
+            lines = result.split("\n", 1)
+            if lines[0].strip() and len(lines) > 1 and lines[1].strip():
+                translated_title = lines[0].strip()
+                translated_content = lines[1].strip()
 
     return translated_title, translated_content
 
