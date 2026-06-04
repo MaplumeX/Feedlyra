@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Adding history_summary column to ArticleChat, needs migration and ORM patterns"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "New DELETE endpoint for message truncation, need correct error handling patterns"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Adding stop button, edit UI to AIChatPanel — must follow component patterns"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "SSE streaming hook patterns, abort controller usage conventions"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Chat message state trimming on edit, Zustand vs React Query boundary"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Feature spans DB migration → API → SSE → React components; cross-layer data flow check"}
+{"file": ".trellis/tasks/06-04-upgrade-ai-chat-context-and-ux/prd.md", "reason": "PRD with all decisions and requirements for implementation"}
