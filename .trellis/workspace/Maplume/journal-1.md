@@ -1955,3 +1955,36 @@ Replaced mutable filtered article offset paging with opaque cursor pagination, f
 ### Next Steps
 
 - None - task complete
+
+
+## Session 55: Fix scroll mark-read accuracy in unread view
+
+**Date**: 2026-06-07
+**Task**: Fix scroll mark-read accuracy in unread view
+**Branch**: `MaplumeX/fix-unread-scroll-mark-read`
+
+### Summary
+
+Removed 1-second down-scroll window guard that caused missed mark-read when user pauses reading then continues scrolling. Also fixed cleanup effect clearing submittedIdsRef/pendingIdsRef on articlesIdentity change from optimistic updates, which broke error rollback. Updated component-guidelines spec.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4de5536` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

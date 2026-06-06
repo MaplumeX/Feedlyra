@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 54
-- **Last Active**: 2026-06-06
+- **Total Sessions**: 55
+- **Last Active**: 2026-06-07
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1924 | Active |
+| `journal-1.md` | ~1990 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 55 | 2026-06-07 | Fix scroll mark-read accuracy in unread view | `4de5536` | `MaplumeX/fix-unread-scroll-mark-read` |
 | 55 | 2026-06-06 | Fix article list pagination and filter state | `e78a057` | `MaplumeX/davao` |
 | 54 | 2026-06-06 | Fix AI chat panel drag failure and white screen on close | `8caa0b4` | `MaplumeX/fix-ai-panel-drag-and-white-screen` |
 | 53 | 2026-06-06 | Replace conversation sidebar with floating popover | `04be619` | `MaplumeX/session-history-compression` |
