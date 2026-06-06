@@ -293,6 +293,7 @@ const [scrollViewport, setScrollViewport] = useState<HTMLDivElement | null>(null
 - **"Fixing" macOS overlay scrollbar layout differences** — macOS uses overlay scrollbars by default (no layout space). Custom `::-webkit-scrollbar` CSS forces Chrome into classic mode, which reserves a 6px layout gutter. This is expected behavior, not a bug. Do not remove custom scrollbar CSS or replace `<ScrollArea>` with native `overflow-y-auto` to "fix" this. (See: PR #16/#18 revert)
 - **Using `position: sticky` inside plain `Virtuoso`** — plain `Virtuoso` wraps each item in an element with `position: absolute` + computed `top`, so CSS `position: sticky` on child content silently fails. For sticky group headers, use `GroupedVirtuoso` which applies sticky on its group wrapper element automatically.
 - **Hardcoded Tailwind color classes for text/background** — classes like `text-green-600`, `bg-white`, `text-gray-500` use fixed hues that don't respond to dark mode. Always use semantic classes (`text-primary`, `text-muted-foreground`, `bg-background`, `bg-muted`, etc.) which map to CSS variables that flip in `.dark`.
+- **Applying `animate-in` to all items in a list unconditionally** — `tailwindcss-animate`'s `animate-in` triggers on every DOM mount. When applied inside a `.map()` for all messages, historical messages also animate when the component mounts or a conversation is switched. This creates a distracting cascade effect. Only apply entrance animations to newly appended items (e.g., track the last rendered message count or use an `isNew` flag).
 
 ---
 
@@ -719,6 +720,71 @@ import { MarkdownContent } from "@/components/MarkdownContent";
 ```
 
 **Why**: Without this script, the page renders with light CSS variables first, then flashes to dark when next-themes applies the `.dark` class after React mounts. The inline script reads the same `localStorage` key (`"theme"`) that next-themes uses and applies the class synchronously before first paint.
+
+### ChatGPT-Style Message Alignment
+
+Chat messages use asymmetric alignment: user messages right-aligned with colored background, AI messages left-aligned without background:
+
+```tsx
+// User message — right-aligned pill, no avatar
+<div className="flex justify-end">
+  <div className="max-w-[85%] rounded-2xl bg-chat-user px-3 py-2 text-sm">
+    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+  </div>
+</div>
+
+// AI message — left-aligned, avatar, no background bubble
+<div className="flex gap-2.5">
+  <AssistantAvatar />
+  <div className="min-w-0 flex-1 text-sm">
+    <MarkdownContent content={msg.content} />
+  </div>
+</div>
+```
+
+**Key details**:
+- User messages: `justify-end` + `max-w-[85%]` + `rounded-2xl bg-chat-user` pill
+- AI messages: `AssistantAvatar` on left + `flex-1`, no background bubble — `MarkdownContent` renders directly with `prose` styling
+- `--chat-bubble-user` opacity is higher than typical panel backgrounds (0.12 light, 0.18 dark) because the rounded pill has less visual area than a full-width bubble
+- `--chat-bubble-ai` is unused as background (AI has no bubble); it may be repurposed or removed later
+- Edit mode for user messages must also be right-aligned to match the layout
+
+### Chat Typing Indicator (Bouncing Dots)
+
+The typing indicator uses 3 staggered bouncing dots instead of a blinking cursor:
+
+```tsx
+function TypingIndicator() {
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[0, 150, 300].map((delay) => (
+        <span
+          key={delay}
+          className="chat-typing-dot h-1.5 w-1.5 rounded-full bg-foreground/50"
+          style={{ animationDelay: `${delay}ms` }}
+        />
+      ))}
+    </span>
+  );
+}
+```
+
+CSS keyframe in `index.css`:
+
+```css
+@keyframes chat-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}
+.chat-typing-dot {
+  animation: chat-bounce 1.4s ease-in-out infinite;
+}
+```
+
+**Key details**:
+- Staggered `animationDelay` (0ms, 150ms, 300ms) creates a wave effect
+- `bg-foreground/50` ensures visibility in both light and dark modes
+- The `chat-typing-dot` class is defined in `index.css`, not as a Tailwind utility
 
 ### Chat Message Hover Actions
 

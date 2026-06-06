@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component structure and styling conventions for frontend changes"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality checklist for UI changes"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "File placement conventions"}
+{"file": ".trellis/tasks/06-06-beautify-ai-chat-ui/prd.md", "reason": "Full requirements and technical approach for this task"}
