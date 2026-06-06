@@ -44,7 +44,7 @@
     --sidebar-hover: 220 14% 93%;
     --sidebar-selected: 220 14% 90%;
     --article-hover: 220 14% 94%;
-    --chat-bubble-user: 239 84% 58% / 0.08;
+    --chat-bubble-user: 239 84% 58% / 0.12;
     --chat-bubble-ai: 220 14% 96%;
     --conversation-bg: 222 18% 97%;
     --conversation-hover: 220 14% 93%;
@@ -89,7 +89,7 @@
     --sidebar-hover: 225 16% 14%;
     --sidebar-selected: 225 16% 20%;
     --article-hover: 225 16% 14%;
-    --chat-bubble-user: 240 68% 65% / 0.12;
+    --chat-bubble-user: 240 68% 65% / 0.18;
     --chat-bubble-ai: 225 16% 14%;
     --conversation-bg: 225 20% 8%;
     --conversation-hover: 225 16% 14%;
@@ -181,11 +181,11 @@
   }
 
   /* === Chat typing indicator === */
-  @keyframes chat-cursor-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
+  @keyframes chat-bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-4px); }
   }
-  .chat-cursor-blink {
-    animation: chat-cursor-blink 1s step-end infinite;
+  .chat-typing-dot {
+    animation: chat-bounce 1.4s ease-in-out infinite;
   }
 }

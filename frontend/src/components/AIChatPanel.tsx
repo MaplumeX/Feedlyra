@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, X, Bot, User, Copy, Check, RefreshCw, MessageSquareText, Square, Pencil, Paperclip, XCircle } from "lucide-react";
+import { Send, X, Bot, Copy, Check, RefreshCw, MessageSquareText, Square, Pencil, Paperclip, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,14 +38,6 @@ function updateLastAssistant(messages: ChatMessage[], content: string): ChatMess
 
 // --- Sub-components ---
 
-function UserAvatar() {
-  return (
-    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-chat-user">
-      <User className="h-4 w-4 text-primary" />
-    </div>
-  );
-}
-
 function AssistantAvatar() {
   return (
     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
@@ -56,7 +48,11 @@ function AssistantAvatar() {
 
 function TypingIndicator() {
   return (
-    <span className="chat-cursor-blink inline-block h-4 w-0.5 bg-foreground/70" />
+    <span className="inline-flex items-center gap-1">
+      <span className="chat-typing-dot h-1.5 w-1.5 rounded-full bg-foreground/50" />
+      <span className="chat-typing-dot h-1.5 w-1.5 rounded-full bg-foreground/50" style={{ animationDelay: "150ms" }} />
+      <span className="chat-typing-dot h-1.5 w-1.5 rounded-full bg-foreground/50" style={{ animationDelay: "300ms" }} />
+    </span>
   );
 }
 
@@ -70,20 +66,20 @@ const SUGGESTION_KEYS = [
 function ChatEmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) => void }) {
   const { t } = useTranslation("reader");
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-8">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-        <MessageSquareText className="h-6 w-6 text-muted-foreground" />
+    <div className="flex flex-1 flex-col items-center justify-center gap-5 px-4 py-8">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+        <MessageSquareText className="h-8 w-8 text-primary" />
       </div>
       <div className="text-center">
-        <p className="text-sm font-medium">{t("chatEmptyTitle")}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{t("chatEmptySubtitle")}</p>
+        <p className="text-base font-medium">{t("chatEmptyTitle")}</p>
+        <p className="mt-1.5 text-xs text-muted-foreground">{t("chatEmptySubtitle")}</p>
       </div>
-      <div className="grid grid-cols-2 gap-2 w-full max-w-xs">
+      <div className="grid grid-cols-2 gap-2.5 w-full max-w-xs">
         {SUGGESTION_KEYS.map((key) => (
           <button
             key={key}
             type="button"
-            className="rounded-md border bg-background px-3 py-2 text-left text-xs text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="rounded-lg border bg-background px-3 py-2.5 text-left text-xs text-foreground transition-all hover:shadow-sm hover:-translate-y-0.5 hover:bg-accent hover:text-accent-foreground"
             onClick={() => onSuggestionClick(t(key))}
           >
             {t(key)}
@@ -253,20 +249,19 @@ function ChatMessageBubble({
 
   if (isEditing) {
     return (
-      <div className="flex gap-2.5">
-        <UserAvatar />
-        <div className="min-w-0 flex-1">
-          <div className="rounded-lg bg-chat-user px-3 py-2">
+      <div className="flex justify-end">
+        <div className="max-w-[85%]">
+          <div className="rounded-2xl bg-chat-user px-3 py-2">
             <textarea
               ref={textareaRef}
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               onKeyDown={handleEditKeyDown}
               rows={1}
-              className="w-full resize-none rounded border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-full resize-none rounded-xl border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
-          <div className="mt-1 flex gap-1">
+          <div className="mt-1 flex gap-1 justify-end">
             <Button
               variant="ghost"
               size="sm"
@@ -291,16 +286,19 @@ function ChatMessageBubble({
 
   return (
     <div
-      className="group flex gap-2.5"
+      className={cn(
+        "group flex gap-2.5",
+        isAssistant ? "" : "justify-end"
+      )}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {isAssistant ? <AssistantAvatar /> : <UserAvatar />}
-      <div className="min-w-0 flex-1">
+      {isAssistant && <AssistantAvatar />}
+      <div className={cn("min-w-0", isAssistant ? "flex-1" : "max-w-[85%]")}>
         <div
           className={cn(
-            "rounded-lg px-3 py-2 text-sm",
-            isAssistant ? "bg-chat-ai" : "bg-chat-user"
+            "text-sm",
+            isAssistant ? "" : "rounded-2xl bg-chat-user px-3 py-2"
           )}
         >
           {isAssistant ? (
@@ -316,7 +314,7 @@ function ChatMessageBubble({
           )}
         </div>
         {hovered && !isStreaming && msg.content && (
-          <div className="mt-1 flex gap-1">
+          <div className={cn("mt-1 flex gap-1", isAssistant ? "" : "justify-end")}>
             <Button
               variant="ghost"
               size="icon"
@@ -494,7 +492,7 @@ function ChatInput({
           placeholder={t("chatPlaceholder")}
           disabled={isStreaming}
           rows={1}
-          className="flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 resize-none rounded-xl border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:cursor-not-allowed disabled:opacity-50"
         />
         <Button
           variant="ghost"
@@ -526,6 +524,7 @@ function ChatInput({
         ) : (
           <Button
             size="icon"
+            variant="default"
             className="h-8 w-8 shrink-0"
             onClick={handleSend}
             disabled={!input.trim() && pendingImages.length === 0}
@@ -798,17 +797,21 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
         <ChatEmptyState onSuggestionClick={(text) => handleSend(text, [])} />
       ) : (
         <ScrollArea className="flex-1" viewportRef={setScrollViewport}>
-          <div className="space-y-4 px-3 py-3">
+          <div className="space-y-5 px-3 py-3">
             {messages.map((msg) => (
-              <ChatMessageBubble
+              <div
                 key={msg.id}
-                msg={msg}
-                isStreaming={isStreaming && msg === messages[messages.length - 1] && msg.role === "assistant"}
-                editingMsgId={editingMsgId}
-                onCopy={handleCopy}
-                onRegenerate={handleRegenerate}
-                onEdit={handleEdit}
-              />
+                className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+              >
+                <ChatMessageBubble
+                  msg={msg}
+                  isStreaming={isStreaming && msg === messages[messages.length - 1] && msg.role === "assistant"}
+                  editingMsgId={editingMsgId}
+                  onCopy={handleCopy}
+                  onRegenerate={handleRegenerate}
+                  onEdit={handleEdit}
+                />
+              </div>
             ))}
           </div>
         </ScrollArea>

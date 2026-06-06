@@ -276,7 +276,7 @@ export function ConversationSidebar() {
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           placeholder={t("searchConversations")}
-          className="h-7 text-xs"
+          className="h-7 text-xs rounded-lg"
         />
       </div>
 
