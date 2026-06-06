@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify Popover usage follows project patterns"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Lint/typecheck standards"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify store state cleanup is correct"}
+{"file": ".trellis/tasks/06-06-replace-conversation-sidebar-with-floating-overlay-panel/prd.md", "reason": "Acceptance criteria and definition of done"}

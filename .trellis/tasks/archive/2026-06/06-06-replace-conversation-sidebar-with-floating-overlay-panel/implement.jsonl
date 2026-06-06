@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Popover component patterns, shadcn/ui usage conventions"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand store cleanup for conversationPanelOpen removal"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "TypeScript/lint standards for the refactor"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Where to place new ConversationListPopover component"}
+{"file": ".trellis/tasks/06-06-replace-conversation-sidebar-with-floating-overlay-panel/prd.md", "reason": "Full requirements and technical approach"}
