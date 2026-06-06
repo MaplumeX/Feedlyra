@@ -579,7 +579,29 @@ useEffect(() => {
 - Check `mutation.isPending` before mutating — prevents concurrent calls
 - Use `useRef` (not `useState`) for the guard — avoids causing re-renders that re-trigger the effect
 - Reset the ref in a separate `useEffect` keyed on the entity identifier
+- **On mutation error, reset the guard ref and show user feedback** — otherwise a failed mutation blocks retries for the same entity, and the user has no idea what happened:
+
+```tsx
+const autoTranslateTriggeredRef = useRef<string | null>(null);
+
+useEffect(() => {
+  if (!article || !feed?.auto_translate || article.translated_content) return;
+  if (translateMut.isPending) return;
+  if (autoTranslateTriggeredRef.current === article.id) return;
+  autoTranslateTriggeredRef.current = article.id;
+  translateMut.mutate({ articleId: article.id, targetLang: effectiveLang });
+}, [article, feed, translateMut]);
+
+// Reset on failure so the user can retry (e.g., fix API key and reopen)
+useEffect(() => {
+  if (translateMut.isError && autoTranslateTriggeredRef.current === selectedArticleId) {
+    autoTranslateTriggeredRef.current = null;
+  }
+}, [translateMut.isError]);
+```
+
 - Silently skip (return early) when preconditions aren't met — don't show errors for expected states
+- **Do show errors (toast) when an auto-triggered mutation fails** — auto-triggered means the user didn't click, so they need explicit feedback
 
 ### Placeholder UI with Same Container Style
 

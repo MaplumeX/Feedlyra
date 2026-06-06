@@ -75,5 +75,7 @@
   "uncategorized": "未分类",
   "editUsername": "修改用户名",
   "editEmail": "修改邮箱",
-  "editPassword": "修改密码"
+  "editPassword": "修改密码",
+  "defaultTranslateLang": "默认翻译语言",
+  "defaultTranslateLangDescription": "未设置单独订阅源覆盖时，自动翻译使用的默认目标语言。"
 }

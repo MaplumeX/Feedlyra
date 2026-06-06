@@ -72,6 +72,7 @@ export function ArticleDetail() {
   const [articleElement, setArticleElement] = useState<HTMLElement | null>(null);
   const autoSummarizeTriggeredRef = useRef<string | null>(null);
   const autoExtractTriggeredRef = useRef<string | null>(null);
+  const autoTranslateTriggeredRef = useRef<string | null>(null);
 
   const setScrollViewportRef = useCallback((node: HTMLDivElement | null) => {
     setScrollViewport(node);
@@ -124,9 +125,50 @@ export function ArticleDetail() {
   }, [article?.full_content, article?.id, fullContentArticleIds, selectedArticleId]);
 
   const feedAutoFullText = feeds?.find((f) => f.id === article?.feed_id)?.auto_full_text ?? false;
+  const feedAutoTranslate = feeds?.find((f) => f.id === article?.feed_id)?.auto_translate ?? false;
+  const feedTranslateTargetLang = feeds?.find((f) => f.id === article?.feed_id)?.translate_target_lang ?? null;
+
+  // Auto-translate: when feed has auto_translate, automatically trigger translation on first open
+  useEffect(() => {
+    if (!article || !feedAutoTranslate) return;
+    if (translateMut.isPending) return;
+    if (autoTranslateTriggeredRef.current === article.id) return;
+    // If translation already cached, just show it
+    if (article.translated_content) {
+      setShowTranslation(true);
+      setShowFullContent(false);
+      return;
+    }
+    const aiReady = aiConfig?.base_url && aiConfig?.has_api_key && aiConfig?.model;
+    if (!aiReady) return;
+    autoTranslateTriggeredRef.current = article.id;
+    const effectiveLang = feedTranslateTargetLang || aiConfig.translate_default_lang || "zh";
+    translateMut.mutate(
+      { articleId: article.id, targetLang: effectiveLang },
+      {
+        onError: () => {
+          autoTranslateTriggeredRef.current = null;
+          toast.error(t("autoTranslateFailed"));
+        },
+      },
+    );
+  }, [article, feedAutoTranslate, aiConfig, translateMut, feedTranslateTargetLang]);
+
+  // Reset auto-translate trigger ref when article changes
+  useEffect(() => {
+    autoTranslateTriggeredRef.current = null;
+  }, [selectedArticleId]);
+
+  // Auto-switch to translation view after successful translation
+  useEffect(() => {
+    if (translateMut.isSuccess && article?.translated_content) {
+      setShowTranslation(true);
+      setShowFullContent(false);
+      setArticleFullContentPreference(article.id, false);
+    }
+  }, [article?.id, article?.translated_content, setArticleFullContentPreference, translateMut.isSuccess]);
 
   // Auto-summarize: when the feed has auto_full_text, wait for full-text extraction
-  // and use full content as source; otherwise use feed content as source.
   useEffect(() => {
     if (!article || !autoSummarize) return;
     if (summarize.isPending) return;
@@ -178,15 +220,6 @@ export function ArticleDetail() {
   useEffect(() => {
     autoExtractTriggeredRef.current = null;
   }, [selectedArticleId]);
-
-  // Auto-switch to translation view after successful translation
-  useEffect(() => {
-    if (translateMut.isSuccess && article?.translated_content) {
-      setShowTranslation(true);
-      setShowFullContent(false);
-      setArticleFullContentPreference(article.id, false);
-    }
-  }, [article?.id, article?.translated_content, setArticleFullContentPreference, translateMut.isSuccess]);
 
   const hasTranslation = !!article?.translated_content;
   const hasFullContent = !!article?.full_content;

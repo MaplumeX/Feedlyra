@@ -120,6 +120,8 @@ async def update_ai_config(
         user.ai_api_key = encrypt_api_key(body.api_key)
     if body.model is not None:
         user.ai_model = body.model
+    if body.translate_default_lang is not None:
+        user.translate_default_lang = body.translate_default_lang
 
     _apply_feature_update(user, "translate", body.translate)
     _apply_feature_update(user, "summary", body.summary)
@@ -132,6 +134,7 @@ async def update_ai_config(
         "base_url": user.ai_base_url,
         "model": user.ai_model,
         "has_api_key": user.ai_api_key is not None,
+        "translate_default_lang": user.translate_default_lang or "zh",
         "translate": _build_feature_response(user, "translate"),
         "summary": _build_feature_response(user, "summary"),
         "chat": _build_feature_response(user, "chat"),
@@ -146,10 +149,32 @@ async def get_ai_config(
         "base_url": user.ai_base_url,
         "model": user.ai_model,
         "has_api_key": user.ai_api_key is not None,
+        "translate_default_lang": user.translate_default_lang or "zh",
         "translate": _build_feature_response(user, "translate"),
         "summary": _build_feature_response(user, "summary"),
         "chat": _build_feature_response(user, "chat"),
     }
+
+
+@router.get("/effective-translate-lang/{feed_id}")
+async def get_effective_translate_lang(
+    feed_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Resolve the effective target language for a feed.
+
+    Priority: per-feed override -> global user default -> "zh"
+    """
+    result = await db.execute(
+        select(Feed).where(Feed.id == feed_id, Feed.user_id == user.id)
+    )
+    feed = result.scalar_one_or_none()
+    if feed is None:
+        raise HTTPException(status_code=404, detail="Feed not found")
+
+    effective_lang = feed.translate_target_lang or user.translate_default_lang or "zh"
+    return {"target_lang": effective_lang}
 
 
 @router.get("/test-connection")

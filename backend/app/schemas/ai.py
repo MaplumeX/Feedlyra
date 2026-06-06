@@ -101,6 +101,7 @@ class AIConfigUpdate(BaseModel):
     base_url: str | None = Field(default=None, max_length=500)
     api_key: str | None = Field(default=None, max_length=255)
     model: str | None = Field(default=None, max_length=100)
+    translate_default_lang: str | None = Field(default=None, max_length=10)
     translate: FeatureAIConfigUpdate | None = None
     summary: FeatureAIConfigUpdate | None = None
     chat: FeatureAIConfigUpdate | None = None
@@ -117,6 +118,7 @@ class AIConfigResponse(BaseModel):
     base_url: str | None
     model: str | None
     has_api_key: bool
+    translate_default_lang: str = "zh"
     translate: FeatureAIConfigResponse
     summary: FeatureAIConfigResponse
     chat: FeatureAIConfigResponse

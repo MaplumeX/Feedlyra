@@ -19,6 +19,8 @@ export interface Feed {
   category_id: string | null;
   category_name: string | null;
   auto_full_text: boolean;
+  auto_translate: boolean;
+  translate_target_lang: string | null;
 }
 
 export interface Category {
@@ -83,6 +85,7 @@ export interface AIConfig {
   base_url: string | null;
   model: string | null;
   has_api_key: boolean;
+  translate_default_lang: string;
   translate: FeatureAIConfig;
   summary: FeatureAIConfig;
   chat: FeatureAIConfig;

@@ -75,5 +75,7 @@
   "uncategorized": "Uncategorized",
   "editUsername": "Edit Username",
   "editEmail": "Edit Email",
-  "editPassword": "Edit Password"
+  "editPassword": "Edit Password",
+  "defaultTranslateLang": "Default Translation Language",
+  "defaultTranslateLangDescription": "Default target language for auto-translate when no per-feed override is set."
 }

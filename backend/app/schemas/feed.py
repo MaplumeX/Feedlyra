@@ -10,12 +10,16 @@ class FeedCreate(BaseModel):
     url: str = Field(max_length=2048)
     category_id: UUID | None = None
     auto_full_text: bool = False
+    auto_translate: bool = False
+    translate_target_lang: str | None = None
 
 
 class FeedUpdate(BaseModel):
     title: str | None = Field(None, max_length=500)
     category_id: UUID | None = None
     auto_full_text: bool | None = None
+    auto_translate: bool | None = None
+    translate_target_lang: str | None = None
 
 
 class FeedResponse(BaseModel):
@@ -30,6 +34,8 @@ class FeedResponse(BaseModel):
     checked_at: datetime | None
     created_at: datetime
     auto_full_text: bool = False
+    auto_translate: bool = False
+    translate_target_lang: str | None = None
 
     model_config = {"from_attributes": True}
 
