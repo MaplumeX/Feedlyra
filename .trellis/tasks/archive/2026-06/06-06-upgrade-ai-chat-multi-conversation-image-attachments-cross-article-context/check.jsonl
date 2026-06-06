@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify new models use UUIDMixin/TimestampMixin, cascade deletes correct, migration follows sequential ID convention"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify error handling for new endpoints (image upload limits, invalid references, conversation ownership)"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Code quality checks: no forbidden patterns, proper async usage, no accidental sync in async context"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify ConversationSidebar uses ScrollArea fix, proper component structure, semantic CSS vars for chat UI"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify no server data in Zustand, conversation state in React Query, temporary UI state not persisted"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Verify query key factory used, mutations invalidate correctly, no stale data after conversation mutations"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend code quality: no hardcoded colors, proper dark mode, no CSS modules"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify TypeScript types match API schemas, no loose types on new interfaces"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify data flow consistency: conversation model↔schema↔API↔TypeScript, image upload→serve→vision message format"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Verify reuse of extract_content_for_summary, SSE pattern, chat message building for multi-article references"}
