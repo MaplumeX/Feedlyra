@@ -229,6 +229,39 @@ title_escaped = escape(title, {'"': "&quot;"})  # handles &amp;, &lt;, &gt; + &q
 
 ---
 
+### Don't: Forget to pass new schema fields to model constructors in create endpoints
+
+```python
+# Bad — schema accepts the field but the endpoint silently ignores it
+class FeedCreate(BaseModel):
+    auto_translate: bool = False
+    translate_target_lang: str | None = None
+
+@router.post("/")
+async def add_feed(body: FeedCreate, db: AsyncSession = Depends(get_db)):
+    feed = Feed(
+        user_id=user.id,
+        url=body.url,
+        # auto_translate and translate_target_lang silently dropped!
+    )
+```
+
+**Why**: When a new field is added to a Pydantic schema but not passed to the model constructor in the create endpoint, the field is accepted by the API but silently ignored. The user thinks they configured it, but it defaults to the DB column default. This is especially sneaky because the GET response will also show the DB default, so the user may not notice until behavior diverges from expectation.
+
+**Instead**:
+```python
+feed = Feed(
+    user_id=user.id,
+    url=body.url,
+    auto_translate=body.auto_translate,
+    translate_target_lang=body.translate_target_lang,
+)
+```
+
+**Checklist**: When adding a new field to a schema used in a create endpoint, verify the model constructor in that endpoint also receives the new field.
+
+---
+
 ## Testing Requirements
 
 - SSE streaming endpoints must test with independent DB sessions
@@ -247,3 +280,4 @@ title_escaped = escape(title, {'"': "&quot;"})  # handles &amp;, &lt;, &gt; + &q
 - [ ] feedparser `icon`/`image` fields may be dict or str — always check type before accessing
 - [ ] Pydantic nullable optional fields use `model_dump(exclude_unset=True)`, NOT `if field is not None`
 - [ ] XML generation uses `xml.sax.saxutils.escape`, NOT manual `.replace()` chains
+- [ ] New schema fields added to create endpoints are passed to model constructors — not silently dropped
