@@ -4,10 +4,11 @@ import { Sidebar } from "@/components/Sidebar";
 import { ArticleList } from "@/components/ArticleList";
 import { ArticleDetail } from "@/components/ArticleDetail";
 import { AIChatPanel } from "@/components/AIChatPanel";
+import { ConversationSidebar } from "@/components/ConversationSidebar";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useReaderStore } from "@/stores/reader";
-import { useArticle } from "@/api/hooks";
+import { useCreateConversation } from "@/api/hooks";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { PanelLeft } from "lucide-react";
@@ -15,11 +16,13 @@ import { PanelLeft } from "lucide-react";
 const SIDEBAR_PANEL_ID = "sidebar";
 const ARTICLE_LIST_PANEL_ID = "article-list";
 const ARTICLE_DETAIL_PANEL_ID = "article-detail";
+const CONVERSATION_SIDEBAR_PANEL_ID = "conversation-sidebar";
 const CHAT_PANEL_ID = "ai-chat";
 const LAYOUT_STORAGE_KEY = "providence-layout";
 
 const DEFAULT_SIDEBAR_SIZE = 192;
 const DEFAULT_ARTICLE_LIST_SIZE = 280;
+const DEFAULT_CONVERSATION_SIDEBAR_SIZE = 260;
 
 function loadLayout(): Record<string, number> | undefined {
   try {
@@ -34,7 +37,17 @@ function saveLayout(layout: Record<string, number>) {
 }
 
 export function Home() {
-  const { sidebarCollapsed, chatPanelOpen, chatPanelWidth, selectedArticleId, set: setReader } = useReaderStore();
+  const {
+    sidebarCollapsed,
+    chatPanelOpen,
+    chatPanelWidth,
+    conversationPanelOpen,
+    activeConversationId,
+    selectedArticleId,
+    set: setReader,
+  } = useReaderStore();
+
+  const createConversation = useCreateConversation();
 
   useKeyboardShortcuts();
 
@@ -64,7 +77,7 @@ export function Home() {
         setReader({ sidebarCollapsed: collapsed });
       }
     },
-    [setReader, sidebarPanelRef]
+    [setReader, sidebarPanelRef],
   );
 
   // Persist layout after drag ends
@@ -72,17 +85,42 @@ export function Home() {
     saveLayout(layout);
   }, []);
 
-  // Auto-close chat when article is deselected
+  // Auto-close legacy chat panel when article is deselected
   useEffect(() => {
     if (!selectedArticleId && chatPanelOpen) {
       setReader({ chatPanelOpen: false });
     }
   }, [selectedArticleId, chatPanelOpen, setReader]);
 
-  // Get article title for chat panel
-  const { data: selectedArticle } = useArticle(chatPanelOpen && selectedArticleId ? selectedArticleId : "");
+  // Handle opening chat from article detail page: creates a conversation with auto-reference
+  const handleOpenChatFromArticle = useCallback(() => {
+    if (!selectedArticleId) return;
 
-  const showChatPanel = chatPanelOpen && !!selectedArticleId;
+    createConversation.mutate(
+      { article_id: selectedArticleId },
+      {
+        onSuccess: (conv) => {
+          setReader({
+            activeConversationId: conv.id,
+            conversationPanelOpen: true,
+            chatPanelOpen: false,
+          });
+        },
+      },
+    );
+  }, [selectedArticleId, createConversation, setReader]);
+
+  // Expose the handler for ArticleDetail to use
+  // We'll use the chatPanelOpen toggle flow — but redirect to new conversation panel
+  // Override: When chatPanelOpen is set to true, create a conversation instead
+  useEffect(() => {
+    if (chatPanelOpen && selectedArticleId && !conversationPanelOpen && !createConversation.isPending) {
+      setReader({ chatPanelOpen: false });
+      handleOpenChatFromArticle();
+    }
+  }, [chatPanelOpen, selectedArticleId, conversationPanelOpen, handleOpenChatFromArticle, setReader, createConversation.isPending]);
+
+  const showChatPanel = conversationPanelOpen && !!activeConversationId;
 
   return (
     <div className="h-screen w-screen overflow-hidden">
@@ -151,6 +189,19 @@ export function Home() {
               <div className="absolute inset-y-0 -left-2 -right-2" />
             </Separator>
             <Panel
+              id={CONVERSATION_SIDEBAR_PANEL_ID}
+              minSize={200}
+              maxSize={320}
+              defaultSize={DEFAULT_CONVERSATION_SIDEBAR_SIZE}
+            >
+              <ConversationSidebar />
+            </Panel>
+            <Separator
+              className="relative w-px bg-border transition-colors hover:bg-primary/50 data-[separator=active]:bg-primary"
+            >
+              <div className="absolute inset-y-0 -left-2 -right-2" />
+            </Separator>
+            <Panel
               id={CHAT_PANEL_ID}
               defaultSize={chatPanelWidth}
               minSize={280}
@@ -159,7 +210,7 @@ export function Home() {
                 setReader({ chatPanelWidth: size.inPixels });
               }}
             >
-              <AIChatPanel articleId={selectedArticleId!} articleTitle={selectedArticle?.title ?? ""} />
+              <AIChatPanel conversationId={activeConversationId!} />
             </Panel>
           </>
         )}

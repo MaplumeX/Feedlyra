@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     AI_DEFAULT_BASE_URL: str = "https://api.openai.com/v1"
     AI_DEFAULT_API_KEY: str = ""
     AI_DEFAULT_MODEL: str = "gpt-4o-mini"
+    UPLOAD_DIR: str = "./uploads/chat_images"
 
     @property
     def cors_origin_list(self) -> list[str]:

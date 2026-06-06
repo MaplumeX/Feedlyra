@@ -49,6 +49,7 @@ export function ArticleDetail() {
   const {
     selectedArticleId,
     chatPanelOpen,
+    conversationPanelOpen,
     readerSettings,
     autoSummarize,
     fullContentArticleIds,
@@ -287,10 +288,16 @@ export function ArticleDetail() {
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          onClick={() => setReader({ chatPanelOpen: !chatPanelOpen })}
+          onClick={() => {
+            if (conversationPanelOpen) {
+              setReader({ conversationPanelOpen: false, chatPanelOpen: false });
+            } else {
+              setReader({ chatPanelOpen: true });
+            }
+          }}
           title={t("aiChat")}
         >
-          <MessageSquare className={cn("h-4 w-4", chatPanelOpen && "text-primary")} />
+          <MessageSquare className={cn("h-4 w-4", (chatPanelOpen || conversationPanelOpen) && "text-primary")} />
         </Button>
         <Button
           variant={showFullContent ? "secondary" : "ghost"}

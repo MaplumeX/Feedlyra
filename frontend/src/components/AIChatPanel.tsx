@@ -1,18 +1,23 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, X, Bot, User, Copy, Check, RefreshCw, MessageSquareText, Square, Pencil } from "lucide-react";
+import { Send, X, Bot, User, Copy, Check, RefreshCw, MessageSquareText, Square, Pencil, Paperclip, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useChatHistory } from "@/api/hooks";
+import {
+  useChatHistory,
+  useConversationReferences,
+  useRemoveConversationReference,
+  useConversation,
+} from "@/api/hooks";
 import { streamChat, truncateChatMessages } from "@/api/sse";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { useReaderStore } from "@/stores/reader";
-import type { ChatMessage } from "@/api/types";
+import type { ChatMessage, ImageAttachment, ConversationReference } from "@/api/types";
 import { cn } from "@/lib/utils";
 
 interface AIChatPanelProps {
-  articleId: string;
-  articleTitle: string;
+  conversationId: string;
 }
 
 function updateLastAssistant(messages: ChatMessage[], content: string): ChatMessage[] {
@@ -24,6 +29,7 @@ function updateLastAssistant(messages: ChatMessage[], content: string): ChatMess
       id: last.id,
       role: last.role,
       content: content,
+      attachments: last.attachments,
       created_at: last.created_at,
     };
   }
@@ -88,6 +94,90 @@ function ChatEmptyState({ onSuggestionClick }: { onSuggestionClick: (text: strin
   );
 }
 
+function ReferenceTag({
+  reference,
+  onRemove,
+}: {
+  reference: ConversationReference;
+  onRemove: (refId: string) => void;
+}) {
+  const { t } = useTranslation("reader");
+  return (
+    <Badge variant="secondary" className="gap-1 text-xs pr-1 max-w-[200px]">
+      <span className="truncate">{reference.article_title}</span>
+      {reference.is_auto && (
+        <span className="text-[10px] text-primary font-medium shrink-0">
+          {t("currentArticle")}
+        </span>
+      )}
+      <button
+        type="button"
+        className="shrink-0 rounded-full p-0.5 hover:bg-muted-foreground/20"
+        onClick={() => onRemove(reference.id)}
+        title={t("removeReference")}
+      >
+        <XCircle className="h-3 w-3" />
+      </button>
+    </Badge>
+  );
+}
+
+function ImagePreview({
+  images,
+  onRemoveImage,
+}: {
+  images: File[];
+  onRemoveImage: (index: number) => void;
+}) {
+  if (images.length === 0) return null;
+  return (
+    <div className="flex gap-2 px-3 pt-2">
+      {images.map((img, idx) => {
+        const objectUrl = URL.createObjectURL(img);
+        return (
+          <div key={`${img.name}-${img.size}-${idx}`} className="group relative h-14 w-14 shrink-0">
+            <img
+              src={objectUrl}
+              alt={img.name}
+              className="h-14 w-14 rounded-md border object-cover"
+              onLoad={() => URL.revokeObjectURL(objectUrl)}
+            />
+            <button
+              type="button"
+              className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => onRemoveImage(idx)}
+            >
+              <X className="h-2.5 w-2.5" />
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+
+function MessageAttachments({ attachments }: { attachments: ImageAttachment[] }) {
+  if (!attachments || attachments.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2 mt-1">
+      {attachments.map((att, idx) => {
+        // Server returns relative URLs like /api/ai/images/xxx — prefix with API base
+        const src = att.url.startsWith("/") ? `${API_BASE}${att.url}` : att.url;
+        return (
+          <img
+            key={idx}
+            src={src}
+            alt={att.filename}
+            className="max-h-48 max-w-full rounded-md border object-contain"
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 function ChatMessageBubble({
   msg,
   isStreaming,
@@ -148,7 +238,6 @@ function ChatMessageBubble({
   };
 
   const cancelEdit = () => {
-    // Reset by setting editingMsgId to null is handled by parent
     onEdit("", "");
   };
 
@@ -220,7 +309,10 @@ function ChatMessageBubble({
               {isStreaming && <TypingIndicator />}
             </div>
           ) : (
-            <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+            <>
+              <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+              <MessageAttachments attachments={msg.attachments ?? []} />
+            </>
           )}
         </div>
         {hovered && !isStreaming && msg.content && (
@@ -271,14 +363,22 @@ function ChatInput({
   onSend,
   isStreaming,
   onStop,
+  pendingImages,
+  onAddImages,
+  onRemoveImage,
 }: {
-  onSend: (text: string) => void;
+  onSend: (text: string, images: File[]) => void;
   isStreaming: boolean;
   onStop: () => void;
+  pendingImages: File[];
+  onAddImages: (files: File[]) => void;
+  onRemoveImage: (index: number) => void;
 }) {
   const { t } = useTranslation("reader");
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -288,10 +388,34 @@ function ChatInput({
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
   }, [input]);
 
+  // Paste handler for images
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const files: File[] = [];
+      if (e.clipboardData) {
+        for (const item of e.clipboardData.items) {
+          if (item.type.startsWith("image/")) {
+            const file = item.getAsFile();
+            if (file) files.push(file);
+          }
+        }
+      }
+      if (files.length > 0) {
+        onAddImages(files);
+      }
+    };
+
+    el.addEventListener("paste", handlePaste);
+    return () => el.removeEventListener("paste", handlePaste);
+  }, [onAddImages]);
+
   const handleSend = () => {
     const trimmed = input.trim();
-    if (!trimmed || isStreaming) return;
-    onSend(trimmed);
+    if ((!trimmed && pendingImages.length === 0) || isStreaming) return;
+    onSend(trimmed, pendingImages);
     setInput("");
   };
 
@@ -302,49 +426,130 @@ function ChatInput({
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const imageFiles: File[] = [];
+    for (let i = 0; i < files.length; i++) {
+      if (files[i]!.type.startsWith("image/")) {
+        imageFiles.push(files[i]!);
+      }
+    }
+    if (imageFiles.length > 0) {
+      onAddImages(imageFiles);
+    }
+    e.target.value = "";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.types.includes("Files")) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const files: File[] = [];
+    if (e.dataTransfer.files) {
+      for (let i = 0; i < e.dataTransfer.files.length; i++) {
+        const file = e.dataTransfer.files[i]!;
+        if (file.type.startsWith("image/")) {
+          files.push(file);
+        }
+      }
+    }
+    if (files.length > 0) {
+      onAddImages(files);
+    }
+  };
+
   return (
-    <div className="flex items-end gap-2 border-t p-3">
-      <textarea
-        ref={textareaRef}
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={t("askAboutArticle")}
-        disabled={isStreaming}
-        rows={1}
-        className="flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-      />
-      {isStreaming ? (
-        <Button
-          size="icon"
-          className="h-8 w-8 shrink-0"
-          onClick={onStop}
-          title={t("stopGeneration")}
-        >
-          <Square className="h-4 w-4" />
-        </Button>
-      ) : (
-        <Button
-          size="icon"
-          className="h-8 w-8 shrink-0"
-          onClick={handleSend}
-          disabled={!input.trim()}
-        >
-          <Send className="h-4 w-4" />
-        </Button>
+    <div
+      className={cn(
+        "border-t p-3",
+        isDragOver && "bg-primary/5"
       )}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDragOver && (
+        <div className="mb-2 flex items-center justify-center rounded-md border-2 border-dashed border-primary/40 py-3 text-xs text-primary">
+          {t("dropImage")}
+        </div>
+      )}
+      <ImagePreview images={pendingImages} onRemoveImage={onRemoveImage} />
+      <div className="flex items-end gap-2">
+        <textarea
+          ref={textareaRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={t("chatPlaceholder")}
+          disabled={isStreaming}
+          rows={1}
+          className="flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isStreaming}
+          title={t("uploadImage")}
+        >
+          <Paperclip className="h-4 w-4" />
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+        {isStreaming ? (
+          <Button
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={onStop}
+            title={t("stopGeneration")}
+          >
+            <Square className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={handleSend}
+            disabled={!input.trim() && pendingImages.length === 0}
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
 
 // --- Main component ---
 
-export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
+export function AIChatPanel({ conversationId }: AIChatPanelProps) {
   const { t } = useTranslation("reader");
-  const { data: chatHistory, isLoading } = useChatHistory(articleId);
+  const { data: chatHistory, isLoading } = useChatHistory(conversationId);
+  const { data: conversation } = useConversation(conversationId);
+  const { data: references } = useConversationReferences(conversationId);
+  const removeReference = useRemoveConversationReference();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
   const { set: setReader } = useReaderStore();
@@ -356,6 +561,13 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
     }
   }, [chatHistory]);
 
+  // Reset state when conversation changes
+  useEffect(() => {
+    setMessages([]);
+    setPendingImages([]);
+    setEditingMsgId(null);
+  }, [conversationId]);
+
   // Auto-scroll to bottom on new messages or streaming content
   useEffect(() => {
     if (scrollViewportRef.current) {
@@ -363,22 +575,38 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
     }
   }, [messages]);
 
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
   const doStream = useCallback(
-    async (text: string) => {
+    async (text: string, images?: File[]) => {
       setIsStreaming(true);
+
+      // Convert images to base64 for the API
+      let base64Images: string[] | undefined;
+      if (images && images.length > 0) {
+        base64Images = await Promise.all(images.map(fileToBase64));
+      }
 
       const assistantMsg: ChatMessage = {
         id: `temp-assistant-${Date.now()}`,
         role: "assistant",
         content: "",
+        attachments: null,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMsg]);
 
-      const controller = await streamChat(
-        articleId,
-        text,
-        (chunk) => {
+      const controller = await streamChat({
+        conversationId,
+        message: text,
+        images: base64Images,
+        onChunk: (chunk) => {
           setMessages((prev) => {
             const last = prev.length > 0 ? prev[prev.length - 1] : undefined;
             if (last && last.role === "assistant") {
@@ -387,10 +615,10 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
             return prev;
           });
         },
-        () => {
+        onDone: () => {
           setIsStreaming(false);
         },
-        (error) => {
+        onError: (error) => {
           setIsStreaming(false);
           setMessages((prev) => {
             const last = prev.length > 0 ? prev[prev.length - 1] : undefined;
@@ -400,23 +628,37 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
             return prev;
           });
         },
-      );
+      });
       abortRef.current = controller;
     },
-    [articleId],
+    [conversationId],
   );
 
   const handleSend = useCallback(
-    (text: string) => {
+    (text: string, images: File[]) => {
       if (isStreaming) return;
+
+      // Build attachments for the user message preview
+      const imageAttachments: ImageAttachment[] | null = images.length > 0
+        ? images.map((img) => ({
+            type: "image" as const,
+            url: URL.createObjectURL(img),
+            filename: img.name,
+            mime_type: img.type,
+            size: img.size,
+          }))
+        : null;
+
       const userMsg: ChatMessage = {
         id: `temp-${Date.now()}`,
         role: "user",
         content: text,
+        attachments: imageAttachments,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, userMsg]);
-      doStream(text);
+      setPendingImages([]);
+      doStream(text, images.length > 0 ? images : undefined);
     },
     [doStream, isStreaming],
   );
@@ -427,16 +669,13 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
 
   const handleRegenerate = useCallback(
     (assistantMsg: ChatMessage) => {
-      // Prevent regenerate while streaming
       if (isStreaming) return;
 
-      // Find the user message right before this assistant message
       const idx = messages.indexOf(assistantMsg);
       if (idx < 1) return;
       const prevMsg = messages[idx - 1];
       if (!prevMsg || prevMsg.role !== "user") return;
 
-      // Remove the assistant message and re-send
       const userText = prevMsg.content;
       setMessages((prev) => prev.slice(0, idx));
       doStream(userText);
@@ -449,7 +688,6 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
       abortRef.current.abort();
       abortRef.current = null;
     }
-    // Clean up the last assistant message if it's empty
     setMessages((prev) => {
       const last = prev.length > 0 ? prev[prev.length - 1] : undefined;
       if (last && last.role === "assistant" && !last.content.trim()) {
@@ -462,75 +700,94 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
 
   const handleEdit = useCallback(
     (msgId: string, newText: string) => {
-      // Cancel edit: empty msgId signals cancel
       if (!msgId) {
         setEditingMsgId(null);
         return;
       }
 
-      // Enter edit mode: empty newText signals "start editing"
       if (!newText) {
         setEditingMsgId(msgId);
         return;
       }
 
-      // Confirm edit: truncate messages after the edited one, then re-submit
       if (isStreaming) return;
 
       const msgIdx = messages.findIndex((m) => m.id === msgId);
       if (msgIdx < 0) return;
 
-      // Keep messages before the edited one (the anchor itself is deleted server-side)
       const truncatedMessages = messages.slice(0, msgIdx);
 
-      // Add the new user message so it appears in the UI before the response streams in
       const editedUserMsg: ChatMessage = {
         id: `temp-${Date.now()}`,
         role: "user",
         content: newText,
+        attachments: null,
         created_at: new Date().toISOString(),
       };
       setMessages([...truncatedMessages, editedUserMsg]);
       setEditingMsgId(null);
 
-      // Truncate server-side history (delete anchor and all messages after it).
-      // Must await so the new chat request sees the trimmed history.
-      truncateChatMessages(articleId, msgId)
+      truncateChatMessages(conversationId, msgId)
         .then(() => {
           doStream(newText);
         })
         .catch(() => {
-          // Server truncation failed — still try to send the message
-          // because the server re-reads history on each request
           doStream(newText);
         });
     },
-    [doStream, isStreaming, messages, articleId],
+    [doStream, isStreaming, messages, conversationId],
   );
 
   const handleClose = () => {
     if (abortRef.current) {
       abortRef.current.abort();
     }
-    setReader({ chatPanelOpen: false });
+    setReader({ conversationPanelOpen: false });
   };
 
   const setScrollViewport = useCallback((node: HTMLDivElement | null) => {
     scrollViewportRef.current = node;
   }, []);
 
+  const handleRemoveReference = useCallback(
+    (referenceId: string) => {
+      removeReference.mutate({ conversationId, referenceId });
+    },
+    [conversationId, removeReference],
+  );
+
+  const handleAddImages = useCallback((files: File[]) => {
+    setPendingImages((prev) => [...prev, ...files]);
+  }, []);
+
+  const handleRemoveImage = useCallback((index: number) => {
+    setPendingImages((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const convTitle = conversation?.title || t("newConversation");
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center gap-2 border-b px-3 py-2">
-        <h3 className="flex-1 truncate text-sm font-medium">{t("aiChat")}</h3>
+        <h3 className="flex-1 truncate text-sm font-medium">{convTitle}</h3>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
-      <div className="px-3 pb-1.5 text-xs text-muted-foreground truncate" title={articleTitle}>
-        {articleTitle}
-      </div>
+
+      {/* Reference tags */}
+      {references && references.length > 0 && (
+        <div className="flex flex-wrap gap-1 border-b px-3 py-1.5">
+          {references.map((ref) => (
+            <ReferenceTag
+              key={ref.id}
+              reference={ref}
+              onRemove={handleRemoveReference}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Messages or empty state */}
       {isLoading ? (
@@ -538,7 +795,7 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       ) : messages.length === 0 ? (
-        <ChatEmptyState onSuggestionClick={handleSend} />
+        <ChatEmptyState onSuggestionClick={(text) => handleSend(text, [])} />
       ) : (
         <ScrollArea className="flex-1" viewportRef={setScrollViewport}>
           <div className="space-y-4 px-3 py-3">
@@ -558,7 +815,14 @@ export function AIChatPanel({ articleId, articleTitle }: AIChatPanelProps) {
       )}
 
       {/* Input */}
-      <ChatInput onSend={handleSend} isStreaming={isStreaming} onStop={handleStop} />
+      <ChatInput
+        onSend={handleSend}
+        isStreaming={isStreaming}
+        onStop={handleStop}
+        pendingImages={pendingImages}
+        onAddImages={handleAddImages}
+        onRemoveImage={handleRemoveImage}
+      />
     </div>
   );
 }

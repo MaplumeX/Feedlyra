@@ -88,11 +88,50 @@ export interface AIConfig {
   chat: FeatureAIConfig;
 }
 
+export interface ImageAttachment {
+  type: "image";
+  url: string;
+  filename: string;
+  mime_type: string;
+  size: number;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
+  attachments: ImageAttachment[] | null;
   created_at: string;
+}
+
+export interface Conversation {
+  id: string;
+  title: string | null;
+  created_at: string;
+  updated_at: string;
+  last_message_preview: string | null;
+  last_message_at: string | null;
+  references_count: number;
+}
+
+export interface ConversationListResponse {
+  items: Conversation[];
+  total: number;
+}
+
+export interface ConversationReference {
+  id: string;
+  article_id: string;
+  article_title: string;
+  is_auto: boolean;
+  created_at: string;
+}
+
+export interface ImageUploadResult {
+  url: string;
+  filename: string;
+  mime_type: string;
+  size: number;
 }
 
 export interface OPMLExportResponse {

@@ -52,6 +52,15 @@ CHAT_SYSTEM_PROMPT = (
     "ARTICLE:\n{article_content}"
 )
 
+CHAT_MULTI_ARTICLE_SYSTEM_PROMPT = (
+    "You are an AI assistant helping a user understand article(s). "
+    "Answer questions based on the article content below. "
+    "If the answer is not in the articles, say so clearly. "
+    "Use the same language as the user's question.\n"
+    "Be concise but thorough. When referencing the articles, quote relevant parts.\n\n"
+    "{article_sections}"
+)
+
 
 def _get_fernet() -> Fernet:
     # Derive a valid 32-byte Fernet key from SECRET_KEY via SHA256
@@ -208,15 +217,48 @@ async def stream_chat(
 
 
 def build_chat_messages(
-    article_title: str,
-    article_content: str,
-    chat_history: list[dict],
-    new_message: str,
+    article_title: str | None = None,
+    article_content: str | None = None,
+    chat_history: list[dict] | None = None,
+    new_message: str = "",
     history_summary: str | None = None,
+    articles: list[dict] | None = None,
+    images: list[str] | None = None,
 ) -> list[dict]:
-    """Build messages list for chat API call."""
-    extracted = extract_content_for_summary(article_content, MAX_CONTENT_CHARS)
-    system_prompt = CHAT_SYSTEM_PROMPT.format(article_content=extracted)
+    """Build messages list for chat API call.
+
+    Supports two modes:
+    1. Single article (legacy): pass article_title + article_content
+    2. Multi-article (conversations): pass articles list of {"title": str, "content": str}
+    """
+    chat_history = chat_history or []
+
+    if articles:
+        # Build multi-article system prompt
+        SEPARATOR_LEN = len("\n\n---\n\n")  # 8
+        budget = MAX_CONTENT_CHARS
+        sections: list[str] = []
+        for article_data in articles:
+            extracted = extract_content_for_summary(article_data["content"], MAX_CONTENT_CHARS)
+            section = f"ARTICLE: {article_data['title']}\n\n{extracted}"
+            cost = len(section) + (SEPARATOR_LEN if sections else 0)
+            if cost <= budget:
+                sections.append(section)
+                budget -= cost
+            elif budget > SEPARATOR_LEN:
+                available = budget - SEPARATOR_LEN
+                sections.append(section[:available])
+                budget = 0
+                break
+            else:
+                break
+        article_sections = "\n\n---\n\n".join(sections)
+        system_prompt = CHAT_MULTI_ARTICLE_SYSTEM_PROMPT.format(article_sections=article_sections)
+    elif article_title and article_content:
+        extracted = extract_content_for_summary(article_content, MAX_CONTENT_CHARS)
+        system_prompt = CHAT_SYSTEM_PROMPT.format(article_content=extracted)
+    else:
+        system_prompt = "You are a helpful AI assistant. Use the same language as the user's question."
 
     messages: list[dict] = [{"role": "system", "content": system_prompt}]
 
@@ -227,5 +269,15 @@ def build_chat_messages(
     for msg in chat_history[-12:]:
         messages.append({"role": msg["role"], "content": msg["content"]})
 
-    messages.append({"role": "user", "content": new_message})
+    # Build user message — may include image attachments for vision
+    if images:
+        content_parts: list[dict] = [{"type": "text", "text": new_message}]
+        for img_data in images:
+            content_parts.append({
+                "type": "image_url",
+                "image_url": {"url": img_data},
+            })
+        messages.append({"role": "user", "content": content_parts})
+    else:
+        messages.append({"role": "user", "content": new_message})
     return messages

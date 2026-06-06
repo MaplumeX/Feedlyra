@@ -46,6 +46,9 @@
     --article-hover: 220 14% 94%;
     --chat-bubble-user: 239 84% 58% / 0.08;
     --chat-bubble-ai: 220 14% 96%;
+    --conversation-bg: 222 18% 97%;
+    --conversation-hover: 220 14% 93%;
+    --conversation-selected: 220 14% 90%;
     --prose-link: 239 84% 58%;
     --prose-code-bg: 220 14% 94%;
     --prose-blockquote-border: 239 84% 58%;
@@ -88,6 +91,9 @@
     --article-hover: 225 16% 14%;
     --chat-bubble-user: 240 68% 65% / 0.12;
     --chat-bubble-ai: 225 16% 14%;
+    --conversation-bg: 225 20% 8%;
+    --conversation-hover: 225 16% 14%;
+    --conversation-selected: 225 16% 20%;
     --prose-link: 240 68% 65%;
     --prose-code-bg: 225 16% 16%;
     --prose-blockquote-border: 240 68% 65%;

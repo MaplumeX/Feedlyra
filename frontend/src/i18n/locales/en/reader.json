@@ -111,5 +111,18 @@
   "stopGeneration": "Stop generating",
   "editMessage": "Edit message",
   "cancelEdit": "Cancel",
-  "confirmEdit": "Send"
+  "confirmEdit": "Send",
+  "newConversation": "New Chat",
+  "deleteConversation": "Delete Chat",
+  "renameConversation": "Rename Chat",
+  "deleteConversationConfirm": "Delete this conversation? This cannot be undone.",
+  "searchConversations": "Search conversations...",
+  "noConversations": "No conversations yet",
+  "addReference": "Add article reference",
+  "removeReference": "Remove reference",
+  "currentArticle": "Current",
+  "uploadImage": "Upload image",
+  "pasteImage": "Paste image",
+  "dropImage": "Drop image here",
+  "chatPlaceholder": "Type your message..."
 }
