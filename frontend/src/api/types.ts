@@ -67,6 +67,7 @@ export interface ArticleListResponse {
   total: number;
   page: number;
   limit: number;
+  next_cursor: string | null;
 }
 
 export interface DiscoveredFeed {

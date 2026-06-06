@@ -27,24 +27,34 @@ export function useFeeds() {
 
 **Infinite query hooks** (paginated list fetching):
 
-Use `useInfiniteQuery` for APIs that return `{ items, total, page, limit }` and are rendered as a single continuous list. Keep server pagination state inside React Query; do not mirror pages or fetched items in Zustand.
+Use `useInfiniteQuery` for APIs that return `{ items, total, page, limit, next_cursor }` and are rendered as a single continuous list. Keep server pagination state inside React Query; do not mirror pages or fetched items in Zustand.
 
 ```tsx
 export function useInfiniteArticles(params: ArticleListParams = {}) {
   return useInfiniteQuery({
     queryKey: queryKeys.articles.infiniteList(params),
     queryFn: ({ pageParam }) =>
-      api.get<ArticleListResponse>(articleListPath({ ...params, page: pageParam })),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      const loadedCount = lastPage.page * lastPage.limit;
-      return loadedCount < lastPage.total ? lastPage.page + 1 : undefined;
-    },
+      api.get<ArticleListResponse>(
+        articleListPath({
+          ...params,
+          page: pageParam ? undefined : 1,
+          cursor: pageParam ?? undefined,
+        }),
+      ),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
   });
 }
 ```
 
 Components should flatten `data.pages` locally before rendering. If duplicate rows are possible when data changes between page fetches, de-duplicate by stable entity ID during flattening.
+
+Article read/star mutations intentionally keep already rendered rows in the current filtered list so the reading position does not jump. The mutation cache update must still:
+
+- update `is_read` / `is_starred` on every cached representation
+- adjust each filtered response's `total` by the membership delta
+- update feed unread counts
+- mark article queries stale with `refetchType: "none"` so a later filter switch/refetch rebuilds true membership without immediately disrupting the current list
 
 **Mutation hooks** (data modification):
 
@@ -145,4 +155,6 @@ const handleSend = async () => {
 - **Missing cross-entity invalidation** — When a mutation changes data referenced by another entity's queries, invalidate both. Example: updating a feed's title changes `feed_title` in article list responses, so `useUpdateFeed` must invalidate both `queryKeys.feeds.list()` and `queryKeys.articles.all`.
 - **Mutation hooks with dynamic IDs** — When a mutation hook needs to operate on different entities by ID (e.g. `useUpdateFeed`), pass the ID as part of `mutate()` payload — NOT as a hook creation parameter. This allows one hook instance to serve multiple entities. Hook signature: `useUpdateFeed()` → `mutate({ feedId, ...data })`. Do NOT use `useUpdateFeed(feedId)` which requires a separate hook instance per entity.
 - **Deriving values from query data before it arrives** — When using `data?.pages?.[0]?.total ?? 0` or similar, the fallback (`0`) fires on the first render before data loads. If a `useEffect` compares this value against a ref, the "0 → realTotal" jump looks like a real increase. Guard with `isLoading` (skip the effect while loading) or use a `hasLoadedRef` boolean to only start comparing after the first real data arrives.
-- **Using `invalidateQueries` after inline mutations** — Mutations that change a property the user is currently viewing (e.g., `is_read`/`is_starred` in the article list) should NOT call `invalidateQueries` on article queries — it causes articles to disappear from the unread view and can falsely trigger the "new articles" banner. Use `setQueryData`-based optimistic updates (`updateArticleInCache`/`patchArticleById`/`patchArticlesByIds` helpers) instead. Reserve `invalidateQueries` for explicit bulk actions like `markAllRead` or structural changes like adding/deleting feeds.
+- **Refetching active article queries after inline mutations** — Mutations that change a property the user is currently viewing (e.g., `is_read`/`is_starred` in the article list) should not immediately refetch active article queries; it causes rows to disappear from filtered views and can falsely trigger the "new articles" banner. Use `applyArticleTransitionsToCache` to update fields and totals, then invalidate with `refetchType: "none"`. Reserve immediate refetches for explicit bulk actions like `markAllRead` or structural changes like adding/deleting feeds.
+- **Using offset pagination for mutable filtered infinite lists** — Read/star mutations change membership in `read_status=unread` and `starred=true` while the user is paging. A later offset request then skips the row that shifted across the page boundary. Use the backend's opaque `next_cursor`; never derive the next article page from `page * limit < total`.
+- **Treating every unknown loaded ID as a new article** — Infinite scrolling deliberately loads unknown historical IDs. New-article detection must compare unknown IDs from the first page only, while automatically acknowledging IDs from appended history pages.

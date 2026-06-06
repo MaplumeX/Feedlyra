@@ -28,6 +28,7 @@ This directory contains guidelines for backend development in the Feedlyra proje
 - **Type annotations**: Full `Mapped[]` style on models; `str | None` union syntax (Python 3.10+ style, not `Optional`)
 - **Config**: `pydantic-settings` with `.env` file loading. Module-level singleton: `settings = Settings()`
 - **Async-first**: Everything is async — database, HTTP client, LLM calls all use async/await
+- **Article pagination**: Filtered infinite lists use opaque keyset cursors ordered by `published_at`, `created_at`, then `id`; `page` remains a legacy fallback
 - **UUID primary keys**: All PKs are PostgreSQL UUIDs with `default=uuid4`
 - **Pydantic schemas**: Separate schema files per domain. `model_config = {"from_attributes": True}` for ORM compatibility
 - **No repository pattern**: Routers and services both write SQL directly

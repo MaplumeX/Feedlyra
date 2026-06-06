@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import base64
+import binascii
+import json
 import logging
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy.sql import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_current_user, get_db
@@ -29,6 +34,92 @@ from app.services.llm import get_user_model
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/articles", tags=["articles"])
+
+
+@dataclass(frozen=True)
+class ArticleCursor:
+    published_at: datetime | None
+    created_at: datetime
+    article_id: UUID
+    page: int
+
+
+def _encode_article_cursor(article: Article, page: int) -> str:
+    payload = {
+        "published_at": article.published_at.isoformat() if article.published_at else None,
+        "created_at": article.created_at.isoformat(),
+        "article_id": str(article.id),
+        "page": page,
+    }
+    encoded = base64.urlsafe_b64encode(
+        json.dumps(payload, separators=(",", ":")).encode()
+    ).decode()
+    return encoded.rstrip("=")
+
+
+def _decode_article_cursor(value: str) -> ArticleCursor:
+    try:
+        padding = "=" * (-len(value) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(value + padding))
+        if not isinstance(payload, dict):
+            raise ValueError
+
+        published_at_raw = payload.get("published_at")
+        if published_at_raw is not None and not isinstance(published_at_raw, str):
+            raise ValueError
+        published_at = (
+            datetime.fromisoformat(published_at_raw)
+            if isinstance(published_at_raw, str)
+            else None
+        )
+        created_at_raw = payload.get("created_at")
+        article_id_raw = payload.get("article_id")
+        page_raw = payload.get("page")
+        if (
+            not isinstance(created_at_raw, str)
+            or not isinstance(article_id_raw, str)
+            or not isinstance(page_raw, int)
+            or page_raw < 2
+        ):
+            raise ValueError
+
+        created_at = datetime.fromisoformat(created_at_raw)
+        if created_at.utcoffset() is None:
+            raise ValueError
+        if published_at is not None and published_at.utcoffset() is None:
+            raise ValueError
+
+        return ArticleCursor(
+            published_at=published_at,
+            created_at=created_at,
+            article_id=UUID(article_id_raw),
+            page=page_raw,
+        )
+    except (ValueError, TypeError, json.JSONDecodeError, binascii.Error) as exc:
+        raise HTTPException(status_code=400, detail="Invalid article cursor") from exc
+
+
+def _apply_article_cursor(query: Select, cursor: ArticleCursor) -> Select:
+    tie_breaker = or_(
+        Article.created_at < cursor.created_at,
+        and_(
+            Article.created_at == cursor.created_at,
+            Article.id < cursor.article_id,
+        ),
+    )
+    if cursor.published_at is None:
+        return query.where(Article.published_at.is_(None), tie_breaker)
+
+    return query.where(
+        or_(
+            Article.published_at < cursor.published_at,
+            Article.published_at.is_(None),
+            and_(
+                Article.published_at == cursor.published_at,
+                tie_breaker,
+            ),
+        )
+    )
 
 
 def _apply_ai_data(item: ArticleResponse, ai_data: ArticleAIData | None) -> None:
@@ -107,6 +198,7 @@ async def list_articles(
     starred: bool | None = Query(None),
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=200),
+    cursor: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
@@ -139,12 +231,24 @@ async def list_articles(
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
 
-    offset = (page - 1) * limit
-    query = query.order_by(Article.published_at.desc().nullslast(), Article.created_at.desc())
-    query = query.offset(offset).limit(limit)
+    response_page = page
+    if cursor:
+        decoded_cursor = _decode_article_cursor(cursor)
+        query = _apply_article_cursor(query, decoded_cursor)
+        response_page = decoded_cursor.page
+    else:
+        query = query.offset((page - 1) * limit)
+
+    query = query.order_by(
+        Article.published_at.desc().nullslast(),
+        Article.created_at.desc(),
+        Article.id.desc(),
+    ).limit(limit + 1)
 
     result = await db.execute(query)
-    rows = result.all()
+    fetched_rows = result.all()
+    has_more = len(fetched_rows) > limit
+    rows = fetched_rows[:limit]
 
     article_ids = [row[0].id for row in rows]
 
@@ -192,7 +296,17 @@ async def list_articles(
         _apply_summaries(item, summary_map.get(article.id, []))
         items.append(item)
 
-    return {"items": items, "total": total, "page": page, "limit": limit}
+    next_cursor = None
+    if has_more and rows:
+        next_cursor = _encode_article_cursor(rows[-1][0], response_page + 1)
+
+    return {
+        "items": items,
+        "total": total,
+        "page": response_page,
+        "limit": limit,
+        "next_cursor": next_cursor,
+    }
 
 
 @router.put("/mark-all-read")

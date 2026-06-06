@@ -1922,3 +1922,36 @@ Fixed two bugs: (1) Strip stale ai-chat layout entries in loadLayout() so condit
 ### Next Steps
 
 - None - task complete
+
+
+## Session 55: Fix article list pagination and filter state
+
+**Date**: 2026-06-06
+**Task**: Fix article list pagination and filter state
+**Branch**: `MaplumeX/davao`
+
+### Summary
+
+Replaced mutable filtered article offset paging with opaque cursor pagination, fixed new-article detection to ignore appended history pages, synchronized read/star totals while preserving visible rows, based mark-all-read visibility on feed unread counts, and added frontend/backend regression tests plus specs.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e78a057` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

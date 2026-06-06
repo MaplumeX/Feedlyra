@@ -9,6 +9,7 @@ import { FeedIcon } from "@/components/FeedIcon";
 import { useInfiniteArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead, useRefreshAllFeeds } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
+import { reconcileArticleAcknowledgements } from "@/lib/articleList";
 import type { Article } from "@/api/types";
 
 const SCROLL_MARK_READ_DEBOUNCE_MS = 300;
@@ -207,52 +208,36 @@ export function ArticleList() {
   // acknowledge the new IDs and render them.
   const acknowledgedArticleIdsRef = useRef<Set<string>>(new Set());
   const hasLoadedRef = useRef(false);
+  const previousPageCountRef = useRef(0);
   const [newArticlesCount, setNewArticlesCount] = useState(0);
-  const currentTotal = data?.pages?.[0]?.total ?? 0;
 
   // Mark acknowledged as stale on feed/filter change
   useEffect(() => {
     acknowledgedArticleIdsRef.current = new Set();
     hasLoadedRef.current = false;
+    previousPageCountRef.current = 0;
     setNewArticlesCount(0);
   }, [selectedFeedId, articleListFilter]);
 
-  // Also reset on manual refresh / mark-all-read so these don't trigger a false banner
-  useEffect(() => {
-    if (refreshAll.isSuccess || markAllRead.isSuccess) {
-      acknowledgedArticleIdsRef.current = new Set();
-      hasLoadedRef.current = false;
-      setNewArticlesCount(0);
-    }
-  }, [refreshAll.isSuccess, markAllRead.isSuccess]);
-
-  // Detect new articles from background refetch: on first load, acknowledge all;
-  // on subsequent refetches, find IDs not yet acknowledged.
+  // Only unknown IDs from the first page are new. IDs from appended history
+  // pages are acknowledged automatically so infinite scrolling never raises the banner.
   useEffect(() => {
     if (isLoading) return;
 
-    const allIds: string[] = [];
-    for (const page of data?.pages ?? []) {
-      for (const article of page.items) {
-        allIds.push(article.id);
-      }
-    }
+    const pageArticleIds = (data?.pages ?? []).map((page) =>
+      page.items.map((article) => article.id),
+    );
+    const result = reconcileArticleAcknowledgements(pageArticleIds, {
+      acknowledgedIds: acknowledgedArticleIdsRef.current,
+      initialized: hasLoadedRef.current,
+      previousPageCount: previousPageCountRef.current,
+    });
 
-    if (!hasLoadedRef.current) {
-      // First load: acknowledge everything
-      acknowledgedArticleIdsRef.current = new Set(allIds);
-      hasLoadedRef.current = true;
-      setNewArticlesCount(0);
-    } else {
-      // Subsequent refetch: find new IDs
-      const acknowledged = acknowledgedArticleIdsRef.current;
-      const newIds = allIds.filter((id) => !acknowledged.has(id));
-      if (newIds.length > 0) {
-        setNewArticlesCount(newIds.length);
-        // Do NOT add newIds to acknowledged yet — that happens on banner click
-      }
-    }
-  }, [currentTotal, isLoading, data]);
+    acknowledgedArticleIdsRef.current = result.acknowledgedIds;
+    hasLoadedRef.current = result.initialized;
+    previousPageCountRef.current = result.previousPageCount;
+    setNewArticlesCount(result.newArticleIds.length);
+  }, [isLoading, data]);
 
   const feedIconMap = useMemo(() => {
     const map = new Map<string, string | null>();
@@ -282,7 +267,9 @@ export function ArticleList() {
     },
     [data, newArticlesCount]
   );
-  const hasUnread = articles.some((a) => !a.is_read);
+  const hasUnread = selectedFeedId
+    ? (feeds.find((feed) => feed.id === selectedFeedId)?.unread_count ?? 0) > 0
+    : feeds.some((feed) => (feed.unread_count ?? 0) > 0);
   const unreadArticleIds = useMemo(
     () => new Set(articles.filter((article) => !article.is_read).map((article) => article.id)),
     [articles]

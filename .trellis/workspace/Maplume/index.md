@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 55 | 2026-06-06 | Fix article list pagination and filter state | `e78a057` | `MaplumeX/davao` |
 | 54 | 2026-06-06 | Fix AI chat panel drag failure and white screen on close | `8caa0b4` | `MaplumeX/fix-ai-panel-drag-and-white-screen` |
 | 53 | 2026-06-06 | Replace conversation sidebar with floating popover | `04be619` | `MaplumeX/session-history-compression` |
 | 52 | 2026-06-06 | Beautify AI Chat UI | `5432b62`, `cefb8df` | `MaplumeX/beautify-ai-chat-ui` |
