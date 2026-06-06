@@ -207,10 +207,9 @@ Group (orientation="horizontal")
 
 **Chat panel behavior**:
 - The AI chat panel is a top-level Panel in the main Group, not nested inside article-detail
-- Only renders when `chatPanelOpen` is true AND `selectedArticleId` is non-null
+- Only renders when `conversationPanelOpen` is true AND `activeConversationId` is non-null
 - When toggled off, the Panel is unmounted entirely (not collapsed) — article-detail takes full width
-- When no article is selected, the chat toggle button is disabled (`selectedArticleId` guard)
-- When the selected article is deselected, the chat panel auto-closes (useEffect in Home.tsx)
+- The conversation history list is in a Popover (anchored to History button in AIChatPanel header), NOT a separate panel
 - Width persisted via `chatPanelWidth` in Zustand (included in `partialize`)
 - `onResize` callback on the chat Panel updates `chatPanelWidth` in the store
 
@@ -834,39 +833,35 @@ function handleRegenerate(assistantMsgId: string) {
 
 **Gotcha**: Always guard with `if (isStreaming) return` even if the UI already hides the button during streaming — prevents race conditions from rapid clicks or programmatic triggers.
 
-### Conversation Sidebar
+### Conversation Popover
 
-The conversation list uses the same sidebar pattern as the feed sidebar — left border indicator for selection, group-hover actions for rename/delete, ScrollArea with `[&>div]:!block` fix:
+The conversation list is rendered inside a Radix Popover (anchored to a History button in the AIChatPanel header), not as a fixed sidebar panel:
 
 ```tsx
-<ScrollArea className="flex-1">
-  {conversations.map((conv) => (
-    <div
-      key={conv.id}
-      className={cn(
-        "group flex cursor-pointer items-center gap-2 px-3 py-2",
-        conv.id === activeConversationId
-          ? "border-l-2 border-primary bg-conversation-selected"
-          : "hover:bg-conversation-hover"
-      )}
-      onClick={() => setActiveConversation(conv.id)}
-    >
-      <span className="min-w-0 flex-1 truncate text-sm">
-        {conv.title || t("newConversation")}
-      </span>
-      {/* Hover actions */}
-      <DropdownMenu>...</DropdownMenu>
-    </div>
-  ))}
-</ScrollArea>
+<Popover open={convoPopoverOpen} onOpenChange={setConvoPopoverOpen}>
+  <PopoverTrigger asChild>
+    <Button variant="ghost" size="icon" className="h-7 w-7">
+      <History className="h-4 w-4" />
+    </Button>
+  </PopoverTrigger>
+  <PopoverContent side="left" align="start" className="w-80 p-0">
+    <ConversationListPopover onSelect={() => setConvoPopoverOpen(false)} />
+  </PopoverContent>
+</Popover>
 ```
 
 **Key details**:
-- `border-l-2 border-primary` + `bg-conversation-selected` for active conversation
+- Must use **controlled mode** (`open` + `onOpenChange`) — uncontrolled Radix Popover does NOT close when a selection is made inside it, only on click-outside/Escape. Pass an `onSelect` callback to close the popover programmatically on conversation select or create.
+- `side="left"` anchors the popover towards the article detail area
+- `w-80` (320px) matches the old sidebar default width
+- `ConversationListPopover` component contains search input + ScrollArea list, no standalone wrapper div
+- `border-l-2 border-primary` + `bg-conversation-selected` for active conversation (same as before)
 - `truncate` + `min-w-0 flex-1` for long titles
 - Group hover pattern for action buttons (`opacity-0 group-hover:opacity-100`)
 - Semantic CSS variables: `--conversation-bg`, `--conversation-hover`, `--conversation-selected` (light + dark variants)
 - In-place rename: replace title text with an `<input>`, save on Enter/blur, cancel on Escape
+
+> **Gotcha**: Radix Popover in uncontrolled mode (no `open` prop) will NOT close when internal content triggers a state change (e.g., clicking a list item). If you need the popover to close on selection, use controlled mode with `open`/`onOpenChange` and an explicit close callback.
 
 ### Image Upload & Paste in Chat Input
 

@@ -4,7 +4,6 @@ import { Sidebar } from "@/components/Sidebar";
 import { ArticleList } from "@/components/ArticleList";
 import { ArticleDetail } from "@/components/ArticleDetail";
 import { AIChatPanel } from "@/components/AIChatPanel";
-import { ConversationSidebar } from "@/components/ConversationSidebar";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useReaderStore } from "@/stores/reader";
@@ -16,18 +15,24 @@ import { PanelLeft } from "lucide-react";
 const SIDEBAR_PANEL_ID = "sidebar";
 const ARTICLE_LIST_PANEL_ID = "article-list";
 const ARTICLE_DETAIL_PANEL_ID = "article-detail";
-const CONVERSATION_SIDEBAR_PANEL_ID = "conversation-sidebar";
 const CHAT_PANEL_ID = "ai-chat";
 const LAYOUT_STORAGE_KEY = "providence-layout";
 
 const DEFAULT_SIDEBAR_SIZE = 192;
 const DEFAULT_ARTICLE_LIST_SIZE = 280;
-const DEFAULT_CONVERSATION_SIDEBAR_SIZE = 260;
 
 function loadLayout(): Record<string, number> | undefined {
   try {
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const layout = JSON.parse(raw);
+      // Migration: strip stale conversation-sidebar panel from persisted layout
+      if (layout["conversation-sidebar"]) {
+        delete layout["conversation-sidebar"];
+        localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
+      }
+      return layout;
+    }
   } catch { /* ignore corrupt data */ }
   return undefined;
 }
@@ -183,19 +188,6 @@ export function Home() {
 
         {showChatPanel && (
           <>
-            <Separator
-              className="relative w-px bg-border transition-colors hover:bg-primary/50 data-[separator=active]:bg-primary"
-            >
-              <div className="absolute inset-y-0 -left-2 -right-2" />
-            </Separator>
-            <Panel
-              id={CONVERSATION_SIDEBAR_PANEL_ID}
-              minSize={200}
-              maxSize={320}
-              defaultSize={DEFAULT_CONVERSATION_SIDEBAR_SIZE}
-            >
-              <ConversationSidebar />
-            </Panel>
             <Separator
               className="relative w-px bg-border transition-colors hover:bg-primary/50 data-[separator=active]:bg-primary"
             >

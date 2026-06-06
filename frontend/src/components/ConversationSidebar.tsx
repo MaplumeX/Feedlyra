@@ -228,7 +228,7 @@ function formatRelativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
-export function ConversationSidebar() {
+export function ConversationListPopover({ onSelect }: { onSelect?: () => void }) {
   const { t } = useTranslation("reader");
   const { activeConversationId, set: setReader } = useReaderStore();
   const { data: conversationsData, isLoading } = useConversations({ limit: 100 });
@@ -246,19 +246,21 @@ export function ConversationSidebar() {
     createConversation.mutate(undefined, {
       onSuccess: (conv) => {
         setReader({ activeConversationId: conv.id, conversationPanelOpen: true });
+        onSelect?.();
       },
     });
   };
 
   const handleSelect = (convId: string) => {
     setReader({ activeConversationId: convId, conversationPanelOpen: true });
+    onSelect?.();
   };
 
   return (
-    <div className="flex h-full min-w-0 flex-col overflow-hidden bg-conversation-bg">
-      <div className="flex h-11 min-w-0 items-center justify-between gap-2 border-b px-3">
-        <span className="min-w-0 truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground font-heading">
-          {t("aiChat")}
+    <div className="flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-heading">
+          {t("conversations")}
         </span>
         <Button
           variant="ghost"
@@ -280,7 +282,7 @@ export function ConversationSidebar() {
         />
       </div>
 
-      <ScrollArea className="min-w-0 flex-1">
+      <ScrollArea className="min-w-0" style={{ maxHeight: "360px" }}>
         <div className="min-w-0 space-y-0.5 p-2">
           {isLoading ? (
             <div className="flex items-center justify-center py-4">
