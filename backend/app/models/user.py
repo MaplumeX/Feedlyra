@@ -28,3 +28,5 @@ class User(UUIDMixin, TimestampMixin, Base):
     chat_base_url: Mapped[str | None] = mapped_column(String(500))
     chat_api_key: Mapped[str | None] = mapped_column(Text)
     chat_model: Mapped[str | None] = mapped_column(String(100))
+    # Translation default language
+    translate_default_lang: Mapped[str] = mapped_column(String(10), default="zh", server_default="zh", nullable=False)

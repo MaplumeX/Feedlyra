@@ -30,6 +30,8 @@ class Feed(TimestampMixin, Base):
         PGUUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
     )
     auto_full_text: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
+    auto_translate: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
+    translate_target_lang: Mapped[str | None] = mapped_column(String(10))
 
     articles: Mapped[list["Article"]] = relationship("Article", back_populates="feed")
     category: Mapped["Category | None"] = relationship("Category", back_populates="feeds")
