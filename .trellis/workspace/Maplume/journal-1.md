@@ -1778,3 +1778,37 @@ Replace invalidateQueries with setQueryData-based optimistic updates in useToggl
 ### Next Steps
 
 - None - task complete
+
+
+## Session 51: Add per-feed auto AI translation with target language config
+
+**Date**: 2026-06-06
+**Task**: Add per-feed auto AI translation with target language config
+**Branch**: `MaplumeX/feed-auto-ai-translate`
+
+### Summary
+
+Implemented auto-translate feature: per-feed auto_translate toggle + translate_target_lang, global translate_default_lang, lazy translate on first article open, auto-switch to translated content. Also updated spec with auto-trigger error reset pattern and schema-field-in-constructor gotcha.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3f8eefc` | (see git log) |
+| `736c04e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
