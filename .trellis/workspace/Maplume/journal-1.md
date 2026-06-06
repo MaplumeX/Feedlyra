@@ -1778,3 +1778,37 @@ Replace invalidateQueries with setQueryData-based optimistic updates in useToggl
 ### Next Steps
 
 - None - task complete
+
+
+## Session 51: Upgrade AI Chat: Multi-Conversation, Image Attachments, Cross-Article Context
+
+**Date**: 2026-06-06
+**Task**: Upgrade AI Chat: Multi-Conversation, Image Attachments, Cross-Article Context
+**Branch**: `MaplumeX/upgrade-ai-chat-v2`
+
+### Summary
+
+Upgraded AI chat from per-article binding to independent conversations with Conversation/ConversationReference models, conversation sidebar UI, image upload/paste/drag-drop with OpenAI vision format, and cross-article context via reference injection with budget-aware multi-article content truncation. Included database migration from article_chats, backend CRUD APIs, frontend components, i18n, and spec updates.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3e45432` | (see git log) |
+| `61e2d4b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
