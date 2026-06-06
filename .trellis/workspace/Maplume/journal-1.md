@@ -1891,7 +1891,40 @@ Removed fixed 260px conversation sidebar panel from the main layout and replaced
 - None - task complete
 
 
-## Session 54: Fix article list pagination and filter state
+## Session 54: Fix AI chat panel drag failure and white screen on close
+
+**Date**: 2026-06-06
+**Task**: Fix AI chat panel drag failure and white screen on close
+**Branch**: `MaplumeX/fix-ai-panel-drag-and-white-screen`
+
+### Summary
+
+Fixed two bugs: (1) Strip stale ai-chat layout entries in loadLayout() so conditionally rendered panels always initialize from defaultSize instead of stale persisted values causing undraggable panels. (2) Add mountedRef guard in AIChatPanel to prevent post-unmount state updates from async streaming callbacks, and add HomeErrorBoundary in App.tsx to catch render errors that cause white screen. Updated frontend component-guidelines spec with stale layout migration pattern and async callback unmount guard pattern.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8caa0b4` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 55: Fix article list pagination and filter state
 
 **Date**: 2026-06-06
 **Task**: Fix article list pagination and filter state

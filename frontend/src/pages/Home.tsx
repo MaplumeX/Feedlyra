@@ -26,9 +26,17 @@ function loadLayout(): Record<string, number> | undefined {
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
     if (raw) {
       const layout = JSON.parse(raw);
-      // Migration: strip stale conversation-sidebar panel from persisted layout
+      // Migration: strip stale panel entries from persisted layout
+      let migrated = false;
       if (layout["conversation-sidebar"]) {
         delete layout["conversation-sidebar"];
+        migrated = true;
+      }
+      if (layout["ai-chat"]) {
+        delete layout["ai-chat"];
+        migrated = true;
+      }
+      if (migrated) {
         localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
       }
       return layout;

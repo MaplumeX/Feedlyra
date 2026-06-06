@@ -552,8 +552,16 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
   const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
   const [pendingImages, setPendingImages] = useState<File[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
   const { set: setReader } = useReaderStore();
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Sync server history into local state
   useEffect(() => {
@@ -617,9 +625,11 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
           });
         },
         onDone: () => {
+          if (!mountedRef.current) return;
           setIsStreaming(false);
         },
         onError: (error) => {
+          if (!mountedRef.current) return;
           setIsStreaming(false);
           setMessages((prev) => {
             const last = prev.length > 0 ? prev[prev.length - 1] : undefined;
@@ -740,6 +750,7 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
   );
 
   const handleClose = () => {
+    mountedRef.current = false;
     if (abortRef.current) {
       abortRef.current.abort();
     }
