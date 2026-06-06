@@ -1,7 +1,7 @@
 """Add conversations and conversation_references tables, update chat_messages
 
-Revision ID: 011
-Revises: 010
+Revision ID: 012
+Revises: 011
 Create Date: 2026-06-06
 """
 
@@ -9,8 +9,8 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-revision = "011"
-down_revision = "010"
+revision = "012"
+down_revision = "011"
 branch_labels = None
 depends_on = None
 
