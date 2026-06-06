@@ -1856,3 +1856,36 @@ Redesigned AI chat interface to ChatGPT-style layout: user messages right-aligne
 ### Next Steps
 
 - None - task complete
+
+
+## Session 53: Replace conversation sidebar with floating popover
+
+**Date**: 2026-06-06
+**Task**: Replace conversation sidebar with floating popover
+**Branch**: `MaplumeX/session-history-compression`
+
+### Summary
+
+Removed fixed 260px conversation sidebar panel from the main layout and replaced it with a Radix Popover overlay anchored to a History button in AIChatPanel header. Popover dismisses on select/click-outside/Escape. All CRUD (search, create, rename, delete) preserved. Layout localStorage migration strips stale sidebar data.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `04be619` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
