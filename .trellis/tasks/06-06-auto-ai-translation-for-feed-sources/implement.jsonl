@@ -1,0 +1,8 @@
+{"file": ".trellis/tasks/06-06-auto-ai-translation-for-feed-sources/prd.md", "reason": "PRD with full requirements, decisions, acceptance criteria, and technical notes"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Migration and model conventions for adding feed/user columns"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Error handling patterns for translation API failures"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "UI component patterns for FeedSettingsDialog and AISettingsTab additions"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "TanStack Query hook patterns for new API mutations/queries"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand store patterns for auto-translate state in reader store"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "TypeScript interface updates for Feed and AIConfig types"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "End-to-end data flow: DB → API → frontend for new feed fields"}

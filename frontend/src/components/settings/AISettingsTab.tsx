@@ -9,9 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAIConfig, useUpdateAIConfig, type UpdateAIConfigPayload } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
+import { LANGUAGES } from "@/lib/languages";
 
 const aiConfigSchema = z.object({
   base_url: z.string().url().or(z.literal("")),
@@ -53,6 +61,8 @@ export function AISettingsTab() {
   const [testError, setTestError] = useState("");
 
   const { autoSummarize, set: setReader } = useReaderStore();
+
+  const [translateDefaultLang, setTranslateDefaultLang] = useState("zh");
 
   const { register, handleSubmit, formState: { errors } } = useForm<AIConfigForm>({
     resolver: zodResolver(aiConfigSchema),
@@ -99,6 +109,7 @@ export function AISettingsTab() {
       setTranslate(featureDefaults(global, config.translate));
       setSummary(featureDefaults(global, config.summary));
       setChat(featureDefaults(global, config.chat));
+      setTranslateDefaultLang(config.translate_default_lang || "zh");
       featureInitialized.current = true;
     }
   }, [config]);
@@ -132,6 +143,7 @@ export function AISettingsTab() {
     if (data.base_url) payload.base_url = data.base_url;
     if (data.api_key && data.api_key !== "********") payload.api_key = data.api_key;
     if (data.model) payload.model = data.model;
+    payload.translate_default_lang = translateDefaultLang;
 
     payload.translate = buildFeaturePayload(translate, config?.translate?.enabled ?? false);
     payload.summary = buildFeaturePayload(summary, config?.summary?.enabled ?? false);
@@ -205,6 +217,25 @@ export function AISettingsTab() {
           checked={autoSummarize}
           onCheckedChange={(checked) => setReader({ autoSummarize: checked })}
         />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label>{t("defaultTranslateLang")}</Label>
+          <p className="text-xs text-muted-foreground">{t("defaultTranslateLangDescription")}</p>
+        </div>
+        <Select value={translateDefaultLang} onValueChange={setTranslateDefaultLang}>
+          <SelectTrigger className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {LANGUAGES.map((lang) => (
+              <SelectItem key={lang.value} value={lang.value}>
+                {lang.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Separator />

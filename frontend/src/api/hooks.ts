@@ -142,7 +142,14 @@ export function useRefreshFeed() {
 export function useUpdateFeed() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ feedId, ...data }: { feedId: string; title: string; category_id?: string | null; auto_full_text?: boolean }) =>
+    mutationFn: ({ feedId, ...data }: {
+      feedId: string;
+      title?: string;
+      category_id?: string | null;
+      auto_full_text?: boolean;
+      auto_translate?: boolean;
+      translate_target_lang?: string | null;
+    }) =>
       api.put(`/api/feeds/${feedId}`, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
@@ -386,6 +393,7 @@ export interface UpdateAIConfigPayload {
   base_url?: string | null;
   api_key?: string | null;
   model?: string | null;
+  translate_default_lang?: string;
   translate?: {
     enabled?: boolean;
     base_url?: string | null;

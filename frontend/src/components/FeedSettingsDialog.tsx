@@ -21,6 +21,7 @@ import { useUpdateFeed, useCategories } from "@/api/hooks";
 import { useTranslation } from "react-i18next";
 import type { Feed } from "@/api/types";
 import { Switch } from "@/components/ui/switch";
+import { LANGUAGES } from "@/lib/languages";
 
 interface FeedSettingsDialogProps {
   feed: Feed;
@@ -29,12 +30,17 @@ interface FeedSettingsDialogProps {
 }
 
 const UNCATEGORIZED = "__none__";
+const LANG_AUTO = "__auto__";
 
 export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDialogProps) {
   const { t } = useTranslation("reader");
   const [title, setTitle] = useState(feed.title);
   const [categoryId, setCategoryId] = useState<string>(feed.category_id ?? UNCATEGORIZED);
   const [autoFullText, setAutoFullText] = useState(feed.auto_full_text);
+  const [autoTranslate, setAutoTranslate] = useState(feed.auto_translate);
+  const [translateTargetLang, setTranslateTargetLang] = useState<string>(
+    feed.translate_target_lang ?? LANG_AUTO,
+  );
   const updateFeed = useUpdateFeed();
   const { data: categories = [] } = useCategories();
 
@@ -42,18 +48,43 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
     setTitle(feed.title);
     setCategoryId(feed.category_id ?? UNCATEGORIZED);
     setAutoFullText(feed.auto_full_text);
-  }, [feed.title, feed.category_id, feed.auto_full_text]);
+    setAutoTranslate(feed.auto_translate);
+    setTranslateTargetLang(feed.translate_target_lang ?? LANG_AUTO);
+  }, [feed.title, feed.category_id, feed.auto_full_text, feed.auto_translate, feed.translate_target_lang]);
 
   function handleSave() {
     const trimmedTitle = title.trim();
     const catId = categoryId === UNCATEGORIZED ? null : categoryId;
+    const targetLang = translateTargetLang === LANG_AUTO ? null : translateTargetLang;
     if (!trimmedTitle) return;
-    if (trimmedTitle === feed.title && catId === feed.category_id && autoFullText === feed.auto_full_text) return;
+    if (
+      trimmedTitle === feed.title &&
+      catId === feed.category_id &&
+      autoFullText === feed.auto_full_text &&
+      autoTranslate === feed.auto_translate &&
+      targetLang === feed.translate_target_lang
+    ) return;
     updateFeed.mutate(
-      { feedId: feed.id, title: trimmedTitle, category_id: catId, auto_full_text: autoFullText },
+      {
+        feedId: feed.id,
+        title: trimmedTitle,
+        category_id: catId,
+        auto_full_text: autoFullText,
+        auto_translate: autoTranslate,
+        translate_target_lang: targetLang,
+      },
       { onSuccess: () => onOpenChange(false) },
     );
   }
+
+  const isSaveDisabled =
+    !title.trim() ||
+    (title === feed.title &&
+      categoryId === (feed.category_id ?? UNCATEGORIZED) &&
+      autoFullText === feed.auto_full_text &&
+      autoTranslate === feed.auto_translate &&
+      (translateTargetLang === LANG_AUTO ? null : translateTargetLang) === feed.translate_target_lang) ||
+    updateFeed.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -112,6 +143,34 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
           />
         </div>
 
+        <div className="flex items-center justify-between">
+          <Label htmlFor="auto-translate">{t("autoTranslate")}</Label>
+          <Switch
+            id="auto-translate"
+            checked={autoTranslate}
+            onCheckedChange={setAutoTranslate}
+          />
+        </div>
+
+        {autoTranslate && (
+          <div className="space-y-2">
+            <Label>{t("translateTargetLang")}</Label>
+            <Select value={translateTargetLang} onValueChange={setTranslateTargetLang}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={LANG_AUTO}>{t("translateLangAuto")}</SelectItem>
+                {LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.value} value={lang.value}>
+                    {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {updateFeed.isError && (
           <p className="text-sm text-destructive">{updateFeed.error.message}</p>
         )}
@@ -122,7 +181,7 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
           </Button>
           <Button
             onClick={handleSave}
-            disabled={!title.trim() || (title === feed.title && categoryId === (feed.category_id ?? UNCATEGORIZED) && autoFullText === feed.auto_full_text) || updateFeed.isPending}
+            disabled={isSaveDisabled}
           >
             {updateFeed.isPending ? t("saving", { ns: "common" }) : t("save", { ns: "common" })}
           </Button>
