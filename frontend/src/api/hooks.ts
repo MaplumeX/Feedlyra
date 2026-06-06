@@ -7,6 +7,10 @@ import type {
   ArticleSummarySource,
   Category,
   ChatHistory,
+  Conversation,
+  ConversationListResponse,
+  ConversationReference,
+  ImageUploadResult,
   DiscoveredFeed,
   Feed,
   OPMLExportResponse,
@@ -31,6 +35,13 @@ const queryKeys = {
   },
   ai: {
     config: ["ai", "config"] as const,
+  },
+  conversations: {
+    all: ["conversations"] as const,
+    list: (params?: ConversationListParams) => [...queryKeys.conversations.all, params] as const,
+    detail: (id: string) => [...queryKeys.conversations.all, "detail", id] as const,
+    references: (id: string) => [...queryKeys.conversations.all, id, "references"] as const,
+    chat: (id: string) => [...queryKeys.conversations.all, id, "chat"] as const,
   },
   auth: {
     me: ["auth", "me"] as const,
@@ -463,11 +474,11 @@ export function useTranslate() {
   });
 }
 
-export function useChatHistory(articleId: string | null) {
+export function useChatHistory(conversationId: string | null) {
   return useQuery({
-    queryKey: [...queryKeys.articles.all, "chat", articleId],
-    queryFn: () => api.get<ChatHistory>(`/api/ai/articles/${articleId}/chat/history`),
-    enabled: !!articleId,
+    queryKey: queryKeys.conversations.chat(conversationId ?? ""),
+    queryFn: () => api.get<ChatHistory>(`/api/ai/conversations/${conversationId}/chat/history`),
+    enabled: !!conversationId,
   });
 }
 
@@ -481,5 +492,109 @@ export function useExtractContent() {
       qc.invalidateQueries({ queryKey: queryKeys.articles.detail(articleId) });
       qc.invalidateQueries({ queryKey: queryKeys.articles.all });
     },
+  });
+}
+
+// --- Conversation hooks ---
+
+interface ConversationListParams {
+  page?: number;
+  limit?: number;
+}
+
+export function useConversations(params: ConversationListParams = {}) {
+  return useQuery({
+    queryKey: queryKeys.conversations.list(params),
+    queryFn: () => {
+      const searchParams = new URLSearchParams();
+      if (params.page) searchParams.set("page", String(params.page));
+      if (params.limit) searchParams.set("limit", String(params.limit));
+      const qs = searchParams.toString();
+      return api.get<ConversationListResponse>(`/api/ai/conversations${qs ? `?${qs}` : ""}`);
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useConversation(id: string | null) {
+  return useQuery({
+    queryKey: queryKeys.conversations.detail(id ?? ""),
+    queryFn: () => api.get<Conversation>(`/api/ai/conversations/${id}`),
+    enabled: !!id,
+  });
+}
+
+export function useCreateConversation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data?: { article_id?: string }) =>
+      api.post<Conversation>("/api/ai/conversations", data ?? {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.conversations.all });
+    },
+  });
+}
+
+export function useUpdateConversation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ conversationId, ...data }: { conversationId: string; title?: string }) =>
+      api.put<Conversation>(`/api/ai/conversations/${conversationId}`, data),
+    onSuccess: (_data, { conversationId }) => {
+      qc.invalidateQueries({ queryKey: queryKeys.conversations.detail(conversationId) });
+      qc.invalidateQueries({ queryKey: queryKeys.conversations.all });
+    },
+  });
+}
+
+export function useDeleteConversation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      api.delete(`/api/ai/conversations/${conversationId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.conversations.all });
+    },
+  });
+}
+
+export function useConversationReferences(conversationId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.conversations.references(conversationId ?? ""),
+    queryFn: () => api.get<ConversationReference[]>(`/api/ai/conversations/${conversationId}/references`),
+    enabled: !!conversationId,
+  });
+}
+
+export function useAddConversationReference() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ conversationId, articleId }: { conversationId: string; articleId: string }) =>
+      api.post<ConversationReference>(`/api/ai/conversations/${conversationId}/references`, { article_id: articleId }),
+    onSuccess: (_data, { conversationId }) => {
+      qc.invalidateQueries({ queryKey: queryKeys.conversations.references(conversationId) });
+      qc.invalidateQueries({ queryKey: queryKeys.conversations.detail(conversationId) });
+      qc.invalidateQueries({ queryKey: queryKeys.conversations.all });
+    },
+  });
+}
+
+export function useRemoveConversationReference() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ conversationId, referenceId }: { conversationId: string; referenceId: string }) =>
+      api.delete(`/api/ai/conversations/${conversationId}/references/${referenceId}`),
+    onSuccess: (_data, { conversationId }) => {
+      qc.invalidateQueries({ queryKey: queryKeys.conversations.references(conversationId) });
+      qc.invalidateQueries({ queryKey: queryKeys.conversations.detail(conversationId) });
+      qc.invalidateQueries({ queryKey: queryKeys.conversations.all });
+    },
+  });
+}
+
+export function useUploadConversationImage() {
+  return useMutation({
+    mutationFn: ({ conversationId, file }: { conversationId: string; file: File }) =>
+      api.upload<ImageUploadResult>(`/api/ai/conversations/${conversationId}/images`, file),
   });
 }

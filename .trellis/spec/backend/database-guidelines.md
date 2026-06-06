@@ -314,3 +314,85 @@ await db.execute(
     )
 )
 ```
+
+---
+
+## Scenario: Conversation Model & Cross-Article References
+
+### 1. Scope / Trigger
+- Trigger: AI chat needs independent conversations not bound to a single article, with the ability to reference multiple articles as context.
+
+### 2. Signatures
+- DB: `conversations.id: UUID` primary key (UUIDMixin).
+- DB: `conversations.user_id: UUID` FK to `users.id` with `ondelete="CASCADE"`, NOT NULL.
+- DB: `conversations.title: String(200) | null` — auto-generated from first message, user-editable.
+- DB: `conversations.history_summary: Text | null` — migrated from `article_chats.history_summary`.
+- DB: `conversations.created_at / updated_at` — TimestampMixin.
+- DB: `conversation_references.id: UUID` primary key (UUIDMixin).
+- DB: `conversation_references.conversation_id: UUID` FK to `conversations.id` with `ondelete="CASCADE"`, NOT NULL.
+- DB: `conversation_references.article_id: UUID` FK to `articles.id` with `ondelete="CASCADE"`, NOT NULL.
+- DB: `conversation_references.is_auto: Boolean` NOT NULL default=False — True when auto-injected from current article.
+- DB: `conversation_references.created_at` — TimestampMixin.
+- DB: Unique constraint on `conversation_references(conversation_id, article_id)` — prevents duplicate references.
+- DB: `chat_messages.conversation_id: UUID | null` FK to `conversations.id` with `ondelete="CASCADE"` — new column alongside `chat_id` for migration transition.
+- DB: `chat_messages.attachments: JSON | null` — image metadata array: `[{"type": "image", "url": "...", "filename": "...", "mime_type": "...", "size": 12345}]`.
+- API: `GET /api/ai/conversations` — list conversations with pagination, last message preview.
+- API: `POST /api/ai/conversations` — create conversation; if `article_id` provided, auto-create reference with `is_auto=True`.
+- API: `GET/PUT/DELETE /api/ai/conversations/{id}` — conversation CRUD.
+- API: `GET/POST /api/ai/conversations/{id}/references` — list/add references.
+- API: `DELETE /api/ai/conversations/{id}/references/{ref_id}` — remove reference.
+- API: `POST /api/ai/conversations/{id}/images` — multipart image upload.
+- API: `GET /api/ai/images/{filename}` — serve uploaded image with auth check.
+
+### 3. Contracts
+- Conversations are independent entities — not bound to articles. Article context is injected via `conversation_references`.
+- Auto-reference (`is_auto=True`) and manual references are equivalent in LLM context — same format in system prompt.
+- `is_auto=True` references are created when opening chat from an article page. User can remove them.
+- When adding a reference that already exists with `is_auto=False`, the existing row's `is_auto` is set to `True` (merge behavior, not error).
+- `chat_messages.conversation_id` is the new FK. `chat_id` (pointing to `article_chats`) is nullable for backward compatibility during migration.
+- Image files are stored on local filesystem under `UPLOAD_DIR` (default: `./uploads/chat_images/`).
+- Image deletion: when a conversation is deleted, associated image files are cleaned up from the filesystem.
+- `chat_messages.attachments` JSON contains full image metadata. Uploaded images store `filename` for filesystem lookup; inline base64 images store the data URL directly.
+
+### 4. Validation & Error Matrix
+- Conversation not owned by user -> `404 Conversation not found`.
+- Reference article not owned by user -> `404 Article not found`.
+- Duplicate reference (same conversation + article) -> silently merge `is_auto` flag, return `200`.
+- Image upload: unsupported type -> `400 Unsupported image type`.
+- Image upload: exceeds 10MB -> `400 Image too large`.
+- Image serve: filename not found -> `404 Image not found`.
+- Image serve: path traversal attempt -> `404 Image not found`.
+- Missing AI configuration -> `400` with LLM config error message.
+
+### 5. Good/Base/Bad Cases
+- Good: conversation references 3 articles, all content injected into LLM context with clear section headers.
+- Base: conversation has no references (standalone free-form chat).
+- Bad: reference content exceeds budget but no budget-aware truncation applied — LLM context truncated by provider.
+
+### 6. Tests Required
+- API integration: creating a conversation with `article_id` auto-creates a reference with `is_auto=True`.
+- API integration: adding a duplicate reference merges `is_auto` flag instead of erroring.
+- API integration: deleting a conversation removes associated image files from filesystem.
+- Migration: existing `article_chats` rows become conversations with proper references.
+- Migration: downgrade deletes conversation-owned messages before restoring `chat_id` NOT NULL constraint.
+
+### 7. Wrong vs Correct
+#### Wrong
+```python
+# Forgetting budget-aware truncation for multi-article content
+for ref in references:
+    content = extract_content_for_summary(article.title, article.readable_content)
+    all_content += content  # Could exceed LLM context window
+```
+
+#### Correct
+```python
+# Budget-aware truncation with separator overhead
+budget = MAX_CONTENT_CHARS
+sep_len = len("\n\n---\n\n")
+available = budget - sep_len * max(0, len(articles) - 1)
+per_article = available // len(articles)
+for article in articles:
+    chunk = extract_content_for_summary(article.title, article.readable_content, per_article)
+    parts.append(chunk)
+```

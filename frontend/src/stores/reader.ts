@@ -32,6 +32,8 @@ interface ReaderState {
   fullContentArticleIds: Record<string, true>;
   chatPanelOpen: boolean;
   chatPanelWidth: number;
+  conversationPanelOpen: boolean;
+  activeConversationId: string | null;
   commandPaletteOpen: boolean;
   settingsDialogOpen: boolean;
   set: (partial: Partial<ReaderState>) => void;
@@ -54,6 +56,8 @@ export const useReaderStore = create<ReaderState>()(
       fullContentArticleIds: {},
       chatPanelOpen: false,
       chatPanelWidth: 360,
+      conversationPanelOpen: false,
+      activeConversationId: null,
       commandPaletteOpen: false,
       settingsDialogOpen: false,
       set: (partial) => set(partial),

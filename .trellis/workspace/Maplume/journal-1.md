@@ -1668,17 +1668,6 @@ Replace simple content[:8000] truncation with smart paragraph extraction: preser
 - None - task complete
 
 
-<<<<<<< HEAD
-## Session 48: Upgrade AI Chat: Smart Context + Message Edit + Stop Generation
-
-**Date**: 2026-06-04
-**Task**: Upgrade AI Chat: Smart Context + Message Edit + Stop Generation
-**Branch**: `MaplumeX/upgrade-ai-chat`
-
-### Summary
-
-Upgraded AI chat with smart paragraph extraction (20k chars) replacing raw 8k truncation; sliding window history summarization (keep last 6 turns, lazy-summarize older when >8 turns); stop generation button with stream cleanup; message edit (truncate+re-submit with proper async ordering); message truncation PUT endpoint; ArticleChat.history_summary column + migration; spec updates for database guidelines and cross-layer guide.
-=======
 ## Session 48: Adapt auto-summarize to use full content when auto_full_text is enabled
 
 **Date**: 2026-06-04
@@ -1688,7 +1677,16 @@ Upgraded AI chat with smart paragraph extraction (20k chars) replacing raw 8k tr
 ### Summary
 
 Modified ArticleDetail.tsx auto-summarize useEffect to coordinate with auto-extract when feedAutoFullText is true: waits for full-text extraction to complete, then generates source=full summary; falls back to source=feed on extraction failure. Non-auto-full-text feeds unaffected.
->>>>>>> origin/main
+
+## Session 48: Upgrade AI Chat: Smart Context + Message Edit + Stop Generation
+
+**Date**: 2026-06-04
+**Task**: Upgrade AI Chat: Smart Context + Message Edit + Stop Generation
+**Branch**: `MaplumeX/upgrade-ai-chat`
+
+### Summary
+
+Upgraded AI chat with smart paragraph extraction (20k chars) replacing raw 8k truncation; sliding window history summarization (keep last 6 turns, lazy-summarize older when >8 turns); stop generation button with stream cleanup; message edit (truncate+re-submit with proper async ordering); message truncation PUT endpoint; ArticleChat.history_summary column + migration; spec updates for database guidelines and cross-layer guide.
 
 ### Main Changes
 
@@ -1790,6 +1788,16 @@ Replace invalidateQueries with setQueryData-based optimistic updates in useToggl
 
 Implemented auto-translate feature: per-feed auto_translate toggle + translate_target_lang, global translate_default_lang, lazy translate on first article open, auto-switch to translated content. Also updated spec with auto-trigger error reset pattern and schema-field-in-constructor gotcha.
 
+## Session 51: Upgrade AI Chat: Multi-Conversation, Image Attachments, Cross-Article Context
+
+**Date**: 2026-06-06
+**Task**: Upgrade AI Chat: Multi-Conversation, Image Attachments, Cross-Article Context
+**Branch**: `MaplumeX/upgrade-ai-chat-v2`
+
+### Summary
+
+Upgraded AI chat from per-article binding to independent conversations with Conversation/ConversationReference models, conversation sidebar UI, image upload/paste/drag-drop with OpenAI vision format, and cross-article context via reference injection with budget-aware multi-article content truncation. Included database migration from article_chats, backend CRUD APIs, frontend components, i18n, and spec updates.
+
 ### Main Changes
 
 (Add details)
@@ -1800,6 +1808,8 @@ Implemented auto-translate feature: per-feed auto_translate toggle + translate_t
 |------|---------|
 | `3f8eefc` | (see git log) |
 | `736c04e` | (see git log) |
+| `3e45432` | (see git log) |
+| `61e2d4b` | (see git log) |
 
 ### Testing
 

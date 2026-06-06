@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,6 +34,7 @@ async def _periodic_feed_refresh() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
     task = asyncio.create_task(_periodic_feed_refresh())
     yield
     task.cancel()

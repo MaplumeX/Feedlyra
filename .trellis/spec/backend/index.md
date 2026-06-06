@@ -37,6 +37,10 @@ This directory contains guidelines for backend development in the Feedlyra proje
 - **Summary content extraction**: For LLM summarization, use `extract_content_for_summary()` instead of simple `content[:N]` truncation. It preserves first/last paragraphs and extracts first sentences from middle paragraphs, ensuring conclusions aren't lost. Falls back to simple truncation when no paragraph structure detected.
 - **Chat content extraction**: Chat feature reuses `extract_content_for_summary()` with a 20000-char limit (vs 8000 for summary). Same smart paragraph extraction, wider window for Q&A context.
 - **Chat history summarization**: When chat exceeds 8 turns, older turns beyond the last 6 are summarized via LLM and cached in `article_chats.history_summary`. Lazy + cached — only computed once per chat.
+- **Conversation model**: AI chat uses independent `Conversation` entities (not bound to articles) with `ConversationReference` links for multi-article context. One `article_id` auto-injection via `is_auto=True`; additional articles added manually. All references equivalent in LLM context.
+- **Multi-article LLM context**: `build_chat_messages()` accepts a list of articles + budget-aware truncation with separator overhead calculation. Each article uses `extract_content_for_summary()` with a per-article char budget.
+- **Image attachments**: Chat messages support image attachments via `attachments` JSON column. Images stored on local filesystem under `UPLOAD_DIR`. Uploaded images sent to LLM as OpenAI vision `image_url` content blocks.
+- **Migration transition**: `chat_messages.conversation_id` (new FK) coexists with `chat_id` (legacy FK to `article_chats`). Both nullable. Migration copies `article_chats` → `conversations` + creates references.
 
 ---
 

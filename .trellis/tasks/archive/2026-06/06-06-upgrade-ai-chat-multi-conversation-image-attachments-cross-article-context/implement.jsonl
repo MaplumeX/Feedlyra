@@ -1,0 +1,11 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "New Conversation/ConversationReference models, migration patterns, mixin usage, cascade deletes, query patterns"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "API error responses for new endpoints (conversations CRUD, image upload, references)"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Code standards, forbidden patterns, async patterns for new backend code"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Logging patterns for image upload, conversation management, reference resolution"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "ConversationSidebar component, ChatInput image upload UI, reference tags, layout conventions, chat message patterns"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Adding activeConversationId/conversationPanelOpen to Zustand, React Query hooks for conversations"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "New API hooks for conversations/references, query key factory updates, SSE streaming pattern changes"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend code standards, forbidden patterns for new components"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "TypeScript interfaces for Conversation, ConversationReference, image attachments"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Multi-layer data flow: conversation CRUD, image upload→storage→serve→LLM vision, reference injection into LLM context"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reusing extract_content_for_summary for multi-article references, reusing SSE streaming pattern"}

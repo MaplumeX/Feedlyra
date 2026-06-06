@@ -2,10 +2,20 @@ import { refreshTokenIfNeeded } from "./client";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
+export interface StreamChatParams {
+  conversationId: string;
+  message: string;
+  images?: string[];
+  onChunk: (text: string) => void;
+  onDone: () => void;
+  onError: (error: Error) => void;
+}
+
 async function createChatFetch(
-  articleId: string,
+  conversationId: string,
   message: string,
   signal: AbortSignal,
+  images?: string[],
 ): Promise<Response> {
   const token = localStorage.getItem("access_token");
   const headers: Record<string, string> = {
@@ -15,10 +25,15 @@ async function createChatFetch(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  let res = await fetch(`${API_BASE}/api/ai/articles/${articleId}/chat`, {
+  const body: Record<string, unknown> = { message };
+  if (images && images.length > 0) {
+    body.images = images;
+  }
+
+  let res = await fetch(`${API_BASE}/api/ai/conversations/${conversationId}/chat`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ message }),
+    body: JSON.stringify(body),
     signal,
   });
 
@@ -30,10 +45,10 @@ async function createChatFetch(
       "Content-Type": "application/json",
       Authorization: `Bearer ${newToken}`,
     };
-    res = await fetch(`${API_BASE}/api/ai/articles/${articleId}/chat`, {
+    res = await fetch(`${API_BASE}/api/ai/conversations/${conversationId}/chat`, {
       method: "POST",
       headers: retryHeaders,
-      body: JSON.stringify({ message }),
+      body: JSON.stringify(body),
       signal,
     });
   }
@@ -42,7 +57,7 @@ async function createChatFetch(
 }
 
 export async function truncateChatMessages(
-  articleId: string,
+  conversationId: string,
   afterMessageId: string,
 ): Promise<void> {
   const token = localStorage.getItem("access_token");
@@ -53,7 +68,7 @@ export async function truncateChatMessages(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const url = `${API_BASE}/api/ai/articles/${articleId}/chat/messages/truncate`;
+  const url = `${API_BASE}/api/ai/conversations/${conversationId}/chat/messages/truncate`;
   const reqBody = { after: afterMessageId };
 
   let res = await fetch(url, {
@@ -82,17 +97,18 @@ export async function truncateChatMessages(
   }
 }
 
-export async function streamChat(
-  articleId: string,
-  message: string,
-  onChunk: (text: string) => void,
-  onDone: () => void,
-  onError: (error: Error) => void,
-): Promise<AbortController> {
+export async function streamChat({
+  conversationId,
+  message,
+  images,
+  onChunk,
+  onDone,
+  onError,
+}: StreamChatParams): Promise<AbortController> {
   const controller = new AbortController();
 
   try {
-    const res = await createChatFetch(articleId, message, controller.signal);
+    const res = await createChatFetch(conversationId, message, controller.signal, images);
 
     if (!res.ok) {
       const error = await res.json().catch(() => ({ detail: res.statusText }));

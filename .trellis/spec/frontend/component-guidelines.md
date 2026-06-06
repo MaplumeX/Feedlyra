@@ -767,3 +767,144 @@ function handleRegenerate(assistantMsgId: string) {
 **Why**: Regenerate simply trims the last assistant response and re-triggers the SSE stream with the same user input. This avoids backend changes and keeps the chat history consistent — the server's last message gets overwritten on the next sync.
 
 **Gotcha**: Always guard with `if (isStreaming) return` even if the UI already hides the button during streaming — prevents race conditions from rapid clicks or programmatic triggers.
+
+### Conversation Sidebar
+
+The conversation list uses the same sidebar pattern as the feed sidebar — left border indicator for selection, group-hover actions for rename/delete, ScrollArea with `[&>div]:!block` fix:
+
+```tsx
+<ScrollArea className="flex-1">
+  {conversations.map((conv) => (
+    <div
+      key={conv.id}
+      className={cn(
+        "group flex cursor-pointer items-center gap-2 px-3 py-2",
+        conv.id === activeConversationId
+          ? "border-l-2 border-primary bg-conversation-selected"
+          : "hover:bg-conversation-hover"
+      )}
+      onClick={() => setActiveConversation(conv.id)}
+    >
+      <span className="min-w-0 flex-1 truncate text-sm">
+        {conv.title || t("newConversation")}
+      </span>
+      {/* Hover actions */}
+      <DropdownMenu>...</DropdownMenu>
+    </div>
+  ))}
+</ScrollArea>
+```
+
+**Key details**:
+- `border-l-2 border-primary` + `bg-conversation-selected` for active conversation
+- `truncate` + `min-w-0 flex-1` for long titles
+- Group hover pattern for action buttons (`opacity-0 group-hover:opacity-100`)
+- Semantic CSS variables: `--conversation-bg`, `--conversation-hover`, `--conversation-selected` (light + dark variants)
+- In-place rename: replace title text with an `<input>`, save on Enter/blur, cancel on Escape
+
+### Image Upload & Paste in Chat Input
+
+The chat input supports three image attachment methods: paste, file picker, and drag-and-drop. Image previews shown above the input area as removable thumbnails:
+
+```tsx
+const [pendingImages, setPendingImages] = useState<File[]>([]);
+
+// Paste handler
+const handlePaste = useCallback((e: React.ClipboardEvent) => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  const imageFiles: File[] = [];
+  for (const item of items) {
+    if (item.type.startsWith("image/")) {
+      const file = item.getAsFile();
+      if (file) imageFiles.push(file);
+    }
+  }
+  if (imageFiles.length) setPendingImages((prev) => [...prev, ...imageFiles]);
+}, []);
+
+// Drag-and-drop
+const handleDrop = useCallback((e: React.DragEvent) => {
+  e.preventDefault();
+  const imageFiles = [...e.dataTransfer.files].filter((f) =>
+    f.type.startsWith("image/")
+  );
+  if (imageFiles.length) setPendingImages((prev) => [...prev, ...imageFiles]);
+}, []);
+
+// Image preview with Blob URL memory management
+function ImagePreview({ file, onRemove }: { file: File; onRemove: () => void }) {
+  const objectUrl = useMemo(() => URL.createObjectURL(file), [file]);
+  return (
+    <div className="group relative">
+      <img src={objectUrl} alt={file.name}
+        className="h-16 w-16 rounded object-cover"
+        onLoad={() => URL.revokeObjectURL(objectUrl)}  // Prevent memory leak
+      />
+      <button onClick={onRemove} className="absolute -top-1 -right-1 ...">x</button>
+    </div>
+  );
+}
+```
+
+**Key details**:
+- Blob URLs created via `URL.createObjectURL` must be revoked on image load (`onLoad` callback) to prevent memory leaks
+- File picker via hidden `<input type="file" accept="image/*">` triggered by attachment button click
+- On send: convert images to base64 via `FileReader` → `FileReader.readAsDataURL(file)` → include in API request body as `images` array
+- Accepted types: JPEG, PNG, GIF, WebP. Max 10MB per image (backend validates).
+
+### Article Reference Tags
+
+Referenced articles displayed as removable tags above the chat input. Auto-referenced current article distinguished with a "当前" badge:
+
+```tsx
+{references?.map((ref) => (
+  <Badge key={ref.id} variant="secondary" className="gap-1">
+    <FileText className="h-3 w-3" />
+    <span className="max-w-[120px] truncate">{ref.article_title}</span>
+    {ref.is_auto && (
+      <span className="text-xs text-muted-foreground">({t("currentArticle")})</span>
+    )}
+    <button onClick={() => removeReference({ conversationId, referenceId: ref.id })}>
+      <X className="h-3 w-3" />
+    </button>
+  </Badge>
+))}
+{references?.length === 0 && (
+  <Button variant="ghost" size="sm" onClick={openArticleSearch}>
+    <BookOpen className="mr-1 h-3 w-3" />{t("addReference")}
+  </Button>
+)}
+```
+
+**Key details**:
+- Auto and manual references are equivalent in LLM context — `is_auto` is UI-only metadata
+- All references can be removed by the user, including auto-referenced ones
+- "Add reference" button opens a search/popover to find and add articles
+
+### Message Image Rendering
+
+Chat messages with image attachments render images inline:
+
+```tsx
+function MessageAttachments({ attachments }: { attachments: ImageAttachment[] }) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      {attachments.map((att, i) => (
+        <img
+          key={i}
+          src={att.url.startsWith("/") ? `${API_BASE}${att.url}` : att.url}
+          alt={att.filename}
+          className="max-h-64 max-w-full rounded cursor-pointer"
+          onClick={() => window.open(imgSrc, "_blank")}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+**Key details**:
+- Relative server paths (e.g., `/api/ai/images/xxx`) must be prefixed with `API_BASE` since frontend and backend run on different ports in development
+- Blob URLs and data URLs are used as-is (already fully qualified)
+- Click to open in new tab for full-size viewing

@@ -61,6 +61,11 @@ export default {
         "article-hover": "hsl(var(--article-hover))",
         "chat-user": "hsl(var(--chat-bubble-user))",
         "chat-ai": "hsl(var(--chat-bubble-ai))",
+        conversation: {
+          bg: "hsl(var(--conversation-bg))",
+          hover: "hsl(var(--conversation-hover))",
+          selected: "hsl(var(--conversation-selected))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -3,8 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID as PyUUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSON, UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDMixin
@@ -45,6 +45,37 @@ class ArticleSummary(UUIDMixin, TimestampMixin, Base):
     article: Mapped["Article"] = relationship("Article", back_populates="summary_rows")
 
 
+class Conversation(UUIDMixin, TimestampMixin, Base):
+    __tablename__ = "conversations"
+
+    user_id: Mapped[PyUUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    title: Mapped[str | None] = mapped_column(String(200))
+    history_summary: Mapped[str | None] = mapped_column(Text)
+
+    messages: Mapped[list["ChatMessage"]] = relationship(back_populates="conversation", cascade="all, delete-orphan")
+    references: Mapped[list["ConversationReference"]] = relationship(back_populates="conversation", cascade="all, delete-orphan")
+
+
+class ConversationReference(UUIDMixin, TimestampMixin, Base):
+    __tablename__ = "conversation_references"
+    __table_args__ = (
+        UniqueConstraint("conversation_id", "article_id", name="uq_conversation_references_conversation_article"),
+    )
+
+    conversation_id: Mapped[PyUUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False
+    )
+    article_id: Mapped[PyUUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("articles.id", ondelete="CASCADE"), nullable=False
+    )
+    is_auto: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    conversation: Mapped["Conversation"] = relationship(back_populates="references")
+    article: Mapped["Article"] = relationship(back_populates="conversation_references")
+
+
 class ArticleChat(Base):
     __tablename__ = "article_chats"
 
@@ -62,9 +93,16 @@ class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
     id: Mapped[PyUUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    chat_id: Mapped[PyUUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("article_chats.id", ondelete="CASCADE"), nullable=False)
+    chat_id: Mapped[PyUUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("article_chats.id", ondelete="CASCADE"), nullable=True
+    )
+    conversation_id: Mapped[PyUUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=True
+    )
     role: Mapped[str] = mapped_column(String(10), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    attachments: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
-    chat: Mapped["ArticleChat"] = relationship(back_populates="messages")
+    chat: Mapped["ArticleChat | None"] = relationship(back_populates="messages")
+    conversation: Mapped["Conversation | None"] = relationship(back_populates="messages")
