@@ -217,6 +217,55 @@ export function useDeleteCategory() {
   });
 }
 
+function updateArticleInCache(
+  qc: ReturnType<typeof useQueryClient>,
+  updater: (article: Article) => Article,
+) {
+  const queries = qc.getQueryCache().findAll({ queryKey: queryKeys.articles.all });
+  for (const query of queries) {
+    qc.setQueryData(query.queryKey, (old: unknown) => {
+      if (!old) return old;
+      if (old && typeof old === "object" && "pages" in (old as Record<string, unknown>)) {
+        // Infinite query: { pages: Array<{ items: Article[] }>, pageParams: unknown[] }
+        const infinite = old as { pages: Array<{ items: Article[] }>; pageParams: unknown[] };
+        return {
+          ...infinite,
+          pages: infinite.pages.map((page) => ({
+            ...page,
+            items: page.items.map(updater),
+          })),
+        };
+      }
+      if (old && typeof old === "object" && "items" in (old as Record<string, unknown>)) {
+        // Regular list query: ArticleListResponse { items: Article[], total, page, limit }
+        const list = old as { items: Article[]; total: number; page: number; limit: number };
+        return { ...list, items: list.items.map(updater) };
+      }
+      if (old && typeof old === "object" && "id" in (old as Record<string, unknown>)) {
+        // Detail query: single Article
+        return updater(old as Article);
+      }
+      return old;
+    });
+  }
+}
+
+function patchArticleById(
+  qc: ReturnType<typeof useQueryClient>,
+  articleId: string,
+  patch: Partial<Article>,
+) {
+  updateArticleInCache(qc, (a) => (a.id === articleId ? { ...a, ...patch } : a));
+}
+
+function patchArticlesByIds(
+  qc: ReturnType<typeof useQueryClient>,
+  articleIds: Set<string>,
+  patch: Partial<Article>,
+) {
+  updateArticleInCache(qc, (a) => (articleIds.has(a.id) ? { ...a, ...patch } : a));
+}
+
 // --- Article hooks ---
 
 interface ArticleListParams {
@@ -275,8 +324,8 @@ export function useToggleRead() {
   return useMutation({
     mutationFn: ({ articleId, read }: { articleId: string; read: boolean }) =>
       api.put<Article>(`/api/articles/${articleId}/read`, { read }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+    onSuccess: (_data: Article, { articleId, read }: { articleId: string; read: boolean }) => {
+      patchArticleById(qc, articleId, { is_read: read });
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
     },
   });
@@ -287,8 +336,9 @@ export function useToggleStar() {
   return useMutation({
     mutationFn: ({ articleId, starred }: { articleId: string; starred: boolean }) =>
       api.put<Article>(`/api/articles/${articleId}/star`, { starred }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+    onSuccess: (_data: Article, { articleId, starred }: { articleId: string; starred: boolean }) => {
+      patchArticleById(qc, articleId, { is_starred: starred });
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
     },
   });
 }
@@ -310,8 +360,8 @@ export function useBatchRead() {
   return useMutation({
     mutationFn: ({ articleIds }: { articleIds: string[] }) =>
       api.put<{ marked_count: number }>("/api/articles/batch-read", { article_ids: articleIds }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+    onSuccess: (_data: { marked_count: number }, { articleIds }: { articleIds: string[] }) => {
+      patchArticlesByIds(qc, new Set(articleIds), { is_read: true });
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
     },
   });
