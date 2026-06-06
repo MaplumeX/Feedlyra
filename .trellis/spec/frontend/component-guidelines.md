@@ -217,6 +217,26 @@ Group (orientation="horizontal")
 
 **Persistence**: Layout saved to localStorage via `onLayoutChanged` callback; restored via `defaultLayout` prop on mount.
 
+**Stale layout migration**: When a conditionally rendered Panel is unmounted, `onLayoutChanged` saves a layout without that panel's ID. On next mount, the stale persisted entry (from a previous session) may conflict with `minSize`/`maxSize` constraints, causing the Panel to become undraggable. The `loadLayout()` function must strip stale panel IDs before returning:
+
+```ts
+function loadLayout(): Record<string, number> | undefined {
+  const layout = JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY));
+  let migrated = false;
+  // Strip IDs of panels that are conditionally rendered or have been removed
+  for (const staleId of ["conversation-sidebar", "ai-chat"]) {
+    if (layout[staleId]) {
+      delete layout[staleId];
+      migrated = true;
+    }
+  }
+  if (migrated) localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
+  return layout;
+}
+```
+
+**Why**: Conditionally unmounted Panels leave stale entries in the persisted layout. When re-mounted, `defaultLayout` feeds the stale pixel value to the Panel, which may violate its current constraints. Stripping these entries ensures the Panel always initializes from its `defaultSize` prop rather than a stale persisted value.
+
 > **Note**: `react-resizable-panels` v4 uses `Group`/`Panel`/`Separator` naming (not v3's `PanelGroup`/`Panel`/`PanelResizeHandle`). v4 supports pixel values directly for `minSize`/`maxSize`/`defaultSize`.
 
 ### ScrollArea in Fixed-Width Panels
@@ -293,6 +313,8 @@ const [scrollViewport, setScrollViewport] = useState<HTMLDivElement | null>(null
 - **Using `position: sticky` inside plain `Virtuoso`** — plain `Virtuoso` wraps each item in an element with `position: absolute` + computed `top`, so CSS `position: sticky` on child content silently fails. For sticky group headers, use `GroupedVirtuoso` which applies sticky on its group wrapper element automatically.
 - **Hardcoded Tailwind color classes for text/background** — classes like `text-green-600`, `bg-white`, `text-gray-500` use fixed hues that don't respond to dark mode. Always use semantic classes (`text-primary`, `text-muted-foreground`, `bg-background`, `bg-muted`, etc.) which map to CSS variables that flip in `.dark`.
 - **Applying `animate-in` to all items in a list unconditionally** — `tailwindcss-animate`'s `animate-in` triggers on every DOM mount. When applied inside a `.map()` for all messages, historical messages also animate when the component mounts or a conversation is switched. This creates a distracting cascade effect. Only apply entrance animations to newly appended items (e.g., track the last rendered message count or use an `isNew` flag).
+- **Stale persisted layout entries for conditionally rendered Panels** — `onLayoutChanged` saves layouts without IDs of unmounted Panels. On remount, stale persisted pixel values may violate `minSize`/`maxSize` constraints and make the Panel undraggable. Always strip stale panel IDs in `loadLayout()` so the Panel initializes from its `defaultSize` prop.
+- **Async callbacks updating state after unmount** — Components with async operations (SSE streams, fetch, `setTimeout`) that call `setState` after the component unmounts will cause React errors. Without an ErrorBoundary, this crashes the entire app. Use a `mountedRef` guard in callbacks, and set it `false` before aborting in close handlers.
 
 ---
 
@@ -969,3 +991,42 @@ function MessageAttachments({ attachments }: { attachments: ImageAttachment[] })
 - Relative server paths (e.g., `/api/ai/images/xxx`) must be prefixed with `API_BASE` since frontend and backend run on different ports in development
 - Blob URLs and data URLs are used as-is (already fully qualified)
 - Click to open in new tab for full-size viewing
+
+### Async Callback Unmount Guard (mountedRef)
+
+Components with async callbacks (SSE streams, fetch, timers) must guard state updates after unmount to prevent React errors and white screens:
+
+```tsx
+const mountedRef = useRef(true);
+
+useEffect(() => {
+  mountedRef.current = true;
+  return () => {
+    mountedRef.current = false;
+  };
+}, []);
+
+// In async callbacks:
+const controller = await streamChat({
+  onDone: () => {
+    if (!mountedRef.current) return;
+    setIsStreaming(false);
+  },
+  onError: (error) => {
+    if (!mountedRef.current) return;
+    setIsStreaming(false);
+    setMessages((prev) => updateLastAssistant(prev, `Error: ${error.message}`));
+  },
+});
+
+// In close/dismiss handlers, set mountedRef before abort:
+const handleClose = () => {
+  mountedRef.current = false;
+  if (abortRef.current) {
+    abortRef.current.abort();
+  }
+  setReader({ conversationPanelOpen: false });
+};
+```
+
+**Why**: When a component unmounts (e.g., closing the chat panel), in-flight async operations may still resolve. Calling `setState` on an unmounted component causes a React error. Without an ErrorBoundary, this crashes the entire app (white screen). The `mountedRef` pattern prevents this; setting it `false` in `handleClose` before `abort()` ensures that abort-triggered callbacks also bail out.
