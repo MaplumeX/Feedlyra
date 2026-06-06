@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 53
+- **Total Sessions**: 54
 - **Last Active**: 2026-06-06
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1891 | Active |
+| `journal-1.md` | ~1924 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 54 | 2026-06-06 | Fix article list pagination and filter state | `e78a057` | `MaplumeX/davao` |
 | 53 | 2026-06-06 | Replace conversation sidebar with floating popover | `04be619` | `MaplumeX/session-history-compression` |
 | 52 | 2026-06-06 | Beautify AI Chat UI | `5432b62`, `cefb8df` | `MaplumeX/beautify-ai-chat-ui` |
 | 51 | 2026-06-06 | Add per-feed auto AI translation with target language config | `3f8eefc`, `736c04e` | `MaplumeX/feed-auto-ai-translate` |
