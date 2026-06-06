@@ -28,9 +28,10 @@ This directory contains guidelines for frontend development in the Feedlyra proj
 - **React 19** + TypeScript (strict mode) + Vite
 - **UI library**: shadcn/ui (Radix primitives) + Tailwind CSS v3
 - **State split**: Zustand for UI/auth state, React Query for server data — no overlap
+- **Article pagination**: Infinite article queries use the backend's opaque `next_cursor`; filtered lists must not derive the next page from mutable totals
 - **i18n**: i18next with `en`/`zh-CN` locales, Zod i18n integration
 - **Forms**: react-hook-form + Zod validation
-- **No tests** — currently not configured
+- **Tests**: Vitest unit tests for reusable frontend logic; run with `npm run test`
 
 ---
 

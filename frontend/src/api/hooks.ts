@@ -1,5 +1,9 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
+import {
+  applyArticleTransitions,
+  type ArticleTransition,
+} from "@/lib/articleList";
 import type {
   AIConfig,
   Article,
@@ -235,53 +239,122 @@ export function useDeleteCategory() {
   });
 }
 
-function updateArticleInCache(
+function articleListParamsFromQueryKey(queryKey: readonly unknown[]): ArticleListParams | null {
+  const rawParams = queryKey[1] === "infinite" ? queryKey[2] : queryKey[1];
+  if (!rawParams || typeof rawParams !== "object" || Array.isArray(rawParams)) return null;
+
+  const params = rawParams as Record<string, unknown>;
+  return {
+    feed_id: typeof params.feed_id === "string" ? params.feed_id : undefined,
+    read_status: typeof params.read_status === "string" ? params.read_status : undefined,
+    starred: typeof params.starred === "boolean" ? params.starred : undefined,
+    page: typeof params.page === "number" ? params.page : undefined,
+    limit: typeof params.limit === "number" ? params.limit : undefined,
+    cursor: typeof params.cursor === "string" ? params.cursor : undefined,
+  };
+}
+
+function findCachedArticle(
   qc: ReturnType<typeof useQueryClient>,
-  updater: (article: Article) => Article,
-) {
+  articleId: string,
+): Article | null {
   const queries = qc.getQueryCache().findAll({ queryKey: queryKeys.articles.all });
   for (const query of queries) {
+    const data: unknown = query.state.data;
+    if (!data || typeof data !== "object") continue;
+
+    if ("pages" in data && Array.isArray(data.pages)) {
+      for (const page of data.pages) {
+        if (!page || typeof page !== "object" || !("items" in page) || !Array.isArray(page.items)) {
+          continue;
+        }
+        const found = page.items.find(
+          (item: unknown): item is Article =>
+            !!item && typeof item === "object" && "id" in item && item.id === articleId,
+        );
+        if (found) return found;
+      }
+      continue;
+    }
+
+    if ("items" in data && Array.isArray(data.items)) {
+      const found = data.items.find(
+        (item: unknown): item is Article =>
+          !!item && typeof item === "object" && "id" in item && item.id === articleId,
+      );
+      if (found) return found;
+      continue;
+    }
+
+    if ("id" in data && data.id === articleId) {
+      return data as Article;
+    }
+  }
+  return null;
+}
+
+function applyArticleTransitionsToCache(
+  qc: ReturnType<typeof useQueryClient>,
+  transitions: readonly ArticleTransition[],
+) {
+  if (transitions.length === 0) return;
+
+  const afterById = new Map(transitions.map(({ after }) => [after.id, after]));
+  const queries = qc.getQueryCache().findAll({ queryKey: queryKeys.articles.all });
+  for (const query of queries) {
+    const params = articleListParamsFromQueryKey(query.queryKey);
     qc.setQueryData(query.queryKey, (old: unknown) => {
-      if (!old) return old;
-      if (old && typeof old === "object" && "pages" in (old as Record<string, unknown>)) {
-        // Infinite query: { pages: Array<{ items: Article[] }>, pageParams: unknown[] }
-        const infinite = old as { pages: Array<{ items: Article[] }>; pageParams: unknown[] };
+      if (!old || typeof old !== "object") return old;
+
+      if ("pages" in old && Array.isArray(old.pages) && params) {
         return {
-          ...infinite,
-          pages: infinite.pages.map((page) => ({
-            ...page,
-            items: page.items.map(updater),
-          })),
+          ...old,
+          pages: old.pages.map((page) => {
+            if (!page || typeof page !== "object" || !("items" in page)) return page;
+            return applyArticleTransitions(page as ArticleListResponse, params, transitions);
+          }),
         };
       }
-      if (old && typeof old === "object" && "items" in (old as Record<string, unknown>)) {
-        // Regular list query: ArticleListResponse { items: Article[], total, page, limit }
-        const list = old as { items: Article[]; total: number; page: number; limit: number };
-        return { ...list, items: list.items.map(updater) };
+
+      if ("items" in old && params) {
+        return applyArticleTransitions(old as ArticleListResponse, params, transitions);
       }
-      if (old && typeof old === "object" && "id" in (old as Record<string, unknown>)) {
-        // Detail query: single Article
-        return updater(old as Article);
+
+      if ("id" in old && typeof old.id === "string") {
+        return afterById.get(old.id) ?? old;
       }
+
       return old;
     });
   }
+
+  void qc.invalidateQueries({
+    queryKey: queryKeys.articles.all,
+    refetchType: "none",
+  });
 }
 
-function patchArticleById(
+function applyUnreadTransitionsToFeeds(
   qc: ReturnType<typeof useQueryClient>,
-  articleId: string,
-  patch: Partial<Article>,
+  transitions: readonly ArticleTransition[],
 ) {
-  updateArticleInCache(qc, (a) => (a.id === articleId ? { ...a, ...patch } : a));
-}
+  const unreadDeltaByFeed = new Map<string, number>();
+  for (const { before, after } of transitions) {
+    const delta = Number(!after.is_read) - Number(!before.is_read);
+    if (delta === 0) continue;
+    unreadDeltaByFeed.set(after.feed_id, (unreadDeltaByFeed.get(after.feed_id) ?? 0) + delta);
+  }
+  if (unreadDeltaByFeed.size === 0) return;
 
-function patchArticlesByIds(
-  qc: ReturnType<typeof useQueryClient>,
-  articleIds: Set<string>,
-  patch: Partial<Article>,
-) {
-  updateArticleInCache(qc, (a) => (articleIds.has(a.id) ? { ...a, ...patch } : a));
+  qc.setQueryData<Feed[]>(queryKeys.feeds.list(), (old) =>
+    old?.map((feed) => ({
+      ...feed,
+      unread_count: Math.max(
+        0,
+        (feed.unread_count ?? 0) + (unreadDeltaByFeed.get(feed.id) ?? 0),
+      ),
+    })),
+  );
 }
 
 // --- Article hooks ---
@@ -292,6 +365,7 @@ interface ArticleListParams {
   starred?: boolean;
   page?: number;
   limit?: number;
+  cursor?: string;
 }
 
 function articleListPath(params: ArticleListParams = {}) {
@@ -301,6 +375,7 @@ function articleListPath(params: ArticleListParams = {}) {
   if (params.starred !== undefined) searchParams.set("starred", String(params.starred));
   if (params.page) searchParams.set("page", String(params.page));
   if (params.limit) searchParams.set("limit", String(params.limit));
+  if (params.cursor) searchParams.set("cursor", params.cursor);
 
   const qs = searchParams.toString();
   return `/api/articles${qs ? `?${qs}` : ""}`;
@@ -318,12 +393,15 @@ export function useInfiniteArticles(params: ArticleListParams = {}) {
   return useInfiniteQuery({
     queryKey: queryKeys.articles.infiniteList(params),
     queryFn: ({ pageParam }) =>
-      api.get<ArticleListResponse>(articleListPath({ ...params, page: pageParam })),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      const loadedCount = lastPage.page * lastPage.limit;
-      return loadedCount < lastPage.total ? lastPage.page + 1 : undefined;
-    },
+      api.get<ArticleListResponse>(
+        articleListPath({
+          ...params,
+          page: pageParam ? undefined : 1,
+          cursor: pageParam ?? undefined,
+        }),
+      ),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     staleTime: 2 * 60 * 1000,
     refetchInterval: 2 * 60 * 1000,
   });
@@ -342,8 +420,11 @@ export function useToggleRead() {
   return useMutation({
     mutationFn: ({ articleId, read }: { articleId: string; read: boolean }) =>
       api.put<Article>(`/api/articles/${articleId}/read`, { read }),
-    onSuccess: (_data: Article, { articleId, read }: { articleId: string; read: boolean }) => {
-      patchArticleById(qc, articleId, { is_read: read });
+    onSuccess: (after: Article, { articleId }: { articleId: string; read: boolean }) => {
+      const before = findCachedArticle(qc, articleId);
+      const transitions = before ? [{ before, after }] : [];
+      applyArticleTransitionsToCache(qc, transitions);
+      applyUnreadTransitionsToFeeds(qc, transitions);
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
     },
   });
@@ -354,9 +435,9 @@ export function useToggleStar() {
   return useMutation({
     mutationFn: ({ articleId, starred }: { articleId: string; starred: boolean }) =>
       api.put<Article>(`/api/articles/${articleId}/star`, { starred }),
-    onSuccess: (_data: Article, { articleId, starred }: { articleId: string; starred: boolean }) => {
-      patchArticleById(qc, articleId, { is_starred: starred });
-      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+    onSuccess: (after: Article, { articleId }: { articleId: string; starred: boolean }) => {
+      const before = findCachedArticle(qc, articleId);
+      applyArticleTransitionsToCache(qc, before ? [{ before, after }] : []);
     },
   });
 }
@@ -379,7 +460,14 @@ export function useBatchRead() {
     mutationFn: ({ articleIds }: { articleIds: string[] }) =>
       api.put<{ marked_count: number }>("/api/articles/batch-read", { article_ids: articleIds }),
     onSuccess: (_data: { marked_count: number }, { articleIds }: { articleIds: string[] }) => {
-      patchArticlesByIds(qc, new Set(articleIds), { is_read: true });
+      const transitions = articleIds.flatMap((articleId) => {
+        const before = findCachedArticle(qc, articleId);
+        return before && !before.is_read
+          ? [{ before, after: { ...before, is_read: true } }]
+          : [];
+      });
+      applyArticleTransitionsToCache(qc, transitions);
+      applyUnreadTransitionsToFeeds(qc, transitions);
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
     },
   });

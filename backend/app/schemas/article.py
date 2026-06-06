@@ -45,6 +45,7 @@ class ArticleListResponse(BaseModel):
     total: int
     page: int
     limit: int
+    next_cursor: str | None = None
 
 
 class ReadToggle(BaseModel):
