@@ -120,6 +120,7 @@
   "deleteConversation": "删除对话",
   "renameConversation": "重命名对话",
   "deleteConversationConfirm": "删除此对话？此操作不可撤销。",
+  "conversations": "对话",
   "searchConversations": "搜索对话...",
   "noConversations": "暂无对话",
   "addReference": "添加文章引用",

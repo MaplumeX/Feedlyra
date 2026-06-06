@@ -120,6 +120,7 @@
   "deleteConversation": "Delete Chat",
   "renameConversation": "Rename Chat",
   "deleteConversationConfirm": "Delete this conversation? This cannot be undone.",
+  "conversations": "Conversations",
   "searchConversations": "Search conversations...",
   "noConversations": "No conversations yet",
   "addReference": "Add article reference",

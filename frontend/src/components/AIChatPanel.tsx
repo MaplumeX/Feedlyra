@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, X, Bot, Copy, Check, RefreshCw, MessageSquareText, Square, Pencil, Paperclip, XCircle } from "lucide-react";
+import { Send, X, Bot, Copy, Check, RefreshCw, MessageSquareText, Square, Pencil, Paperclip, XCircle, History } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { ConversationListPopover } from "@/components/ConversationSidebar";
 import {
   useChatHistory,
   useConversationReferences,
@@ -765,10 +767,22 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
 
   const convTitle = conversation?.title || t("newConversation");
 
+  const [convoPopoverOpen, setConvoPopoverOpen] = useState(false);
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center gap-2 border-b px-3 py-2">
+        <Popover open={convoPopoverOpen} onOpenChange={setConvoPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title={t("conversations")}>
+              <History className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent side="left" align="start" className="w-80 p-0">
+            <ConversationListPopover onSelect={() => setConvoPopoverOpen(false)} />
+          </PopoverContent>
+        </Popover>
         <h3 className="flex-1 truncate text-sm font-medium">{convTitle}</h3>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClose}>
           <X className="h-4 w-4" />
