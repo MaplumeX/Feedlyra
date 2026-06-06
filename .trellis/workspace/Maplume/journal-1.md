@@ -1745,3 +1745,36 @@ Improved article-list scroll mark-as-read precision by making IntersectionObserv
 ### Next Steps
 
 - None - task complete
+
+
+## Session 50: Fix scroll mark-read optimistic updates
+
+**Date**: 2026-06-06
+**Task**: Fix scroll mark-read optimistic updates
+**Branch**: `MaplumeX/scroll-mark-read-and-new-article-display`
+
+### Summary
+
+Replace invalidateQueries with setQueryData-based optimistic updates in useToggleRead, useToggleStar, and useBatchRead. Prevents articles from disappearing in unread view after scroll mark-read and stops false new-articles banner triggers.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d39bc46` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

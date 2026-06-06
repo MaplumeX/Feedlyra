@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 49
-- **Last Active**: 2026-06-04
+- **Total Sessions**: 50
+- **Last Active**: 2026-06-06
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1747 | Active |
+| `journal-1.md` | ~1780 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 50 | 2026-06-06 | Fix scroll mark-read optimistic updates | `d39bc46` | `MaplumeX/scroll-mark-read-and-new-article-display` |
 | 49 | 2026-06-04 | Fix scroll mark-read precision | `b8bc190` | `MaplumeX/san-diego-v1` |
 | 48 | 2026-06-04 | Upgrade AI Chat: Smart Context + Message Edit + Stop Generation | `c6886b9` | `MaplumeX/upgrade-ai-chat` |
 | 48 | 2026-06-04 | Adapt auto-summarize to use full content when auto_full_text is enabled | `a3e407a` | `MaplumeX/auto-summary-fulltext-fetch` |
