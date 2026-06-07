@@ -3,6 +3,7 @@ import type { Article, ArticleListResponse } from "@/api/types";
 import {
   applyArticleTransitions,
   reconcileArticleAcknowledgements,
+  retainFirstInfinitePage,
 } from "@/lib/articleList";
 
 function article(id: string, overrides: Partial<Article> = {}): Article {
@@ -57,6 +58,43 @@ describe("reconcileArticleAcknowledgements", () => {
     });
 
     expect(result.newArticleIds).toEqual(["new"]);
+  });
+
+  it("acknowledges an appended history page while keeping first-page new IDs pending", () => {
+    const result = reconcileArticleAcknowledgements([["new", "a"], ["b"], ["c"]], {
+      acknowledgedIds: new Set(["a", "b"]),
+      initialized: true,
+      previousPageCount: 2,
+    });
+
+    expect(result.newArticleIds).toEqual(["new"]);
+    expect(result.acknowledgedIds).toEqual(new Set(["a", "b", "c"]));
+  });
+});
+
+describe("retainFirstInfinitePage", () => {
+  it("drops loaded history pages and their page params", () => {
+    const firstPage = response([article("a")]);
+    const secondPage = response([article("b")]);
+
+    const result = retainFirstInfinitePage({
+      pages: [firstPage, secondPage],
+      pageParams: [null, "cursor-2"],
+    });
+
+    expect(result).toEqual({
+      pages: [firstPage],
+      pageParams: [null],
+    });
+  });
+
+  it("preserves identity when the query is already on its first page", () => {
+    const data = {
+      pages: [response([article("a")])],
+      pageParams: [null],
+    };
+
+    expect(retainFirstInfinitePage(data)).toBe(data);
   });
 });
 

@@ -24,6 +24,11 @@ interface ArticleAcknowledgementResult {
   previousPageCount: number;
 }
 
+interface InfinitePageData<TPage, TPageParam> {
+  pages: TPage[];
+  pageParams: TPageParam[];
+}
+
 function articleMatchesFilter(article: Article, params: ArticleListFilterParams): boolean {
   if (params.feed_id && article.feed_id !== params.feed_id) return false;
   if (params.read_status === "unread" && article.is_read) return false;
@@ -50,6 +55,18 @@ export function applyArticleTransitions(
     ...response,
     items: response.items.map((article) => afterById.get(article.id) ?? article),
     total: Math.max(0, response.total + totalDelta),
+  };
+}
+
+export function retainFirstInfinitePage<TPage, TPageParam>(
+  data: InfinitePageData<TPage, TPageParam>,
+): InfinitePageData<TPage, TPageParam> {
+  if (data.pages.length <= 1 && data.pageParams.length <= 1) return data;
+
+  return {
+    ...data,
+    pages: data.pages.slice(0, 1),
+    pageParams: data.pageParams.slice(0, 1),
   };
 }
 

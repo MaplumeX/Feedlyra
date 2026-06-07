@@ -56,6 +56,30 @@ Article read/star mutations intentionally keep already rendered rows in the curr
 - update feed unread counts
 - mark article queries stale with `refetchType: "none"` so a later filter switch/refetch rebuilds true membership without immediately disrupting the current list
 
+### New-Article Banner with Infinite Queries
+
+When an automatic refetch updates the first page, keep unknown article IDs hidden until the user acknowledges the new-article banner.
+
+- Reconcile the acknowledgement baseline in `useLayoutEffect`, not `useEffect`. Visibility derived in a normal effect updates after browser paint, so new rows can briefly appear and disturb the virtual list before the banner hides them.
+- If acknowledged IDs live in a ref, publish a read-only state snapshot whenever the set grows. Updating only the ref and setting an unchanged banner count does not re-render; this can leave a newly appended history page hidden while a banner is already visible.
+- Reset the acknowledgement refs and rendered snapshot before establishing the baseline for a different feed/filter. The reset and reconciliation effects must use the same pre-paint phase and execute in that order.
+- Clicking the banner must reset the exact current infinite-query cache to its latest first page:
+
+```tsx
+queryClient.setQueryData<InfiniteData<ArticleListResponse, string | null>>(
+  queryKeys.articles.infiniteList(params),
+  (current) => current
+    ? {
+        ...current,
+        pages: current.pages.slice(0, 1),
+        pageParams: current.pageParams.slice(0, 1),
+      }
+    : current,
+);
+```
+
+Always trim `pages` and `pageParams` together. Keeping old `pageParams` or old history pages means `hasNextPage` and the next `fetchNextPage` can continue from the previous last page instead of rebuilding from the refreshed first page's `next_cursor`.
+
 **Mutation hooks** (data modification):
 
 ```tsx
@@ -158,3 +182,4 @@ const handleSend = async () => {
 - **Refetching active article queries after inline mutations** — Mutations that change a property the user is currently viewing (e.g., `is_read`/`is_starred` in the article list) should not immediately refetch active article queries; it causes rows to disappear from filtered views and can falsely trigger the "new articles" banner. Use `applyArticleTransitionsToCache` to update fields and totals, then invalidate with `refetchType: "none"`. Reserve immediate refetches for explicit bulk actions like `markAllRead` or structural changes like adding/deleting feeds.
 - **Using offset pagination for mutable filtered infinite lists** — Read/star mutations change membership in `read_status=unread` and `starred=true` while the user is paging. A later offset request then skips the row that shifted across the page boundary. Use the backend's opaque `next_cursor`; never derive the next article page from `page * limit < total`.
 - **Treating every unknown loaded ID as a new article** — Infinite scrolling deliberately loads unknown historical IDs. New-article detection must compare unknown IDs from the first page only, while automatically acknowledging IDs from appended history pages.
+- **Resetting only the virtual scroll position when acknowledging new articles** — `scrollToIndex(0)` does not reset React Query pagination. Trim the current query's `pages` and `pageParams` to one entry before continuing from the refreshed first page.
