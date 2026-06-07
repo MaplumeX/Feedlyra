@@ -7,8 +7,8 @@
 ## Current Status
 
 <!-- @@@auto:current-status -->
-- **Active File**: `journal-1.md`
-- **Total Sessions**: 55
+- **Active File**: `journal-2.md`
+- **Total Sessions**: 56
 - **Last Active**: 2026-06-07
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,8 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1990 | Active |
+| `journal-2.md` | ~40 | Active |
+| `journal-1.md` | ~1990 | Archived |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 56 | 2026-06-07 | 修复新文章提示与分页联动 | `6e63fb2` | `MaplumeX/krakow` |
 | 55 | 2026-06-07 | Fix scroll mark-read accuracy in unread view | `4de5536` | `MaplumeX/fix-unread-scroll-mark-read` |
 | 55 | 2026-06-06 | Fix article list pagination and filter state | `e78a057` | `MaplumeX/davao` |
 | 54 | 2026-06-06 | Fix AI chat panel drag failure and white screen on close | `8caa0b4` | `MaplumeX/fix-ai-panel-drag-and-white-screen` |
