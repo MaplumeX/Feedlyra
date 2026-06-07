@@ -315,6 +315,7 @@ const [scrollViewport, setScrollViewport] = useState<HTMLDivElement | null>(null
 - **Applying `animate-in` to all items in a list unconditionally** — `tailwindcss-animate`'s `animate-in` triggers on every DOM mount. When applied inside a `.map()` for all messages, historical messages also animate when the component mounts or a conversation is switched. This creates a distracting cascade effect. Only apply entrance animations to newly appended items (e.g., track the last rendered message count or use an `isNew` flag).
 - **Stale persisted layout entries for conditionally rendered Panels** — `onLayoutChanged` saves layouts without IDs of unmounted Panels. On remount, stale persisted pixel values may violate `minSize`/`maxSize` constraints and make the Panel undraggable. Always strip stale panel IDs in `loadLayout()` so the Panel initializes from its `defaultSize` prop.
 - **Async callbacks updating state after unmount** — Components with async operations (SSE streams, fetch, `setTimeout`) that call `setState` after the component unmounts will cause React errors. Without an ErrorBoundary, this crashes the entire app. Use a `mountedRef` guard in callbacks, and set it `false` before aborting in close handlers.
+- **Including derived identity values (e.g., `articlesIdentity`) in cleanup effect deps** — When optimistic updates change item state (e.g., `is_read` toggle), any derived identity value changes too, triggering cleanup effects that clear dedup refs (`submittedIdsRef`) and pending queues. This breaks error rollback (the `onError` callback can no longer remove IDs from a cleared set) and loses pending IDs that haven't been flushed yet. Only include deps that represent true context switches (feed/filter changes), not data mutations within the same context.
 
 ---
 
@@ -455,7 +456,7 @@ useEffect(() => {
 
 3. **`rootMargin` only for overlaying headers**: Do not blindly use `-44px`. If the toolbar/header is outside the Virtuoso scroller, the scroller root already starts below it and `rootMargin` should be omitted. Use a negative top margin only when a fixed/sticky header overlays the scroller's visible content.
 
-4. **Scroll direction guard**: Only mark as read when recent user scroll direction is downward, `boundingClientRect.bottom <= rootBounds.top` (article fully left above the scroller), and `isIntersecting` is `false`. This prevents marking on upward scroll, mount, resize, or data replacement.
+4. **Scroll direction guard**: Only mark as read when user scroll direction is downward, `boundingClientRect.bottom <= rootBounds.top` (article fully left above the scroller), and `isIntersecting` is `false`. This prevents marking on upward scroll, mount, resize, or data replacement. Do NOT add a time-window guard (e.g., "only if downward scroll happened within the last N ms") — users commonly pause to read then continue scrolling down, and a time window would miss marking those articles. The direction check alone is sufficient.
 
 5. **`scrollerRef` not `scrollRef`**: Virtuoso's `scrollerRef` returns the actual scrolling container element (needed as the observer's `root`). It may return a `Window` object in some Virtuoso configurations — guard with `'nodeType' in ref` check.
 

@@ -13,7 +13,6 @@ import { reconcileArticleAcknowledgements } from "@/lib/articleList";
 import type { Article } from "@/api/types";
 
 const SCROLL_MARK_READ_DEBOUNCE_MS = 300;
-const RECENT_DOWN_SCROLL_WINDOW_MS = 1000;
 
 function ArticleRow({
   article,
@@ -274,10 +273,6 @@ export function ArticleList() {
     () => new Set(articles.filter((article) => !article.is_read).map((article) => article.id)),
     [articles]
   );
-  const articlesIdentity = useMemo(
-    () => articles.map((article) => article.id).join("|"),
-    [articles]
-  );
 
   const loadMoreArticles = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -295,7 +290,6 @@ export function ArticleList() {
   const scrollMarkReadRef = useRef(scrollMarkRead);
   const scrollDirectionRef = useRef<"down" | "up" | null>(null);
   const lastScrollTopRef = useRef(0);
-  const lastDownScrollAtRef = useRef(0);
   unreadArticleIdsRef.current = unreadArticleIds;
   scrollMarkReadRef.current = scrollMarkRead;
   const [scrollerElement, setScrollerElement] = useState<HTMLElement | null>(null);
@@ -334,7 +328,6 @@ export function ArticleList() {
     (entries: IntersectionObserverEntry[]) => {
       if (!scrollMarkReadRef.current) return;
       if (scrollDirectionRef.current !== "down") return;
-      if (performance.now() - lastDownScrollAtRef.current > RECENT_DOWN_SCROLL_WINDOW_MS) return;
 
       for (const entry of entries) {
         // Only trigger when article leaves viewport (was visible, now not)
@@ -395,7 +388,6 @@ export function ArticleList() {
       const scrollTop = scroller.scrollTop;
       if (scrollTop > lastScrollTopRef.current) {
         scrollDirectionRef.current = "down";
-        lastDownScrollAtRef.current = performance.now();
       } else if (scrollTop < lastScrollTopRef.current) {
         scrollDirectionRef.current = "up";
       }
@@ -434,7 +426,6 @@ export function ArticleList() {
     pendingIdsRef.current.clear();
     submittedIdsRef.current.clear();
     scrollDirectionRef.current = null;
-    lastDownScrollAtRef.current = 0;
     if (scrollerElement) {
       lastScrollTopRef.current = scrollerElement.scrollTop;
     }
@@ -442,7 +433,7 @@ export function ArticleList() {
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
     }
-  }, [articlesIdentity, articleListFilter, scrollerElement, selectedFeedId]);
+  }, [articleListFilter, scrollerElement, selectedFeedId]);
 
   useEffect(() => {
     if (scrollMarkRead) return;
