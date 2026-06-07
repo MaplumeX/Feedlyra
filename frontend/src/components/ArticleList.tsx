@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { Virtuoso, type ContextProp, type VirtuosoHandle, type ItemProps } from "react-virtuoso";
 import { Star, CheckCheck, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -6,11 +7,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { FeedIcon } from "@/components/FeedIcon";
-import { useInfiniteArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead, useRefreshAllFeeds } from "@/api/hooks";
+import { queryKeys, useInfiniteArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead, useRefreshAllFeeds } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
-import { reconcileArticleAcknowledgements } from "@/lib/articleList";
-import type { Article } from "@/api/types";
+import { reconcileArticleAcknowledgements, retainFirstInfinitePage } from "@/lib/articleList";
+import type { Article, ArticleListResponse } from "@/api/types";
 
 const SCROLL_MARK_READ_DEBOUNCE_MS = 300;
 
@@ -198,6 +199,7 @@ export function ArticleList() {
   const markAllRead = useMarkAllRead();
   const batchRead = useBatchRead();
   const refreshAll = useRefreshAllFeeds();
+  const queryClient = useQueryClient();
   const virtuosoRef = useRef<VirtuosoHandle>(null);
 
   // New articles detection
@@ -208,11 +210,15 @@ export function ArticleList() {
   const acknowledgedArticleIdsRef = useRef<Set<string>>(new Set());
   const hasLoadedRef = useRef(false);
   const previousPageCountRef = useRef(0);
+  const [acknowledgedArticleIds, setAcknowledgedArticleIds] =
+    useState<ReadonlySet<string>>(new Set());
   const [newArticlesCount, setNewArticlesCount] = useState(0);
 
   // Mark acknowledged as stale on feed/filter change
-  useEffect(() => {
-    acknowledgedArticleIdsRef.current = new Set();
+  useLayoutEffect(() => {
+    const acknowledgedIds = new Set<string>();
+    acknowledgedArticleIdsRef.current = acknowledgedIds;
+    setAcknowledgedArticleIds(acknowledgedIds);
     hasLoadedRef.current = false;
     previousPageCountRef.current = 0;
     setNewArticlesCount(0);
@@ -220,7 +226,7 @@ export function ArticleList() {
 
   // Only unknown IDs from the first page are new. IDs from appended history
   // pages are acknowledged automatically so infinite scrolling never raises the banner.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isLoading) return;
 
     const pageArticleIds = (data?.pages ?? []).map((page) =>
@@ -231,10 +237,15 @@ export function ArticleList() {
       initialized: hasLoadedRef.current,
       previousPageCount: previousPageCountRef.current,
     });
+    const acknowledgementsChanged =
+      result.acknowledgedIds.size !== acknowledgedArticleIdsRef.current.size;
 
     acknowledgedArticleIdsRef.current = result.acknowledgedIds;
     hasLoadedRef.current = result.initialized;
     previousPageCountRef.current = result.previousPageCount;
+    if (acknowledgementsChanged) {
+      setAcknowledgedArticleIds(result.acknowledgedIds);
+    }
     setNewArticlesCount(result.newArticleIds.length);
   }, [isLoading, data]);
 
@@ -250,21 +261,20 @@ export function ArticleList() {
     () => {
       const seen = new Set<string>();
       const flattened: Article[] = [];
-      const acknowledged = acknowledgedArticleIdsRef.current;
 
       for (const page of data?.pages ?? []) {
         for (const article of page.items) {
           if (seen.has(article.id)) continue;
           seen.add(article.id);
           // Hide articles not yet acknowledged (shown via banner instead)
-          if (newArticlesCount > 0 && !acknowledged.has(article.id)) continue;
+          if (newArticlesCount > 0 && !acknowledgedArticleIds.has(article.id)) continue;
           flattened.push(article);
         }
       }
 
       return flattened;
     },
-    [data, newArticlesCount]
+    [acknowledgedArticleIds, data, newArticlesCount]
   );
   const hasUnread = selectedFeedId
     ? (feeds.find((feed) => feed.id === selectedFeedId)?.unread_count ?? 0) > 0
@@ -462,12 +472,24 @@ export function ArticleList() {
   }
 
   function handleNewArticlesClick() {
-    // Acknowledge all article IDs currently in data so they render
-    for (const page of data?.pages ?? []) {
-      for (const article of page.items) {
-        acknowledgedArticleIdsRef.current.add(article.id);
-      }
+    const queryKey = queryKeys.articles.infiniteList(queryParams);
+    const current = queryClient.getQueryData<InfiniteData<ArticleListResponse, string | null>>(
+      queryKey,
+    );
+    const firstPage = current?.pages[0];
+    if (!firstPage) return;
+
+    const acknowledgedIds = new Set(acknowledgedArticleIdsRef.current);
+    for (const article of firstPage.items) {
+      acknowledgedIds.add(article.id);
     }
+    acknowledgedArticleIdsRef.current = acknowledgedIds;
+    setAcknowledgedArticleIds(acknowledgedIds);
+
+    queryClient.setQueryData<InfiniteData<ArticleListResponse, string | null>>(
+      queryKey,
+      retainFirstInfinitePage(current),
+    );
     setNewArticlesCount(0);
     virtuosoRef.current?.scrollToIndex(0);
   }
@@ -513,40 +535,42 @@ export function ArticleList() {
 
       {isLoading ? (
         <ArticleListSkeleton />
-      ) : articles.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-          {t("noArticles")}
-        </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
           {newArticlesCount > 0 && (
             <NewArticlesBanner count={newArticlesCount} onClick={handleNewArticlesClick} />
           )}
-          <Virtuoso
-            ref={virtuosoRef}
-            className="flex-1"
-            data={articles}
-            context={virtuosoContext}
-            scrollerRef={(ref) => {
-              setScrollerElement(isHTMLElement(ref) ? ref : null);
-            }}
-            endReached={loadMoreArticles}
-            followOutput={articleListFilter === "unread" ? "smooth" : undefined}
-            components={{
-              Footer: () => <ArticleListFooter isLoadingMore={isFetchingNextPage} />,
-              Item: ObservableItem,
-            }}
-            itemContent={(_, article) => {
-              return (
-                <ArticleRow
-                  article={article}
-                  feedIconUrl={feedIconMap.get(article.feed_id) ?? null}
-                  isSelected={selectedArticleId === article.id}
-                  onSelect={() => selectArticle(article)}
-                />
-              );
-            }}
-          />
+          {articles.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+              {t("noArticles")}
+            </div>
+          ) : (
+            <Virtuoso
+              ref={virtuosoRef}
+              className="flex-1"
+              data={articles}
+              context={virtuosoContext}
+              scrollerRef={(ref) => {
+                setScrollerElement(isHTMLElement(ref) ? ref : null);
+              }}
+              endReached={loadMoreArticles}
+              followOutput={articleListFilter === "unread" ? "smooth" : undefined}
+              components={{
+                Footer: () => <ArticleListFooter isLoadingMore={isFetchingNextPage} />,
+                Item: ObservableItem,
+              }}
+              itemContent={(_, article) => {
+                return (
+                  <ArticleRow
+                    article={article}
+                    feedIconUrl={feedIconMap.get(article.feed_id) ?? null}
+                    isSelected={selectedArticleId === article.id}
+                    onSelect={() => selectArticle(article)}
+                  />
+                );
+              }}
+            />
+          )}
         </div>
       )}
     </div>
