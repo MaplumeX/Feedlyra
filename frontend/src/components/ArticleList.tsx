@@ -10,7 +10,11 @@ import { FeedIcon } from "@/components/FeedIcon";
 import { queryKeys, useInfiniteArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead, useRefreshAllFeeds } from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
-import { reconcileArticleAcknowledgements, retainFirstInfinitePage } from "@/lib/articleList";
+import {
+  reconcileArticleAcknowledgements,
+  resetArticleListScrollPosition,
+  retainFirstInfinitePage,
+} from "@/lib/articleList";
 import type { Article, ArticleListResponse } from "@/api/types";
 
 const SCROLL_MARK_READ_DEBOUNCE_MS = 300;
@@ -210,6 +214,7 @@ export function ArticleList() {
   const acknowledgedArticleIdsRef = useRef<Set<string>>(new Set());
   const hasLoadedRef = useRef(false);
   const previousPageCountRef = useRef(0);
+  const pendingNewArticlesScrollResetRef = useRef(false);
   const [acknowledgedArticleIds, setAcknowledgedArticleIds] =
     useState<ReadonlySet<string>>(new Set());
   const [newArticlesCount, setNewArticlesCount] = useState(0);
@@ -221,6 +226,7 @@ export function ArticleList() {
     setAcknowledgedArticleIds(acknowledgedIds);
     hasLoadedRef.current = false;
     previousPageCountRef.current = 0;
+    pendingNewArticlesScrollResetRef.current = false;
     setNewArticlesCount(0);
   }, [selectedFeedId, articleListFilter]);
 
@@ -303,6 +309,22 @@ export function ArticleList() {
   unreadArticleIdsRef.current = unreadArticleIds;
   scrollMarkReadRef.current = scrollMarkRead;
   const [scrollerElement, setScrollerElement] = useState<HTMLElement | null>(null);
+  const articlePageCount = data?.pages.length ?? 0;
+
+  // The banner click replaces a potentially long list with its first page.
+  // Wait until Virtuoso has received that shorter data set before resetting
+  // its position, otherwise it keeps the old deep offset and lands in the footer spacer.
+  useLayoutEffect(() => {
+    if (!pendingNewArticlesScrollResetRef.current) return;
+    if (articlePageCount !== 1 || newArticlesCount !== 0) return;
+
+    pendingNewArticlesScrollResetRef.current = false;
+    if (articles.length === 0) return;
+
+    resetArticleListScrollPosition(scrollerElement, virtuosoRef.current);
+    lastScrollTopRef.current = 0;
+    scrollDirectionRef.current = null;
+  }, [articlePageCount, articles.length, newArticlesCount, scrollerElement]);
 
   const flushPendingIds = useCallback(() => {
     const ids = Array.from(pendingIdsRef.current);
@@ -486,12 +508,12 @@ export function ArticleList() {
     acknowledgedArticleIdsRef.current = acknowledgedIds;
     setAcknowledgedArticleIds(acknowledgedIds);
 
+    pendingNewArticlesScrollResetRef.current = true;
     queryClient.setQueryData<InfiniteData<ArticleListResponse, string | null>>(
       queryKey,
       retainFirstInfinitePage(current),
     );
     setNewArticlesCount(0);
-    virtuosoRef.current?.scrollToIndex(0);
   }
 
   return (
