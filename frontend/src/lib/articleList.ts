@@ -29,6 +29,18 @@ interface InfinitePageData<TPage, TPageParam> {
   pageParams: TPageParam[];
 }
 
+interface ScrollContainer {
+  scrollTop: number;
+}
+
+interface VirtualArticleList {
+  scrollToIndex(location: {
+    index: number;
+    align: "start";
+    behavior: "auto";
+  }): void;
+}
+
 function articleMatchesFilter(article: Article, params: ArticleListFilterParams): boolean {
   if (params.feed_id && article.feed_id !== params.feed_id) return false;
   if (params.read_status === "unread" && article.is_read) return false;
@@ -68,6 +80,20 @@ export function retainFirstInfinitePage<TPage, TPageParam>(
     pages: data.pages.slice(0, 1),
     pageParams: data.pageParams.slice(0, 1),
   };
+}
+
+export function resetArticleListScrollPosition(
+  scroller: ScrollContainer | null,
+  virtualList: VirtualArticleList | null,
+): void {
+  if (scroller) {
+    scroller.scrollTop = 0;
+  }
+  virtualList?.scrollToIndex({
+    index: 0,
+    align: "start",
+    behavior: "auto",
+  });
 }
 
 export function reconcileArticleAcknowledgements(
