@@ -47,7 +47,7 @@ Also writes `access_token` to `localStorage` directly for the API client to read
 
 ### Reader store (`src/stores/reader.ts`)
 
-Partially persisted — user preferences (`sidebarCollapsed`, `readerSettings`, `scrollMarkRead`, `autoSummarize`, `feedSort`, `fullContentArticleIds`, `chatPanelWidth`) survive reload, temporary UI state does not:
+Partially persisted — user preferences (`sidebarCollapsed`, `readerSettings`, `scrollMarkRead`, `autoSummarize`, `feedSort`, `fullContentArticleIds`, `chatPanelWidth`, `chatPanelMode`, `floatingPanelPosition`, `floatingPanelSize`) survive reload, temporary UI state does not:
 
 ```tsx
 interface ReaderSettings {
