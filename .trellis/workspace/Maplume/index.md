@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 56
-- **Last Active**: 2026-06-07
+- **Total Sessions**: 57
+- **Last Active**: 2026-06-09
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~40 | Active |
+| `journal-2.md` | ~73 | Active |
 | `journal-1.md` | ~1990 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 57 | 2026-06-09 | 修复新文章提示后列表跳底空白 | `da9bebf` | `MaplumeX/copenhagen-v2` |
 | 56 | 2026-06-07 | 修复新文章提示与分页联动 | `6e63fb2` | `MaplumeX/krakow` |
 | 55 | 2026-06-07 | Fix scroll mark-read accuracy in unread view | `4de5536` | `MaplumeX/fix-unread-scroll-mark-read` |
 | 55 | 2026-06-06 | Fix article list pagination and filter state | `e78a057` | `MaplumeX/davao` |
