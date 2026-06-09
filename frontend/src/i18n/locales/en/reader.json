@@ -129,5 +129,9 @@
   "uploadImage": "Upload image",
   "pasteImage": "Paste image",
   "dropImage": "Drop image here",
-  "chatPlaceholder": "Type your message..."
+  "chatPlaceholder": "Type your message...",
+  "switchToFloating": "Switch to floating mode",
+  "switchToSidebar": "Switch to sidebar mode",
+  "closeChat": "Close chat",
+  "chatPanel": "AI Chat"
 }

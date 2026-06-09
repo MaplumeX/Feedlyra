@@ -86,5 +86,14 @@ export function useKeyboardShortcuts() {
   useHotkeys("shift+s", toggleSidebar, { scopes: ["reader"] });
   useHotkeys("shift+a", markAllAsRead, { scopes: ["reader"] });
   useHotkeys("mod+k", openCommandPalette);
-  useHotkeys("shift+c", () => setReader({ conversationPanelOpen: !useReaderStore.getState().conversationPanelOpen }), { scopes: ["reader"] });
+  const toggleChatPanel = useCallback(() => {
+    const state = useReaderStore.getState();
+    if (state.conversationPanelOpen) {
+      setReader({ conversationPanelOpen: false });
+    } else {
+      setReader({ chatPanelMode: state.chatPanelMode, conversationPanelOpen: true });
+    }
+  }, [setReader]);
+
+  useHotkeys("shift+c", toggleChatPanel, { scopes: ["reader"] });
 }

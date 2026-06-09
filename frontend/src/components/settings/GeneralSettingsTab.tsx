@@ -9,9 +9,14 @@ const languages = [
   { code: "zh-CN" as const, name: "简体中文" },
 ];
 
+const chatModes = [
+  { value: "sidebar" as const, labelKey: "chatModeSidebar" },
+  { value: "floating" as const, labelKey: "chatModeFloating" },
+];
+
 export function GeneralSettingsTab() {
   const { t, i18n } = useTranslation("settings");
-  const { scrollMarkRead, set: setReader } = useReaderStore();
+  const { scrollMarkRead, chatPanelMode, set: setReader } = useReaderStore();
 
   return (
     <div className="space-y-4">
@@ -41,6 +46,25 @@ export function GeneralSettingsTab() {
           checked={scrollMarkRead}
           onCheckedChange={(checked) => setReader({ scrollMarkRead: checked })}
         />
+      </div>
+      <div className="space-y-2">
+        <Label>{t("defaultChatMode")}</Label>
+        <div className="flex gap-2">
+          {chatModes.map((mode) => (
+            <button
+              key={mode.value}
+              onClick={() => setReader({ chatPanelMode: mode.value })}
+              className={cn(
+                "rounded-md border px-4 py-2 text-sm transition-colors",
+                chatPanelMode === mode.value
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-background hover:bg-accent hover:text-accent-foreground"
+              )}
+            >
+              {t(mode.labelKey)}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

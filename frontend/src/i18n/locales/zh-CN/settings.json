@@ -77,5 +77,8 @@
   "editEmail": "修改邮箱",
   "editPassword": "修改密码",
   "defaultTranslateLang": "默认翻译语言",
-  "defaultTranslateLangDescription": "未设置单独订阅源覆盖时，自动翻译使用的默认目标语言。"
+  "defaultTranslateLangDescription": "未设置单独订阅源覆盖时，自动翻译使用的默认目标语言。",
+  "defaultChatMode": "默认对话模式",
+  "chatModeSidebar": "侧边栏",
+  "chatModeFloating": "浮动"
 }

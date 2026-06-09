@@ -20,6 +20,21 @@ export const DEFAULT_READER_SETTINGS: ReaderSettings = {
   paragraphSpacing: 1.25,
 };
 
+export type ChatPanelMode = "sidebar" | "floating";
+
+export interface FloatingPanelPosition {
+  x: number;
+  y: number;
+}
+
+export interface FloatingPanelSize {
+  width: number;
+  height: number;
+}
+
+export const DEFAULT_FLOATING_POSITION: FloatingPanelPosition = { x: 0, y: 0 };
+export const DEFAULT_FLOATING_SIZE: FloatingPanelSize = { width: 380, height: 500 };
+
 interface ReaderState {
   selectedFeedId: string | null;
   selectedArticleId: string | null;
@@ -32,6 +47,9 @@ interface ReaderState {
   fullContentArticleIds: Record<string, true>;
   chatPanelOpen: boolean;
   chatPanelWidth: number;
+  chatPanelMode: ChatPanelMode;
+  floatingPanelPosition: FloatingPanelPosition;
+  floatingPanelSize: FloatingPanelSize;
   conversationPanelOpen: boolean;
   activeConversationId: string | null;
   commandPaletteOpen: boolean;
@@ -56,6 +74,9 @@ export const useReaderStore = create<ReaderState>()(
       fullContentArticleIds: {},
       chatPanelOpen: false,
       chatPanelWidth: 360,
+      chatPanelMode: "sidebar",
+      floatingPanelPosition: { ...DEFAULT_FLOATING_POSITION },
+      floatingPanelSize: { ...DEFAULT_FLOATING_SIZE },
       conversationPanelOpen: false,
       activeConversationId: null,
       commandPaletteOpen: false,
@@ -85,6 +106,9 @@ export const useReaderStore = create<ReaderState>()(
         autoSummarize: state.autoSummarize,
         fullContentArticleIds: state.fullContentArticleIds,
         chatPanelWidth: state.chatPanelWidth,
+        chatPanelMode: state.chatPanelMode,
+        floatingPanelPosition: state.floatingPanelPosition,
+        floatingPanelSize: state.floatingPanelSize,
       }),
     }
   )
