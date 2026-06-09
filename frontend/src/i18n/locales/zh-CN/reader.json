@@ -129,5 +129,9 @@
   "uploadImage": "上传图片",
   "pasteImage": "粘贴图片",
   "dropImage": "拖放图片到此处",
-  "chatPlaceholder": "输入你的消息..."
+  "chatPlaceholder": "输入你的消息...",
+  "switchToFloating": "切换为浮动模式",
+  "switchToSidebar": "切换为侧边栏模式",
+  "closeChat": "关闭对话",
+  "chatPanel": "AI 对话"
 }

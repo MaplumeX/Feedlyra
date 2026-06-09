@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, X, Bot, Copy, Check, RefreshCw, MessageSquareText, Square, Pencil, Paperclip, XCircle, History } from "lucide-react";
+import { Send, X, Bot, Copy, Check, RefreshCw, MessageSquareText, Square, Pencil, Paperclip, XCircle, History, Pin, PinOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -555,6 +555,7 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
   const mountedRef = useRef(true);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
   const { set: setReader } = useReaderStore();
+  const chatPanelMode = useReaderStore((s) => s.chatPanelMode);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -757,6 +758,10 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
     setReader({ conversationPanelOpen: false });
   };
 
+  const handleToggleMode = () => {
+    setReader({ chatPanelMode: chatPanelMode === "sidebar" ? "floating" : "sidebar" });
+  };
+
   const setScrollViewport = useCallback((node: HTMLDivElement | null) => {
     scrollViewportRef.current = node;
   }, []);
@@ -795,7 +800,10 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
           </PopoverContent>
         </Popover>
         <h3 className="flex-1 truncate text-sm font-medium">{convTitle}</h3>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClose}>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleToggleMode} title={chatPanelMode === "sidebar" ? t("switchToFloating") : t("switchToSidebar")}>
+          {chatPanelMode === "sidebar" ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+        </Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClose} title={t("closeChat")}>
           <X className="h-4 w-4" />
         </Button>
       </div>

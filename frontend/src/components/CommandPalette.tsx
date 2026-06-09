@@ -161,7 +161,10 @@ export function CommandPalette() {
                 <Languages className="mr-2 h-4 w-4" />
                 {t("translateCurrentArticle")}
               </CommandItem>
-              <CommandItem onSelect={() => runAndClose(() => setReader({ chatPanelOpen: true }))}>
+              <CommandItem onSelect={() => runAndClose(() => {
+                const state = useReaderStore.getState();
+                setReader({ chatPanelOpen: true, chatPanelMode: state.chatPanelMode });
+              })}>
                 <MessageSquare className="mr-2 h-4 w-4" />
                 {t("openAiChat")}
               </CommandItem>

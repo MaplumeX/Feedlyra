@@ -40,6 +40,16 @@
 - None - task complete
 
 
+## Session 57: Add floating mode for AI chat panel
+
+**Date**: 2026-06-09
+**Task**: Add floating mode for AI chat panel
+**Branch**: `MaplumeX/ai-chat-floating-mode`
+
+### Summary
+
+Implemented floating mode for the AI chat panel: detachable overlay with drag/resize, non-modal interaction, mode toggle in header, default mode setting, position/size persistence, viewport clamping, Shift+C and command palette respect configured mode.
+
 ## Session 57: 修复新文章提示后列表跳底空白
 
 **Date**: 2026-06-09
@@ -58,6 +68,7 @@
 
 | Hash | Message |
 |------|---------|
+| `025c35e` | (see git log) |
 | `da9bebf` | (see git log) |
 
 ### Testing

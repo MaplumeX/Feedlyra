@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { ArticleList } from "@/components/ArticleList";
 import { ArticleDetail } from "@/components/ArticleDetail";
 import { AIChatPanel } from "@/components/AIChatPanel";
+import { FloatingChatPanel } from "@/components/FloatingChatPanel";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useReaderStore } from "@/stores/reader";
@@ -54,6 +55,7 @@ export function Home() {
     sidebarCollapsed,
     chatPanelOpen,
     chatPanelWidth,
+    chatPanelMode,
     conversationPanelOpen,
     activeConversationId,
     selectedArticleId,
@@ -134,6 +136,7 @@ export function Home() {
   }, [chatPanelOpen, selectedArticleId, conversationPanelOpen, handleOpenChatFromArticle, setReader, createConversation.isPending]);
 
   const showChatPanel = conversationPanelOpen && !!activeConversationId;
+  const isSidebarMode = chatPanelMode === "sidebar";
 
   return (
     <div className="h-screen w-screen overflow-hidden">
@@ -194,7 +197,7 @@ export function Home() {
           <ArticleDetail />
         </Panel>
 
-        {showChatPanel && (
+        {showChatPanel && isSidebarMode && (
           <>
             <Separator
               className="relative w-px bg-border transition-colors hover:bg-primary/50 data-[separator=active]:bg-primary"
@@ -215,6 +218,12 @@ export function Home() {
           </>
         )}
       </Group>
+
+      {showChatPanel && !isSidebarMode && (
+        <FloatingChatPanel>
+          <AIChatPanel conversationId={activeConversationId!} />
+        </FloatingChatPanel>
+      )}
 
       <CommandPalette />
       <Toaster />
