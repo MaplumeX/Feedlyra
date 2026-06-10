@@ -18,6 +18,7 @@ import {
   LogOut,
   Mail,
   KeyRound,
+  Zap,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -544,6 +545,13 @@ export function Sidebar() {
           title={t("settings", { ns: "settings" })}
         >
           <Settings className="h-4 w-4" />
+        </button>
+        <button
+          className="flex shrink-0 items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors duration-100 hover:bg-sidebar-hover hover:text-foreground"
+          onClick={() => setReader({ settingsDialogOpen: true, settingsDialogTab: "automation" })}
+          title="Automation" // TODO: i18n
+        >
+          <Zap className="h-4 w-4" />
         </button>
         <ThemeToggle />
       </div>

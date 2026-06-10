@@ -146,3 +146,30 @@ export interface ChatHistory {
   chat_id: string;
   messages: ChatMessage[];
 }
+
+export interface AutomationCondition {
+  field: "title" | "author" | "url" | "content";
+  operator: "contains" | "not_contains" | "matches_regex";
+  value: string;
+  logic: "and" | "or";
+}
+
+export interface AutomationAction {
+  type: "mark_read" | "star" | "delete" | "auto_translate" | "auto_extract";
+  params?: Record<string, string>;
+}
+
+export interface AutomationRule {
+  id: string;
+  user_id: string;
+  name: string;
+  enabled: boolean;
+  scope: "global" | "category" | "feed";
+  scope_id: string | null;
+  conditions: AutomationCondition[];
+  actions: AutomationAction[];
+  priority: number;
+  created_at: string;
+  updated_at: string;
+}
+

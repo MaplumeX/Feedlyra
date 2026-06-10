@@ -82,3 +82,36 @@ Implemented floating mode for the AI chat panel: detachable overlay with drag/re
 ### Next Steps
 
 - None - task complete
+
+
+## Session 58: Add RSS automation rules feature
+
+**Date**: 2026-06-10
+**Task**: Add RSS automation rules feature
+**Branch**: `MaplumeX/rss-automation-rules`
+
+### Summary
+
+Implemented RSS automation rules: multi-condition AND/OR matching, 5 actions (mark_read, star, delete, auto_translate, auto_extract), 3-tier scope (global/category/feed). Backend: model, migration, CRUD API, rule execution service integrated into feed_fetcher. Frontend: AutomationTab, condition builder RuleEditorDialog, Sidebar Zap button, FeedSettingsDialog quick view. 19 tests, tsc/eslint clean.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c20bb51` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

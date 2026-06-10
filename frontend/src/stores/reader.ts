@@ -54,6 +54,7 @@ interface ReaderState {
   activeConversationId: string | null;
   commandPaletteOpen: boolean;
   settingsDialogOpen: boolean;
+  settingsDialogTab?: string;
   set: (partial: Partial<ReaderState>) => void;
   setReaderSetting: <K extends keyof ReaderSettings>(key: K, value: ReaderSettings[K]) => void;
   setArticleFullContentPreference: (articleId: string, enabled: boolean) => void;
@@ -81,6 +82,7 @@ export const useReaderStore = create<ReaderState>()(
       activeConversationId: null,
       commandPaletteOpen: false,
       settingsDialogOpen: false,
+      settingsDialogTab: undefined,
       set: (partial) => set(partial),
       setReaderSetting: (key, value) =>
         set((state) => ({ readerSettings: { ...state.readerSettings, [key]: value } })),

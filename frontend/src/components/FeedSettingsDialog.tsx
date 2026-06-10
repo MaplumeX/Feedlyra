@@ -17,10 +17,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useUpdateFeed, useCategories } from "@/api/hooks";
+import { useUpdateFeed, useCategories, useAutomationRules } from "@/api/hooks";
 import { useTranslation } from "react-i18next";
+import { useReaderStore } from "@/stores/reader";
 import type { Feed } from "@/api/types";
 import { Switch } from "@/components/ui/switch";
+import { Zap } from "lucide-react";
 import { LANGUAGES } from "@/lib/languages";
 
 interface FeedSettingsDialogProps {
@@ -43,6 +45,9 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
   );
   const updateFeed = useUpdateFeed();
   const { data: categories = [] } = useCategories();
+  const { data: automationData } = useAutomationRules({ scope: "feed", scope_id: feed.id });
+  const setReader = useReaderStore((s) => s.set);
+  const feedRuleCount = automationData?.length ?? 0;
 
   useEffect(() => {
     setTitle(feed.title);
@@ -174,6 +179,27 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
         {updateFeed.isError && (
           <p className="text-sm text-destructive">{updateFeed.error.message}</p>
         )}
+
+        <div className="flex items-center justify-between rounded-md border px-3 py-2">
+          <div className="flex items-center gap-2 text-sm">
+            <Zap className="h-4 w-4 text-muted-foreground" />
+            <span>Automation Rules</span> {/* TODO: i18n */}
+            {feedRuleCount > 0 && (
+              <span className="text-xs text-muted-foreground">({feedRuleCount})</span>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => {
+              onOpenChange(false);
+              setReader({ settingsDialogOpen: true, settingsDialogTab: "automation" });
+            }}
+          >
+            Manage {/* TODO: i18n */}
+          </Button>
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
