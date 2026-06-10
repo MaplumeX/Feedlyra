@@ -77,5 +77,8 @@
   "editEmail": "Edit Email",
   "editPassword": "Edit Password",
   "defaultTranslateLang": "Default Translation Language",
-  "defaultTranslateLangDescription": "Default target language for auto-translate when no per-feed override is set."
+  "defaultTranslateLangDescription": "Default target language for auto-translate when no per-feed override is set.",
+  "defaultChatMode": "Default Chat Mode",
+  "chatModeSidebar": "Sidebar",
+  "chatModeFloating": "Floating"
 }

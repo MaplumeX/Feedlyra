@@ -325,7 +325,7 @@ export function ArticleDetail() {
             if (conversationPanelOpen) {
               setReader({ conversationPanelOpen: false, chatPanelOpen: false });
             } else {
-              setReader({ chatPanelOpen: true });
+              setReader({ chatPanelOpen: true, chatPanelMode: useReaderStore.getState().chatPanelMode });
             }
           }}
           title={t("aiChat")}

@@ -3,6 +3,7 @@ import type { Article, ArticleListResponse } from "@/api/types";
 import {
   applyArticleTransitions,
   reconcileArticleAcknowledgements,
+  resetArticleListScrollPosition,
   retainFirstInfinitePage,
 } from "@/lib/articleList";
 
@@ -95,6 +96,29 @@ describe("retainFirstInfinitePage", () => {
     };
 
     expect(retainFirstInfinitePage(data)).toBe(data);
+  });
+});
+
+describe("resetArticleListScrollPosition", () => {
+  it("resets both the actual scroller and the virtual list to the first item", () => {
+    const scroller = { scrollTop: 2400 };
+    const locations: unknown[] = [];
+    const virtualList = {
+      scrollToIndex(location: unknown) {
+        locations.push(location);
+      },
+    };
+
+    resetArticleListScrollPosition(scroller, virtualList);
+
+    expect(scroller.scrollTop).toBe(0);
+    expect(locations).toEqual([
+      {
+        index: 0,
+        align: "start",
+        behavior: "auto",
+      },
+    ]);
   });
 });
 

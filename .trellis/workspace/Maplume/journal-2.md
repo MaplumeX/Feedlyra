@@ -40,7 +40,51 @@
 - None - task complete
 
 
-## Session 57: Add RSS automation rules feature
+## Session 57: Add floating mode for AI chat panel
+
+**Date**: 2026-06-09
+**Task**: Add floating mode for AI chat panel
+**Branch**: `MaplumeX/ai-chat-floating-mode`
+
+### Summary
+
+Implemented floating mode for the AI chat panel: detachable overlay with drag/resize, non-modal interaction, mode toggle in header, default mode setting, position/size persistence, viewport clamping, Shift+C and command palette respect configured mode.
+
+## Session 57: 修复新文章提示后列表跳底空白
+
+**Date**: 2026-06-09
+**Task**: 修复新文章提示后列表跳底空白
+**Branch**: `MaplumeX/copenhagen-v2`
+
+### Summary
+
+修复新文章提示点击后分页裁剪与 Virtuoso 滚动的提交时序，确保列表在最新第一页渲染后再定位顶部；补充回归测试和前端规范。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `025c35e` | (see git log) |
+| `da9bebf` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 58: Add RSS automation rules feature
 
 **Date**: 2026-06-10
 **Task**: Add RSS automation rules feature

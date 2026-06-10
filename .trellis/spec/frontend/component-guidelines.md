@@ -206,12 +206,18 @@ Group (orientation="horizontal")
 ```
 
 **Chat panel behavior**:
-- The AI chat panel is a top-level Panel in the main Group, not nested inside article-detail
+- The AI chat panel supports two modes: **sidebar** (top-level Panel in Group) and **floating** (detached overlay via `createPortal`)
+- `chatPanelMode` in Zustand store (`'sidebar' | 'floating'`) controls which mode is active; persisted via `partialize`
 - Only renders when `conversationPanelOpen` is true AND `activeConversationId` is non-null
-- When toggled off, the Panel is unmounted entirely (not collapsed) — article-detail takes full width
+- **Sidebar mode**: renders as a Panel in the main Group (same as before) — when toggled off, the Panel is unmounted entirely, article-detail takes full width
+- **Floating mode**: renders via `createPortal` with `position: fixed` — Panel/Separator are omitted from Group so article-detail expands; floating panel is non-modal (underlying content remains interactive)
 - The conversation history list is in a Popover (anchored to History button in AIChatPanel header), NOT a separate panel
 - Width persisted via `chatPanelWidth` in Zustand (included in `partialize`)
 - `onResize` callback on the chat Panel updates `chatPanelWidth` in the store
+- Floating panel position/size persisted via `floatingPanelPosition` and `floatingPanelSize` in Zustand (included in `partialize`)
+- Mode toggle: PinOff/Pin icon button in AIChatPanel header switches between sidebar and floating
+- Settings: "Default Chat Mode" option in GeneralSettingsTab (sidebar/floating)
+- All chat open triggers (toolbar button, Shift+C, Command Palette) read `chatPanelMode` from store to respect user's configured default
 
 **Collapse behavior**: When `sidebarCollapsed` is true, the sidebar Panel collapses to 40px via `collapsible` + `collapsedSize={40}`. Controlled by Zustand store (`sidebarCollapsed`), toggled via Shift+S shortcut and Command Palette.
 
@@ -885,6 +891,43 @@ The conversation list is rendered inside a Radix Popover (anchored to a History 
 - In-place rename: replace title text with an `<input>`, save on Enter/blur, cancel on Escape
 
 > **Gotcha**: Radix Popover in uncontrolled mode (no `open` prop) will NOT close when internal content triggers a state change (e.g., clicking a list item). If you need the popover to close on selection, use controlled mode with `open`/`onOpenChange` and an explicit close callback.
+
+### Floating Chat Panel
+
+When `chatPanelMode` is `'floating'`, the chat panel renders as a detached overlay via `createPortal` with `position: fixed`. This allows users to chat while reading articles.
+
+```tsx
+// In Home.tsx — conditional rendering based on chatPanelMode
+const isSidebarMode = chatPanelMode === "sidebar";
+
+// Sidebar mode: Panel inside Group (existing behavior)
+{isSidebarMode && showChatPanel && (
+  <>
+    <Separator ... />
+    <Panel id={CHAT_PANEL_ID} ...>
+      <AIChatPanel conversationId={activeConversationId!} />
+    </Panel>
+  </>
+)}
+
+// Floating mode: portal overlay, no Panel in Group
+{!isSidebarMode && showChatPanel && (
+  <FloatingChatPanel>
+    <AIChatPanel conversationId={activeConversationId!} />
+  </FloatingChatPanel>
+)}
+```
+
+**Key details**:
+- Drag via header area using pointer events (`pointerdown`/`pointermove`/`pointerup`), same approach as `ArticleTableOfContents.tsx`
+- Resize from all 4 edges and 4 corners via edge detection in `pointerdown` — 6px edge zone triggers resize instead of drag
+- Min size: 280×300 (same min width as sidebar panel)
+- Position/size persisted via Zustand store (`floatingPanelPosition`, `floatingPanelSize`), included in `partialize`
+- Window resize listener clamps position back into visible viewport
+- Non-modal: no click-outside handler, no overlay backdrop — underlying content remains interactive
+- Shadow and border styling to visually distinguish from content below
+
+**Gotcha**: When switching from sidebar to floating mode (or vice versa), the `Panel` in the `Group` unmounts, and `onLayoutChanged` saves a layout without the `ai-chat` ID. When switching back to sidebar mode, the `loadLayout()` function strips stale entries so the Panel initializes from `defaultSize`. This is already handled by the existing stale layout migration logic.
 
 ### Image Upload & Paste in Chat Input
 

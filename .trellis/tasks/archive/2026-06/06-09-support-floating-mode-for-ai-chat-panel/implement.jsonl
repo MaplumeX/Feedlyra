@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec index — identifies all relevant guideline files for the implement agent"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns, layout conventions (react-resizable-panels, CSS variables, ScrollArea), chat panel styling patterns"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand store patterns, partialize for persistence, reader store structure — needed for adding chatPanelMode/floatingPanelPosition/floatingPanelSize"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Zustand persist partialize pattern, forbidden patterns, async unmount guard — needed for correct state persistence"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Custom hook patterns — needed if we extract drag/resize logic into a hook"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Code reuse guidelines — reference existing TOC drag pattern vs creating new abstractions"}
+{"file": ".trellis/tasks/06-09-support-floating-mode-for-ai-chat-panel/prd.md", "reason": "Task PRD with requirements, acceptance criteria, and technical approach"}

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 57
+- **Total Sessions**: 58
 - **Last Active**: 2026-06-10
 <!-- @@@/auto:current-status -->
 
@@ -30,7 +30,9 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
-| 57 | 2026-06-10 | Add RSS automation rules feature | `c20bb51` | `MaplumeX/rss-automation-rules` |
+| 58 | 2026-06-10 | Add RSS automation rules feature | `c20bb51` | `MaplumeX/rss-automation-rules` |
+| 57 | 2026-06-09 | Add floating mode for AI chat panel | `025c35e` | `MaplumeX/ai-chat-floating-mode` |
+| 57 | 2026-06-09 | 修复新文章提示后列表跳底空白 | `da9bebf` | `MaplumeX/copenhagen-v2` |
 | 56 | 2026-06-07 | 修复新文章提示与分页联动 | `6e63fb2` | `MaplumeX/krakow` |
 | 55 | 2026-06-07 | Fix scroll mark-read accuracy in unread view | `4de5536` | `MaplumeX/fix-unread-scroll-mark-read` |
 | 55 | 2026-06-06 | Fix article list pagination and filter state | `e78a057` | `MaplumeX/davao` |
@@ -72,7 +74,7 @@
 | 25 | 2026-05-26 | Show full article button always in toolbar | `a432187` | `Feat/show-full-article-button-always` |
 | 24 | 2026-05-26 | Add Readability-lxml extraction for article full content | `c24e72e` | `Feat/readability-web-extraction` |
 | 23 | 2026-05-26 | AI摘要和Chat面板Markdown渲染 | `d277811` | `Feat/md-render` |
-| 22 | 2026-05-25 | Add feed management view to settings subscriptions tab | `9591ddc` | `Feat/feed-management-settings-view` |
+| 22 | 2026-05-26 | Add feed management view to settings subscriptions tab | `9591ddc` | `Feat/feed-management-settings-view` |
 | 21 | 2026-05-24 | 阅读体验排版自定义 | `f82f55e`, `fbbcaf1` | `Feat/reader-typography-settings` |
 | 20 | 2026-05-24 | Add refresh all feeds button to article list header | `5b6144d` | `Feat/article-list-header-refresh-button` |
 | 20 | 2026-05-24 | feat: auto AI summary with setting toggle and placeholder UI | `4056c59`, `a7ae43a` | `Feat/auto-ai-summary` |

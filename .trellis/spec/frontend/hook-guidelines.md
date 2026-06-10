@@ -80,6 +80,34 @@ queryClient.setQueryData<InfiniteData<ArticleListResponse, string | null>>(
 
 Always trim `pages` and `pageParams` together. Keeping old `pageParams` or old history pages means `hasNextPage` and the next `fetchNextPage` can continue from the previous last page instead of rebuilding from the refreshed first page's `next_cursor`.
 
+If acknowledging the banner also scrolls a virtual list to the top, do not call
+`scrollToIndex(0)` in the same event handler that trims the query. React has not
+committed the shorter data set yet, so Virtuoso can retain the old deep offset
+and clamp it into the footer spacer, producing a blank panel. Record a pending
+reset, then run the final scroll in `useLayoutEffect` after `pages.length === 1`
+and the acknowledged articles are visible:
+
+```tsx
+const pendingScrollResetRef = useRef(false);
+
+function handleNewArticlesClick() {
+  pendingScrollResetRef.current = true;
+  queryClient.setQueryData(queryKey, retainFirstInfinitePage(current));
+  setNewArticlesCount(0);
+}
+
+useLayoutEffect(() => {
+  if (!pendingScrollResetRef.current || data?.pages.length !== 1) return;
+  if (newArticlesCount !== 0) return;
+
+  pendingScrollResetRef.current = false;
+  resetArticleListScrollPosition(scrollerElement, virtuosoRef.current);
+}, [data?.pages.length, newArticlesCount, scrollerElement]);
+```
+
+Use a layout effect so the stale footer position is corrected before browser
+paint. Keep the footer spacer itself; scroll-mark-read relies on it.
+
 **Mutation hooks** (data modification):
 
 ```tsx
@@ -183,3 +211,4 @@ const handleSend = async () => {
 - **Using offset pagination for mutable filtered infinite lists** — Read/star mutations change membership in `read_status=unread` and `starred=true` while the user is paging. A later offset request then skips the row that shifted across the page boundary. Use the backend's opaque `next_cursor`; never derive the next article page from `page * limit < total`.
 - **Treating every unknown loaded ID as a new article** — Infinite scrolling deliberately loads unknown historical IDs. New-article detection must compare unknown IDs from the first page only, while automatically acknowledging IDs from appended history pages.
 - **Resetting only the virtual scroll position when acknowledging new articles** — `scrollToIndex(0)` does not reset React Query pagination. Trim the current query's `pages` and `pageParams` to one entry before continuing from the refreshed first page.
+- **Scrolling Virtuoso before a pagination reset commits** — An imperative `scrollToIndex(0)` issued in the same click handler as `setQueryData` still targets the old long list. Defer the final scroller and virtual-index reset to a layout effect that observes the one-page data; otherwise the stale offset can land in the full-height footer spacer and render as an empty list.

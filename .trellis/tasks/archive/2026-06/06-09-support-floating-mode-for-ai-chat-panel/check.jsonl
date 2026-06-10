@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Layout conventions, CSS variable patterns, ScrollArea patterns — verify floating panel follows existing conventions"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Zustand persist partialize — verify new state fields are correctly persisted/excluded"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality checklist — verify partialize, unmount guards, no forbidden patterns"}
+{"file": ".trellis/tasks/06-09-support-floating-mode-for-ai-chat-panel/prd.md", "reason": "Task PRD — verify implementation matches acceptance criteria and technical approach"}
