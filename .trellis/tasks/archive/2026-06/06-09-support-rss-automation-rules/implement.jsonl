@@ -1,0 +1,10 @@
+{"file": ".trellis/tasks/06-09-support-rss-automation-rules/prd.md", "reason": "Full requirements: actions, conditions, scope, UI, execution model"}
+{"file": ".trellis/tasks/06-09-support-rss-automation-rules/research/rss-automation-patterns.md", "reason": "Competitive analysis: Inoreader/FreshRSS/Miniflux patterns for rule design decisions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend conventions: API patterns, auth, dependencies"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "ORM patterns, migration conventions, JSON column usage"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Error handling patterns for rule execution failures"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend conventions: component structure, hooks, types"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component building patterns: dialogs, forms, condition builder"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "API hook conventions for CRUD operations"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Type definition patterns for automation rule types"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Backend-frontend data flow alignment for rule model"}
