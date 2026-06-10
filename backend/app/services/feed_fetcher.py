@@ -345,7 +345,23 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
         new_articles.append(article)
 
     if new_articles:
+        # Apply delete rules before storing articles
+        try:
+            from app.services.automation import apply_delete_rules
+            new_articles = await apply_delete_rules(feed, new_articles, db)
+        except Exception:
+            logger.warning("Error applying delete automation rules, storing all articles")
+
+    if new_articles:
         db.add_all(new_articles)
+
+    # Apply non-delete rules after storing articles
+    if new_articles:
+        try:
+            from app.services.automation import apply_non_delete_rules
+            await apply_non_delete_rules(feed, new_articles, db)
+        except Exception:
+            logger.warning("Error applying non-delete automation rules")
 
     feed.checked_at = now
     feed.next_check_at = _compute_next_check(feed)

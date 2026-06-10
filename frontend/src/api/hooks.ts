@@ -9,6 +9,7 @@ import type {
   Article,
   ArticleListResponse,
   ArticleSummarySource,
+  AutomationRule,
   Category,
   ChatHistory,
   Conversation,
@@ -49,6 +50,10 @@ const queryKeys = {
   },
   auth: {
     me: ["auth", "me"] as const,
+  },
+  automation: {
+    all: ["automation"] as const,
+    list: (params?: AutomationListParams) => [...queryKeys.automation.all, params] as const,
   },
 } as const;
 
@@ -686,3 +691,102 @@ export function useUploadConversationImage() {
       api.upload<ImageUploadResult>(`/api/ai/conversations/${conversationId}/images`, file),
   });
 }
+
+// --- Automation hooks ---
+
+interface AutomationListParams {
+  scope?: "global" | "category" | "feed";
+  scope_id?: string;
+}
+
+function automationListPath(params?: AutomationListParams) {
+  if (!params) return "/api/automation-rules";
+  const searchParams = new URLSearchParams();
+  if (params.scope) searchParams.set("scope", params.scope);
+  if (params.scope_id) searchParams.set("scope_id", params.scope_id);
+  const qs = searchParams.toString();
+  return `/api/automation-rules${qs ? `?${qs}` : ""}`;
+}
+
+export function useAutomationRules(params?: AutomationListParams) {
+  return useQuery({
+    queryKey: queryKeys.automation.list(params),
+    queryFn: () => api.get<AutomationRule[]>(automationListPath(params)),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useCreateAutomationRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      scope: "global" | "category" | "feed";
+      scope_id?: string | null;
+      conditions: AutomationRule["conditions"];
+      actions: AutomationRule["actions"];
+      enabled?: boolean;
+      priority?: number;
+    }) => api.post<AutomationRule>("/api/automation-rules", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.automation.all });
+    },
+  });
+}
+
+export function useUpdateAutomationRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ruleId, ...data }: {
+      ruleId: string;
+      name?: string;
+      enabled?: boolean;
+      scope?: "global" | "category" | "feed";
+      scope_id?: string | null;
+      conditions?: AutomationRule["conditions"];
+      actions?: AutomationRule["actions"];
+      priority?: number;
+    }) => api.put<AutomationRule>(`/api/automation-rules/${ruleId}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.automation.all });
+    },
+  });
+}
+
+export function useDeleteAutomationRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ruleId: string) => api.delete(`/api/automation-rules/${ruleId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.automation.all });
+    },
+  });
+}
+
+export function useToggleAutomationRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ruleId, enabled }: { ruleId: string; enabled: boolean }) =>
+      api.put<AutomationRule>(`/api/automation-rules/${ruleId}`, { enabled }),
+    onMutate: async ({ ruleId, enabled }) => {
+      await qc.cancelQueries({ queryKey: queryKeys.automation.all });
+      const queries = qc.getQueryCache().findAll({ queryKey: queryKeys.automation.all });
+      for (const query of queries) {
+        qc.setQueryData<AutomationRule[]>(query.queryKey, (old) => {
+          if (!old || !Array.isArray(old)) return old;
+          return old.map((rule) =>
+            rule.id === ruleId ? { ...rule, enabled } : rule,
+          );
+        });
+      }
+      return { ruleId, enabled };
+    },
+    onError: (_err, _vars, context) => {
+      if (context) {
+        qc.invalidateQueries({ queryKey: queryKeys.automation.all });
+      }
+    },
+  });
+}
+
+export type { AutomationListParams };
