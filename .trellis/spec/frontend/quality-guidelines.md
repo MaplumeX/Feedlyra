@@ -39,9 +39,7 @@ function App() {
 }
 ```
 
-### Don't: Use Virtuoso rangeChanged for scroll-triggered logic
-
-> **Superseded**: The project now uses `IntersectionObserver` instead of `rangeChanged` for scroll mark-as-read (commit 7b4d633). This entry is kept as a historical reference.
+### Don't: Use Virtuoso rangeChanged Without Scroll Guards
 
 ```tsx
 // Bad — fires on mount, resize, and data changes, not just user scroll
@@ -50,9 +48,9 @@ function App() {
 }} />
 ```
 
-**Why**: Virtuoso emits `rangeChanged` on initialization, window resize, and data replacement — not only on user scroll. Without an `isStable` guard, these non-user events trigger false positives (e.g., marking articles read on page load).
+**Why**: Virtuoso emits `rangeChanged` on initialization, window resize, and data replacement — not only on user scroll. Without active-scrolling, direction, and increasing-index guards, these non-user events trigger false positives.
 
-**Instead**: Use `IntersectionObserver` against Virtuoso's actual scroller root for pixel-accurate viewport boundary detection. Add `rootMargin` only when a fixed/sticky header overlays the scroller content. See [[component-guidelines]] for the full IntersectionObserver pattern.
+**Instead**: Track the previous start index, Virtuoso's `isScrolling` event, and the actual scroller direction. Only collect the full crossed index range during an active downward scroll. See [[component-guidelines]] for the guarded range-tracking pattern.
 
 ### Don't: Forget debounce cleanup in scroll handlers
 
@@ -125,6 +123,9 @@ export const useReaderStore = create(
 - Keyboard shortcut tests must verify `<HotkeysProvider>` is mounted
 - SSE streaming tests must verify buffer flush behavior with incomplete final chunks
 - Zustand store tests must verify `partialize` excludes temporary state
+- Virtualized-list side effects must test a multi-row range jump and negative paths
+  such as upward scrolling or disabled behavior. When the bug depends on row lifecycle,
+  also verify once against the real virtualizer rather than only a mocked callback.
 
 ## Known Quality Gate Gaps
 

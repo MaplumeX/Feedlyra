@@ -96,6 +96,25 @@ export function resetArticleListScrollPosition(
   });
 }
 
+export function getUnreadArticleIdsInRange(
+  articles: readonly Article[],
+  startIndex: number,
+  endIndex: number,
+): string[] {
+  const ids: string[] = [];
+  const start = Math.max(0, startIndex);
+  const end = Math.min(articles.length, endIndex);
+
+  for (let index = start; index < end; index += 1) {
+    const article = articles[index];
+    if (article && !article.is_read) {
+      ids.push(article.id);
+    }
+  }
+
+  return ids;
+}
+
 export function reconcileArticleAcknowledgements(
   pageArticleIds: readonly (readonly string[])[],
   state: ArticleAcknowledgementState,
