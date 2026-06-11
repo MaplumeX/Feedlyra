@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Article, ArticleListResponse } from "@/api/types";
 import {
   applyArticleTransitions,
+  getUnreadArticleIdsInRange,
   reconcileArticleAcknowledgements,
   resetArticleListScrollPosition,
   retainFirstInfinitePage,
@@ -119,6 +120,28 @@ describe("resetArticleListScrollPosition", () => {
         behavior: "auto",
       },
     ]);
+  });
+});
+
+describe("getUnreadArticleIdsInRange", () => {
+  it("returns every unread article crossed by a multi-row range jump", () => {
+    const articles = Array.from({ length: 18 }, (_, index) =>
+      article(`article-${index}`, { is_read: index === 4 }),
+    );
+
+    expect(getUnreadArticleIdsInRange(articles, 0, 17)).toEqual(
+      Array.from({ length: 17 }, (_, index) => `article-${index}`).filter(
+        (id) => id !== "article-4",
+      ),
+    );
+  });
+
+  it("clamps range boundaries and ignores an empty or reversed range", () => {
+    const articles = [article("a"), article("b")];
+
+    expect(getUnreadArticleIdsInRange(articles, -2, 1)).toEqual(["a"]);
+    expect(getUnreadArticleIdsInRange(articles, 2, 1)).toEqual([]);
+    expect(getUnreadArticleIdsInRange(articles, 0, 10)).toEqual(["a", "b"]);
   });
 });
 

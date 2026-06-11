@@ -115,3 +115,36 @@ Implemented RSS automation rules: multi-condition AND/OR matching, 5 actions (ma
 ### Next Steps
 
 - None - task complete
+
+
+## Session 59: Fix missing scroll read marks
+
+**Date**: 2026-06-11
+**Task**: Fix missing scroll read marks
+**Branch**: `MaplumeX/oslo`
+
+### Summary
+
+Replaced observer-only virtual-row exit detection with guarded Virtuoso range tracking, added regression coverage, verified continuous and jump scrolling, and documented the virtualization lifecycle constraint.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4bce780` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
