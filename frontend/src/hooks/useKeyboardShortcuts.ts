@@ -1,11 +1,16 @@
 import { useCallback } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
-import { useQueryClient } from "@tanstack/react-query";
 import { useReaderStore } from "@/stores/reader";
-import { useArticles, useToggleRead, useToggleStar, useMarkAllRead, queryKeys } from "@/api/hooks";
+import {
+  useArticles,
+  useToggleRead,
+  useToggleStar,
+  useMarkAllRead,
+  useRefreshAllFeeds,
+  useIsFeedRefreshPending,
+} from "@/api/hooks";
 
 export function useKeyboardShortcuts() {
-  const queryClient = useQueryClient();
   const { selectedArticleId, selectedFeedId, articleListFilter, sidebarCollapsed, set: setReader } = useReaderStore();
 
   const { data: articlesData } = useArticles({
@@ -17,6 +22,8 @@ export function useKeyboardShortcuts() {
   const toggleRead = useToggleRead();
   const toggleStar = useToggleStar();
   const markAllRead = useMarkAllRead();
+  const refreshAll = useRefreshAllFeeds();
+  const isFeedRefreshPending = useIsFeedRefreshPending();
 
   const articles = articlesData?.items ?? [];
   const currentIndex = articles.findIndex((a) => a.id === selectedArticleId);
@@ -59,9 +66,9 @@ export function useKeyboardShortcuts() {
   }, [selectedArticleId, articles, currentIndex, toggleStar]);
 
   const refreshFeeds = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.feeds.list() });
-    queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
-  }, [queryClient]);
+    if (isFeedRefreshPending) return;
+    refreshAll.mutate();
+  }, [isFeedRefreshPending, refreshAll]);
 
   const markAllAsRead = useCallback(() => {
     markAllRead.mutate({ feedId: selectedFeedId ?? undefined });

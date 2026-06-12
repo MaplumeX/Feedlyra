@@ -11,19 +11,6 @@ export interface ArticleTransition {
   after: Article;
 }
 
-interface ArticleAcknowledgementState {
-  acknowledgedIds: ReadonlySet<string>;
-  initialized: boolean;
-  previousPageCount: number;
-}
-
-interface ArticleAcknowledgementResult {
-  acknowledgedIds: Set<string>;
-  newArticleIds: string[];
-  initialized: boolean;
-  previousPageCount: number;
-}
-
 interface InfinitePageData<TPage, TPageParam> {
   pages: TPage[];
   pageParams: TPageParam[];
@@ -70,15 +57,13 @@ export function applyArticleTransitions(
   };
 }
 
-export function retainFirstInfinitePage<TPage, TPageParam>(
-  data: InfinitePageData<TPage, TPageParam>,
+export function replaceInfiniteDataWithFirstPage<TPage, TPageParam>(
+  firstPage: TPage,
+  firstPageParam: TPageParam,
 ): InfinitePageData<TPage, TPageParam> {
-  if (data.pages.length <= 1 && data.pageParams.length <= 1) return data;
-
   return {
-    ...data,
-    pages: data.pages.slice(0, 1),
-    pageParams: data.pageParams.slice(0, 1),
+    pages: [firstPage],
+    pageParams: [firstPageParam],
   };
 }
 
@@ -94,43 +79,4 @@ export function resetArticleListScrollPosition(
     align: "start",
     behavior: "auto",
   });
-}
-
-export function reconcileArticleAcknowledgements(
-  pageArticleIds: readonly (readonly string[])[],
-  state: ArticleAcknowledgementState,
-): ArticleAcknowledgementResult {
-  const acknowledgedIds = new Set(state.acknowledgedIds);
-
-  if (!state.initialized) {
-    for (const pageIds of pageArticleIds) {
-      for (const id of pageIds) {
-        acknowledgedIds.add(id);
-      }
-    }
-    return {
-      acknowledgedIds,
-      newArticleIds: [],
-      initialized: true,
-      previousPageCount: pageArticleIds.length,
-    };
-  }
-
-  if (pageArticleIds.length > state.previousPageCount) {
-    for (const pageIds of pageArticleIds.slice(state.previousPageCount)) {
-      for (const id of pageIds) {
-        acknowledgedIds.add(id);
-      }
-    }
-  }
-
-  const firstPageIds = pageArticleIds[0] ?? [];
-  const newArticleIds = firstPageIds.filter((id) => !acknowledgedIds.has(id));
-
-  return {
-    acknowledgedIds,
-    newArticleIds,
-    initialized: true,
-    previousPageCount: pageArticleIds.length,
-  };
 }

@@ -286,8 +286,14 @@ async def import_opml(
                         await fetch_and_store_feed(feed, bg_db)
                         await bg_db.commit()
                         logger.info("Background fetch completed for feed %s", feed_id)
-                except Exception:
-                    logger.warning("Background fetch failed for feed %s", feed_id)
+                except Exception as e:
+                    result = await bg_db.execute(select(Feed).where(Feed.id == feed_id))
+                    failed_feed = result.scalar_one_or_none()
+                    if failed_feed:
+                        failed_feed.parsing_error_count += 1
+                        failed_feed.parsing_error_message = str(e)[:500]
+                        await bg_db.commit()
+                    logger.warning("Background fetch failed for feed %s: %s", feed_id, e)
 
         asyncio.create_task(_bg_fetch())
 

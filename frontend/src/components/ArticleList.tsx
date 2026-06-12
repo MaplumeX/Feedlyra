@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Virtuoso, type ContextProp, type VirtuosoHandle, type ItemProps } from "react-virtuoso";
 import { Star, CheckCheck, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -7,15 +7,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { FeedIcon } from "@/components/FeedIcon";
-import { queryKeys, useInfiniteArticles, useFeeds, useToggleRead, useToggleStar, useMarkAllRead, useBatchRead, useRefreshAllFeeds } from "@/api/hooks";
+import {
+  queryKeys,
+  useInfiniteArticles,
+  useFeeds,
+  useToggleRead,
+  useToggleStar,
+  useMarkAllRead,
+  useBatchRead,
+  useRefreshAllFeeds,
+  useIsFeedRefreshPending,
+  useNewArticleCount,
+  useRefreshInfiniteArticles,
+} from "@/api/hooks";
 import { useReaderStore } from "@/stores/reader";
 import { cn } from "@/lib/utils";
-import {
-  reconcileArticleAcknowledgements,
-  resetArticleListScrollPosition,
-  retainFirstInfinitePage,
-} from "@/lib/articleList";
-import type { Article, ArticleListResponse } from "@/api/types";
+import { resetArticleListScrollPosition } from "@/lib/articleList";
+import type { Article } from "@/api/types";
 
 const SCROLL_MARK_READ_DEBOUNCE_MS = 300;
 
@@ -167,11 +175,20 @@ function ArticleListFooter({ isLoadingMore }: { isLoadingMore: boolean }) {
   );
 }
 
-function NewArticlesBanner({ count, onClick }: { count: number; onClick: () => void }) {
+function NewArticlesBanner({
+  count,
+  disabled,
+  onClick,
+}: {
+  count: number;
+  disabled: boolean;
+  onClick: () => void;
+}) {
   const { t } = useTranslation("reader");
   return (
     <button
       className="flex w-full items-center justify-center gap-1.5 border-b bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+      disabled={disabled}
       onClick={onClick}
     >
       {t("newArticles", { count })}
@@ -203,57 +220,34 @@ export function ArticleList() {
   const markAllRead = useMarkAllRead();
   const batchRead = useBatchRead();
   const refreshAll = useRefreshAllFeeds();
+  const isFeedRefreshPending = useIsFeedRefreshPending();
   const queryClient = useQueryClient();
+  const {
+    mutateAsync: refreshFirstPage,
+    isPending: isRefreshingArticles,
+  } = useRefreshInfiniteArticles(queryParams);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
 
-  // New articles detection
-  // acknowledgedArticleIds tracks the set of article IDs the user has "seen".
-  // When refetchInterval brings in new articles, we hide them from the rendered
-  // list and show a banner instead. Only after the user clicks the banner do we
-  // acknowledge the new IDs and render them.
-  const acknowledgedArticleIdsRef = useRef<Set<string>>(new Set());
-  const hasLoadedRef = useRef(false);
-  const previousPageCountRef = useRef(0);
   const pendingNewArticlesScrollResetRef = useRef(false);
-  const [acknowledgedArticleIds, setAcknowledgedArticleIds] =
-    useState<ReadonlySet<string>>(new Set());
-  const [newArticlesCount, setNewArticlesCount] = useState(0);
+  const [newArticlesBaseline, setNewArticlesBaseline] = useState<string | null>(null);
 
-  // Mark acknowledged as stale on feed/filter change
   useLayoutEffect(() => {
-    const acknowledgedIds = new Set<string>();
-    acknowledgedArticleIdsRef.current = acknowledgedIds;
-    setAcknowledgedArticleIds(acknowledgedIds);
-    hasLoadedRef.current = false;
-    previousPageCountRef.current = 0;
     pendingNewArticlesScrollResetRef.current = false;
-    setNewArticlesCount(0);
+    setNewArticlesBaseline(null);
   }, [selectedFeedId, articleListFilter]);
 
-  // Only unknown IDs from the first page are new. IDs from appended history
-  // pages are acknowledged automatically so infinite scrolling never raises the banner.
   useLayoutEffect(() => {
-    if (isLoading) return;
-
-    const pageArticleIds = (data?.pages ?? []).map((page) =>
-      page.items.map((article) => article.id),
-    );
-    const result = reconcileArticleAcknowledgements(pageArticleIds, {
-      acknowledgedIds: acknowledgedArticleIdsRef.current,
-      initialized: hasLoadedRef.current,
-      previousPageCount: previousPageCountRef.current,
-    });
-    const acknowledgementsChanged =
-      result.acknowledgedIds.size !== acknowledgedArticleIdsRef.current.size;
-
-    acknowledgedArticleIdsRef.current = result.acknowledgedIds;
-    hasLoadedRef.current = result.initialized;
-    previousPageCountRef.current = result.previousPageCount;
-    if (acknowledgementsChanged) {
-      setAcknowledgedArticleIds(result.acknowledgedIds);
+    const snapshotAt = data?.pages[0]?.snapshot_at;
+    if (!isLoading && snapshotAt) {
+      setNewArticlesBaseline(snapshotAt);
     }
-    setNewArticlesCount(result.newArticleIds.length);
-  }, [isLoading, data]);
+  }, [data?.pages, isLoading]);
+
+  const { data: newArticleSummary } = useNewArticleCount(
+    queryParams,
+    newArticlesBaseline,
+  );
+  const newArticlesCount = newArticleSummary?.count ?? 0;
 
   const feedIconMap = useMemo(() => {
     const map = new Map<string, string | null>();
@@ -272,15 +266,13 @@ export function ArticleList() {
         for (const article of page.items) {
           if (seen.has(article.id)) continue;
           seen.add(article.id);
-          // Hide articles not yet acknowledged (shown via banner instead)
-          if (newArticlesCount > 0 && !acknowledgedArticleIds.has(article.id)) continue;
           flattened.push(article);
         }
       }
 
       return flattened;
     },
-    [acknowledgedArticleIds, data, newArticlesCount]
+    [data]
   );
   const hasUnread = selectedFeedId
     ? (feeds.find((feed) => feed.id === selectedFeedId)?.unread_count ?? 0) > 0
@@ -316,7 +308,7 @@ export function ArticleList() {
   // its position, otherwise it keeps the old deep offset and lands in the footer spacer.
   useLayoutEffect(() => {
     if (!pendingNewArticlesScrollResetRef.current) return;
-    if (articlePageCount !== 1 || newArticlesCount !== 0) return;
+    if (articlePageCount !== 1 || isRefreshingArticles) return;
 
     pendingNewArticlesScrollResetRef.current = false;
     if (articles.length === 0) return;
@@ -324,7 +316,36 @@ export function ArticleList() {
     resetArticleListScrollPosition(scrollerElement, virtuosoRef.current);
     lastScrollTopRef.current = 0;
     scrollDirectionRef.current = null;
-  }, [articlePageCount, articles.length, newArticlesCount, scrollerElement]);
+  }, [articlePageCount, articles.length, isRefreshingArticles, scrollerElement]);
+
+  const refreshLatestArticles = useCallback(async (refreshFeeds: boolean) => {
+    pendingNewArticlesScrollResetRef.current = true;
+    try {
+      const firstPage = await refreshFirstPage();
+      setNewArticlesBaseline(firstPage.snapshot_at);
+      if (refreshFeeds) {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+      }
+    } catch {
+      pendingNewArticlesScrollResetRef.current = false;
+    }
+  }, [queryClient, refreshFirstPage]);
+
+  useEffect(() => {
+    if (
+      (newArticleSummary?.initial_count ?? 0) === 0
+      || (newArticleSummary?.count ?? 0) > 0
+      || newArticleSummary?.initial_fetch_pending
+      || isRefreshingArticles
+    ) return;
+    void refreshLatestArticles(true);
+  }, [
+    isRefreshingArticles,
+    newArticleSummary?.count,
+    newArticleSummary?.initial_count,
+    newArticleSummary?.initial_fetch_pending,
+    refreshLatestArticles,
+  ]);
 
   const flushPendingIds = useCallback(() => {
     const ids = Array.from(pendingIdsRef.current);
@@ -494,26 +515,7 @@ export function ArticleList() {
   }
 
   function handleNewArticlesClick() {
-    const queryKey = queryKeys.articles.infiniteList(queryParams);
-    const current = queryClient.getQueryData<InfiniteData<ArticleListResponse, string | null>>(
-      queryKey,
-    );
-    const firstPage = current?.pages[0];
-    if (!firstPage) return;
-
-    const acknowledgedIds = new Set(acknowledgedArticleIdsRef.current);
-    for (const article of firstPage.items) {
-      acknowledgedIds.add(article.id);
-    }
-    acknowledgedArticleIdsRef.current = acknowledgedIds;
-    setAcknowledgedArticleIds(acknowledgedIds);
-
-    pendingNewArticlesScrollResetRef.current = true;
-    queryClient.setQueryData<InfiniteData<ArticleListResponse, string | null>>(
-      queryKey,
-      retainFirstInfinitePage(current),
-    );
-    setNewArticlesCount(0);
+    void refreshLatestArticles(false);
   }
 
   return (
@@ -535,11 +537,11 @@ export function ArticleList() {
           variant="ghost"
           size="icon"
           className="h-7 w-7 ml-auto"
-          disabled={refreshAll.isPending}
+          disabled={isFeedRefreshPending}
           onClick={() => refreshAll.mutate()}
           title={t("refreshAll")}
         >
-          <RefreshCw className={cn("h-3.5 w-3.5", refreshAll.isPending && "animate-spin")} />
+          <RefreshCw className={cn("h-3.5 w-3.5", isFeedRefreshPending && "animate-spin")} />
         </Button>
         {hasUnread && (
           <Button
@@ -560,7 +562,11 @@ export function ArticleList() {
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
           {newArticlesCount > 0 && (
-            <NewArticlesBanner count={newArticlesCount} onClick={handleNewArticlesClick} />
+            <NewArticlesBanner
+              count={newArticlesCount}
+              disabled={isRefreshingArticles}
+              onClick={handleNewArticlesClick}
+            />
           )}
           {articles.length === 0 ? (
             <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">

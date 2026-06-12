@@ -13,7 +13,6 @@ import {
   Download,
   Upload,
 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
@@ -26,13 +25,22 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { useReaderStore } from "@/stores/reader";
-import { queryKeys, useMarkAllRead, useSummarize, useTranslate, useExportOPML, useImportOPML } from "@/api/hooks";
+import {
+  useMarkAllRead,
+  useSummarize,
+  useTranslate,
+  useExportOPML,
+  useImportOPML,
+  useRefreshAllFeeds,
+  useIsFeedRefreshPending,
+} from "@/api/hooks";
 
 export function CommandPalette() {
   const { t } = useTranslation("reader");
   const { commandPaletteOpen, set: setReader, selectedArticleId, sidebarCollapsed, selectedFeedId } = useReaderStore();
-  const queryClient = useQueryClient();
   const markAllRead = useMarkAllRead();
+  const refreshAll = useRefreshAllFeeds();
+  const isFeedRefreshPending = useIsFeedRefreshPending();
   const summarize = useSummarize();
   const translateMut = useTranslate();
   const exportOPML = useExportOPML();
@@ -51,11 +59,6 @@ export function CommandPalette() {
     },
     [setOpen]
   );
-
-  const refreshFeeds = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.feeds.list() });
-    queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
-  }, [queryClient]);
 
   const handleImportFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -100,7 +103,10 @@ export function CommandPalette() {
             <CheckCheck className="mr-2 h-4 w-4" />
             {t("markAllAsRead")}
           </CommandItem>
-          <CommandItem onSelect={() => runAndClose(refreshFeeds)}>
+          <CommandItem
+            disabled={isFeedRefreshPending}
+            onSelect={() => runAndClose(() => refreshAll.mutate())}
+          >
             <RefreshCw className="mr-2 h-4 w-4" />
             {t("refreshFeeds")}
           </CommandItem>
