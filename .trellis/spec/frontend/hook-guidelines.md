@@ -56,57 +56,79 @@ Article read/star mutations intentionally keep already rendered rows in the curr
 - update feed unread counts
 - mark article queries stale with `refetchType: "none"` so a later filter switch/refetch rebuilds true membership without immediately disrupting the current list
 
-### New-Article Banner with Infinite Queries
+### Scenario: Baseline-Based New-Article Banner
 
-When an automatic refetch updates the first page, keep unknown article IDs hidden until the user acknowledges the new-article banner.
+#### 1. Scope / Trigger
 
-- Reconcile the acknowledgement baseline in `useLayoutEffect`, not `useEffect`. Visibility derived in a normal effect updates after browser paint, so new rows can briefly appear and disturb the virtual list before the banner hides them.
-- If acknowledged IDs live in a ref, publish a read-only state snapshot whenever the set grows. Updating only the ref and setting an unchanged banner count does not re-render; this can leave a newly appended history page hidden while a banner is already visible.
-- Reset the acknowledgement refs and rendered snapshot before establishing the baseline for a different feed/filter. The reset and reconciliation effects must use the same pre-paint phase and execute in that order.
-- Clicking the banner must reset the exact current infinite-query cache to its latest first page:
+- Trigger: the reader must detect newly ingested articles without replacing the visible infinite-list snapshot before the user clicks the banner.
+- Unknown IDs are not a valid signal because pagination and unread/starred membership changes also introduce previously unseen historical IDs.
+
+#### 2. Signatures
+
+- List response: `ArticleListResponse { items, total, page, limit, next_cursor, snapshot_at }`.
+- Count API: `GET /api/articles/new-count?since=<timezone-aware ISO datetime>&feed_id=<uuid>&read_status=unread|read&starred=true`.
+- Count response: `NewArticleCountResponse { count, initial_count, initial_fetch_pending }`.
+- DB: `articles.is_initial_fetch: boolean not null default false`.
+- Frontend: `useNewArticleCount(params, since)` polls the count API; `useRefreshInfiniteArticles(params)` explicitly fetches and installs a new first page.
+
+#### 3. Contracts
+
+- The infinite article query must not use interval, mount, reconnect, or window-focus refetches. Automatic detection updates only the count query, so current rows and scroll position remain unchanged.
+- `count` includes every matching non-initial article with `created_at > since`; it is not limited by page size or publication date.
+- `initial_count` contains first-fetch history. While `initial_fetch_pending` is true, poll every two seconds. After the whole initial-fetch batch finishes, refresh the first page automatically only when `count === 0`; regular new articles still require banner acknowledgement.
+- Feed refresh mutations share one mutation key. Count polling pauses during refresh, and mutation success awaits feed and count invalidation so all refresh entry points expose the same pending state.
+- Clicking the banner fetches a fresh first page and atomically replaces both `pages` and `pageParams`:
 
 ```tsx
 queryClient.setQueryData<InfiniteData<ArticleListResponse, string | null>>(
   queryKeys.articles.infiniteList(params),
-  (current) => current
-    ? {
-        ...current,
-        pages: current.pages.slice(0, 1),
-        pageParams: current.pageParams.slice(0, 1),
-      }
-    : current,
+  {
+    pages: [firstPage],
+    pageParams: [null],
+  },
 );
 ```
 
-Always trim `pages` and `pageParams` together. Keeping old `pageParams` or old history pages means `hasNextPage` and the next `fetchNextPage` can continue from the previous last page instead of rebuilding from the refreshed first page's `next_cursor`.
+- Defer the Virtuoso scroll reset to `useLayoutEffect` until the refreshed one-page data has committed. Keep the footer spacer because scroll-mark-read depends on it.
 
-If acknowledging the banner also scrolls a virtual list to the top, do not call
-`scrollToIndex(0)` in the same event handler that trims the query. React has not
-committed the shorter data set yet, so Virtuoso can retain the old deep offset
-and clamp it into the footer spacer, producing a blank panel. Record a pending
-reset, then run the final scroll in `useLayoutEffect` after `pages.length === 1`
-and the acknowledged articles are visible:
+#### 4. Validation & Error Matrix
+
+- Missing `since` -> FastAPI `422`.
+- Timezone-naive `since` -> `400 Article baseline must include a timezone`.
+- Invalid feed ID or malformed query value -> FastAPI `422`.
+- Count or first-page request failure -> preserve the current list and scroll position; do not advance the baseline.
+- Failed initial feed fetch -> mark the feed error and stop two-second pending polling.
+
+#### 5. Good/Base/Bad Cases
+
+- Good: 60 backdated articles are ingested after the baseline; the banner reports 60 and the visible list does not change.
+- Base: no new articles exist; the count remains zero and the cached infinite list is untouched.
+- Good: an OPML batch finishes initial fetches; its history appears after one automatic first-page refresh without a banner.
+- Bad: treat every unknown first-page ID as new; removing one unread row can pull an old row into page one and create a false banner.
+
+#### 6. Tests Required
+
+- Backend: cursor round-trip preserves `snapshot_at`; naive cursor/baseline datetimes fail.
+- Backend: count SQL uses `created_at`, all active filters, no publication ordering, and no page limit.
+- Backend: initial-pending SQL includes `checked_at IS NULL`, ignores failed fetches, and respects `feed_id`.
+- Frontend: replacing the first page resets `pages` and `pageParams` together.
+- Frontend: scroll reset runs only after the one-page replacement commits.
+- Integration/E2E: interval detection does not change rendered rows before banner click; refresh pending lasts through count refetch.
+
+#### 7. Wrong vs Correct
+
+#### Wrong
 
 ```tsx
-const pendingScrollResetRef = useRef(false);
-
-function handleNewArticlesClick() {
-  pendingScrollResetRef.current = true;
-  queryClient.setQueryData(queryKey, retainFirstInfinitePage(current));
-  setNewArticlesCount(0);
-}
-
-useLayoutEffect(() => {
-  if (!pendingScrollResetRef.current || data?.pages.length !== 1) return;
-  if (newArticlesCount !== 0) return;
-
-  pendingScrollResetRef.current = false;
-  resetArticleListScrollPosition(scrollerElement, virtuosoRef.current);
-}, [data?.pages.length, newArticlesCount, scrollerElement]);
+const newIds = firstPage.items.filter((item) => !acknowledgedIds.has(item.id));
 ```
 
-Use a layout effect so the stale footer position is corrected before browser
-paint. Keep the footer spacer itself; scroll-mark-read relies on it.
+#### Correct
+
+```tsx
+const { data: summary } = useNewArticleCount(params, firstPage.snapshot_at);
+const newArticlesCount = summary?.count ?? 0;
+```
 
 **Mutation hooks** (data modification):
 

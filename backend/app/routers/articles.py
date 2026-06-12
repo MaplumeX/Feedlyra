@@ -20,6 +20,7 @@ from app.models.feed import Feed
 from app.models.user import User
 from app.schemas.article import (
     ArticleListResponse,
+    NewArticleCountResponse,
     ArticleResponse,
     ArticleSummaryResponse,
     BatchRead,
@@ -42,14 +43,16 @@ class ArticleCursor:
     created_at: datetime
     article_id: UUID
     page: int
+    snapshot_at: datetime
 
 
-def _encode_article_cursor(article: Article, page: int) -> str:
+def _encode_article_cursor(article: Article, page: int, snapshot_at: datetime) -> str:
     payload = {
         "published_at": article.published_at.isoformat() if article.published_at else None,
         "created_at": article.created_at.isoformat(),
         "article_id": str(article.id),
         "page": page,
+        "snapshot_at": snapshot_at.isoformat(),
     }
     encoded = base64.urlsafe_b64encode(
         json.dumps(payload, separators=(",", ":")).encode()
@@ -75,18 +78,23 @@ def _decode_article_cursor(value: str) -> ArticleCursor:
         created_at_raw = payload.get("created_at")
         article_id_raw = payload.get("article_id")
         page_raw = payload.get("page")
+        snapshot_at_raw = payload.get("snapshot_at")
         if (
             not isinstance(created_at_raw, str)
             or not isinstance(article_id_raw, str)
             or not isinstance(page_raw, int)
             or page_raw < 2
+            or not isinstance(snapshot_at_raw, str)
         ):
             raise ValueError
 
         created_at = datetime.fromisoformat(created_at_raw)
+        snapshot_at = datetime.fromisoformat(snapshot_at_raw)
         if created_at.utcoffset() is None:
             raise ValueError
         if published_at is not None and published_at.utcoffset() is None:
+            raise ValueError
+        if snapshot_at.utcoffset() is None:
             raise ValueError
 
         return ArticleCursor(
@@ -94,6 +102,7 @@ def _decode_article_cursor(value: str) -> ArticleCursor:
             created_at=created_at,
             article_id=UUID(article_id_raw),
             page=page_raw,
+            snapshot_at=snapshot_at,
         )
     except (ValueError, TypeError, json.JSONDecodeError, binascii.Error) as exc:
         raise HTTPException(status_code=400, detail="Invalid article cursor") from exc
@@ -120,6 +129,85 @@ def _apply_article_cursor(query: Select, cursor: ArticleCursor) -> Select:
             ),
         )
     )
+
+
+def _apply_article_filters(
+    query: Select,
+    *,
+    user_id: UUID,
+    feed_id: UUID | None,
+    read_status: str | None,
+    starred: bool | None,
+) -> Select:
+    query = query.join(Feed, Feed.id == Article.feed_id).where(Feed.user_id == user_id)
+
+    if feed_id:
+        query = query.where(Article.feed_id == feed_id)
+
+    if read_status == "unread":
+        query = query.outerjoin(
+            ReadStatus,
+            (ReadStatus.article_id == Article.id) & (ReadStatus.user_id == user_id),
+        ).where(ReadStatus.article_id.is_(None))
+    elif read_status == "read":
+        query = query.join(
+            ReadStatus,
+            (ReadStatus.article_id == Article.id) & (ReadStatus.user_id == user_id),
+        )
+
+    if starred is True:
+        query = query.join(
+            StarredArticle,
+            (StarredArticle.article_id == Article.id)
+            & (StarredArticle.user_id == user_id),
+        )
+
+    return query
+
+
+def _new_article_count_query(
+    *,
+    since: datetime,
+    user_id: UUID,
+    feed_id: UUID | None,
+    read_status: str | None,
+    starred: bool | None,
+) -> Select:
+    return (
+        _apply_article_filters(
+            select(Article.is_initial_fetch, func.count()),
+            user_id=user_id,
+            feed_id=feed_id,
+            read_status=read_status,
+            starred=starred,
+        )
+        .where(Article.created_at > since)
+        .group_by(Article.is_initial_fetch)
+    )
+
+
+def _article_snapshot_query(*, user_id: UUID) -> Select:
+    return (
+        select(func.max(Article.created_at))
+        .join(Feed, Feed.id == Article.feed_id)
+        .where(Feed.user_id == user_id)
+    )
+
+
+def _pending_initial_feed_query(*, user_id: UUID, feed_id: UUID | None) -> Select:
+    query = select(func.count()).select_from(Feed).where(
+        Feed.user_id == user_id,
+        Feed.checked_at.is_(None),
+        Feed.parsing_error_count == 0,
+    )
+    if feed_id:
+        query = query.where(Feed.id == feed_id)
+    return query
+
+
+def _validate_article_baseline(since: datetime) -> None:
+    if since.utcoffset() is None:
+        raise HTTPException(status_code=400, detail="Article baseline must include a timezone")
 
 
 def _apply_ai_data(item: ArticleResponse, ai_data: ArticleAIData | None) -> None:
@@ -202,38 +290,29 @@ async def list_articles(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
-    query = (
-        select(Article, Feed.title.label("feed_title"))
-        .join(Feed, Feed.id == Article.feed_id)
-        .where(Feed.user_id == user.id)
+    query = _apply_article_filters(
+        select(Article, Feed.title.label("feed_title")),
+        user_id=user.id,
+        feed_id=feed_id,
+        read_status=read_status,
+        starred=starred,
     )
 
-    if feed_id:
-        query = query.where(Article.feed_id == feed_id)
-
-    if read_status == "unread":
-        query = query.outerjoin(
-            ReadStatus,
-            (ReadStatus.article_id == Article.id) & (ReadStatus.user_id == user.id),
-        ).where(ReadStatus.article_id.is_(None))
-    elif read_status == "read":
-        query = query.join(
-            ReadStatus,
-            (ReadStatus.article_id == Article.id) & (ReadStatus.user_id == user.id),
-        )
-
-    if starred is True:
-        query = query.join(
-            StarredArticle,
-            (StarredArticle.article_id == Article.id) & (StarredArticle.user_id == user.id),
-        )
+    snapshot_at = datetime.fromtimestamp(0, timezone.utc)
+    if cursor:
+        decoded_cursor = _decode_article_cursor(cursor)
+        snapshot_at = decoded_cursor.snapshot_at
+    else:
+        snapshot_at = (
+            await db.execute(_article_snapshot_query(user_id=user.id))
+        ).scalar_one_or_none() or snapshot_at
+    query = query.where(Article.created_at <= snapshot_at)
 
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
 
     response_page = page
     if cursor:
-        decoded_cursor = _decode_article_cursor(cursor)
         query = _apply_article_cursor(query, decoded_cursor)
         response_page = decoded_cursor.page
     else:
@@ -298,7 +377,7 @@ async def list_articles(
 
     next_cursor = None
     if has_more and rows:
-        next_cursor = _encode_article_cursor(rows[-1][0], response_page + 1)
+        next_cursor = _encode_article_cursor(rows[-1][0], response_page + 1, snapshot_at)
 
     return {
         "items": items,
@@ -306,6 +385,43 @@ async def list_articles(
         "page": response_page,
         "limit": limit,
         "next_cursor": next_cursor,
+        "snapshot_at": snapshot_at,
+    }
+
+
+@router.get("/new-count", response_model=NewArticleCountResponse)
+async def count_new_articles(
+    since: datetime = Query(...),
+    feed_id: UUID | None = Query(None),
+    read_status: str | None = Query(None),
+    starred: bool | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict[str, int | bool]:
+    _validate_article_baseline(since)
+    # Read pending state first so a fetch committing between these statements
+    # is either reported as pending or visible to the following count query.
+    initial_fetch_pending = bool(
+        (
+            await db.execute(
+                _pending_initial_feed_query(user_id=user.id, feed_id=feed_id)
+            )
+        ).scalar()
+    )
+    query = _new_article_count_query(
+        since=since,
+        user_id=user.id,
+        feed_id=feed_id,
+        read_status=read_status,
+        starred=starred,
+    )
+
+    rows = (await db.execute(query)).all()
+    counts = {is_initial_fetch: count for is_initial_fetch, count in rows}
+    return {
+        "count": counts.get(False, 0),
+        "initial_count": counts.get(True, 0),
+        "initial_fetch_pending": initial_fetch_pending,
     }
 
 

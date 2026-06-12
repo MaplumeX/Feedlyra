@@ -3,9 +3,8 @@ import type { Article, ArticleListResponse } from "@/api/types";
 import {
   applyArticleTransitions,
   getUnreadArticleIdsInRange,
-  reconcileArticleAcknowledgements,
+  replaceInfiniteDataWithFirstPage,
   resetArticleListScrollPosition,
-  retainFirstInfinitePage,
 } from "@/lib/articleList";
 
 function article(id: string, overrides: Partial<Article> = {}): Article {
@@ -35,68 +34,24 @@ function article(id: string, overrides: Partial<Article> = {}): Article {
 }
 
 function response(items: Article[], total = items.length): ArticleListResponse {
-  return { items, total, page: 1, limit: 50, next_cursor: null };
+  return {
+    items,
+    total,
+    page: 1,
+    limit: 50,
+    next_cursor: null,
+    snapshot_at: "2026-06-11T00:00:00Z",
+  };
 }
 
-describe("reconcileArticleAcknowledgements", () => {
-  it("acknowledges initial and appended history pages without reporting them as new", () => {
-    const initial = reconcileArticleAcknowledgements([["a", "b"]], {
-      acknowledgedIds: new Set(),
-      initialized: false,
-      previousPageCount: 0,
-    });
+describe("replaceInfiniteDataWithFirstPage", () => {
+  it("rebuilds pagination from the refreshed first page", () => {
+    const firstPage = response([article("new"), article("a")]);
 
-    const appended = reconcileArticleAcknowledgements([["a", "b"], ["c", "d"]], initial);
-
-    expect(appended.newArticleIds).toEqual([]);
-    expect(appended.acknowledgedIds).toEqual(new Set(["a", "b", "c", "d"]));
-  });
-
-  it("reports only unknown IDs from the first page after a refresh", () => {
-    const result = reconcileArticleAcknowledgements([["new", "a"], ["b", "c"]], {
-      acknowledgedIds: new Set(["a", "b", "c"]),
-      initialized: true,
-      previousPageCount: 2,
-    });
-
-    expect(result.newArticleIds).toEqual(["new"]);
-  });
-
-  it("acknowledges an appended history page while keeping first-page new IDs pending", () => {
-    const result = reconcileArticleAcknowledgements([["new", "a"], ["b"], ["c"]], {
-      acknowledgedIds: new Set(["a", "b"]),
-      initialized: true,
-      previousPageCount: 2,
-    });
-
-    expect(result.newArticleIds).toEqual(["new"]);
-    expect(result.acknowledgedIds).toEqual(new Set(["a", "b", "c"]));
-  });
-});
-
-describe("retainFirstInfinitePage", () => {
-  it("drops loaded history pages and their page params", () => {
-    const firstPage = response([article("a")]);
-    const secondPage = response([article("b")]);
-
-    const result = retainFirstInfinitePage({
-      pages: [firstPage, secondPage],
-      pageParams: [null, "cursor-2"],
-    });
-
-    expect(result).toEqual({
+    expect(replaceInfiniteDataWithFirstPage(firstPage, null)).toEqual({
       pages: [firstPage],
       pageParams: [null],
     });
-  });
-
-  it("preserves identity when the query is already on its first page", () => {
-    const data = {
-      pages: [response([article("a")])],
-      pageParams: [null],
-    };
-
-    expect(retainFirstInfinitePage(data)).toBe(data);
   });
 });
 

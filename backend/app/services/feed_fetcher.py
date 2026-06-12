@@ -238,6 +238,7 @@ async def _discover_favicon(site_url: str) -> str | None:
 
 async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
     now = datetime.now(timezone.utc)
+    is_initial_fetch = feed.checked_at is None
     status_code, content, etag, last_modified = await _fetch_feed_content(
         feed.url, feed.etag_header, feed.last_modified_header
     )
@@ -341,6 +342,7 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
             published_at=_parse_published(entry),
             fetched_at=now,
             created_at=now,
+            is_initial_fetch=is_initial_fetch,
         )
         new_articles.append(article)
 
@@ -362,6 +364,11 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
             await apply_non_delete_rules(feed, new_articles, db)
         except Exception:
             logger.warning("Error applying non-delete automation rules")
+
+    if new_articles:
+        ingested_at = datetime.now(timezone.utc)
+        for article in new_articles:
+            article.created_at = ingested_at
 
     feed.checked_at = now
     feed.next_check_at = _compute_next_check(feed)

@@ -148,3 +148,36 @@ Replaced observer-only virtual-row exit detection with guarded Virtuoso range tr
 ### Next Steps
 
 - None - task complete
+
+
+## Session 60: Fix new article notification flow
+
+**Date**: 2026-06-12
+**Task**: Fix new article notification flow
+**Branch**: `MaplumeX/amman`
+
+### Summary
+
+Replaced ID-based detection with snapshot/count APIs, stabilized refresh and initial-feed timing, added migration/tests, and updated Trellis specs.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ea5a088` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

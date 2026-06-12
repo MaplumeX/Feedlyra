@@ -46,6 +46,13 @@ class ArticleListResponse(BaseModel):
     page: int
     limit: int
     next_cursor: str | None = None
+    snapshot_at: datetime
+
+
+class NewArticleCountResponse(BaseModel):
+    count: int
+    initial_count: int
+    initial_fetch_pending: bool
 
 
 class ReadToggle(BaseModel):

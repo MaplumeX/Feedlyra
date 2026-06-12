@@ -68,6 +68,13 @@ export interface ArticleListResponse {
   page: number;
   limit: number;
   next_cursor: string | null;
+  snapshot_at: string;
+}
+
+export interface NewArticleCountResponse {
+  count: number;
+  initial_count: number;
+  initial_fetch_pending: boolean;
 }
 
 export interface DiscoveredFeed {
@@ -172,4 +179,3 @@ export interface AutomationRule {
   created_at: string;
   updated_at: string;
 }
-

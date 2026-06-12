@@ -90,13 +90,15 @@ No ORM query builder abstractions. No raw SQL strings.
 
 - API: `GET /api/articles?feed_id=<uuid>&read_status=unread|read&starred=true&limit=50&cursor=<opaque>`.
 - Initial request omits `cursor`; legacy `page` remains supported for non-cursor clients.
-- Response: `ArticleListResponse { items, total, page, limit, next_cursor: str | null }`.
+- Response: `ArticleListResponse { items, total, page, limit, next_cursor: str | null, snapshot_at: datetime }`.
 - Sort order: `published_at DESC NULLS LAST, created_at DESC, id DESC`.
 
 ### 3. Contracts
 
 - `next_cursor` is opaque to clients. Clients pass it back unchanged and must not parse or construct it.
-- Cursor payload records the last row's `published_at`, `created_at`, `id`, and the next response page number.
+- Cursor payload records the last row's `published_at`, `created_at`, `id`, the next response page number, and the first page's `snapshot_at`.
+- The first page snapshot is the latest committed `created_at` across all articles owned by the user, or the Unix epoch when none exist. It is intentionally independent of list filters so later unread/starred membership changes cannot become "new".
+- Every page applies `Article.created_at <= snapshot_at`; articles committed after the first page remain outside that pagination chain and are detected by the separate count API.
 - `id DESC` is the unique final tie-breaker; removing it can duplicate or skip rows with identical timestamps.
 - Cursor filtering uses the same null ordering as the SQL `ORDER BY`.
 - `total` always counts the complete filtered result set, not the number remaining after the cursor.
@@ -108,20 +110,22 @@ No ORM query builder abstractions. No raw SQL strings.
 - Missing cursor -> first/legacy page behavior.
 - Valid server-generated cursor -> next stable page.
 - Invalid base64/JSON/UUID/page -> `400 Invalid article cursor`.
-- Naive cursor datetime without timezone -> `400 Invalid article cursor`.
+- Naive cursor or snapshot datetime without timezone -> `400 Invalid article cursor`.
 - Cursor reaches the end -> `200` with `next_cursor=null`.
 
 ### 5. Good/Base/Bad Cases
 
 - Good: page 1 contains 50 unread rows; one becomes read; the cursor still loads the next article after the original page boundary without skipping.
+- Good: a feed transaction commits after the snapshot query; its later `created_at` is excluded from the current pages and counted as new.
 - Base: an old client sends `page=2` without a cursor and retains legacy offset behavior.
 - Bad: frontend computes page 2 from `page * limit < total` after a read/star mutation; one article shifts before the offset and is never rendered.
 
 ### 6. Tests Required
 
-- Unit: cursor round-trip preserves nullable `published_at`, `created_at`, `id`, and page.
+- Unit: cursor round-trip preserves nullable `published_at`, `created_at`, `id`, page, and `snapshot_at`.
 - Unit: malformed and timezone-naive cursors return `400`.
-- Frontend regression: appended history pages do not become "new articles".
+- Unit: the snapshot query uses the latest user-owned article without applying read/star filters.
+- Frontend regression: automatic count polling does not replace infinite-query pages.
 - Frontend regression: read/star transitions keep rendered rows while adjusting filtered totals.
 
 ### 7. Wrong vs Correct

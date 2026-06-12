@@ -1,13 +1,22 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useIsMutating,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+} from "@tanstack/react-query";
 import { api } from "./client";
 import {
   applyArticleTransitions,
+  replaceInfiniteDataWithFirstPage,
   type ArticleTransition,
 } from "@/lib/articleList";
 import type {
   AIConfig,
   Article,
   ArticleListResponse,
+  NewArticleCountResponse,
   ArticleSummarySource,
   AutomationRule,
   Category,
@@ -36,6 +45,9 @@ const queryKeys = {
     list: (params: ArticleListParams) => [...queryKeys.articles.all, params] as const,
     infiniteList: (params: ArticleListParams) =>
       [...queryKeys.articles.all, "infinite", params] as const,
+    newCounts: () => [...queryKeys.articles.all, "new-count"] as const,
+    newCount: (params: ArticleListParams, since: string) =>
+      [...queryKeys.articles.newCounts(), params, since] as const,
     detail: (id: string) => [...queryKeys.articles.all, "detail", id] as const,
   },
   ai: {
@@ -58,6 +70,12 @@ const queryKeys = {
 } as const;
 
 export { queryKeys };
+
+const mutationKeys = {
+  feeds: {
+    refresh: ["feeds", "refresh"] as const,
+  },
+} as const;
 
 // --- Auth hooks ---
 
@@ -113,9 +131,12 @@ export function useAddFeed() {
   return useMutation({
     mutationFn: ({ url, category_id }: { url: string; category_id?: string | null }) =>
       api.post<Feed>("/api/feeds", { url, category_id: category_id ?? null }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
-      qc.invalidateQueries({ queryKey: queryKeys.categories.list() });
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: queryKeys.feeds.list() }),
+        qc.invalidateQueries({ queryKey: queryKeys.categories.list() }),
+        qc.invalidateQueries({ queryKey: queryKeys.articles.newCounts() }),
+      ]);
     },
   });
 }
@@ -140,10 +161,15 @@ interface RefreshAllResponse {
 export function useRefreshAllFeeds() {
   const qc = useQueryClient();
   return useMutation({
+    mutationKey: mutationKeys.feeds.refresh,
     mutationFn: () => api.post<RefreshAllResponse>("/api/feeds/refresh-all", {}),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
-      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+    onMutate: () =>
+      qc.cancelQueries({ queryKey: queryKeys.articles.newCounts() }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: queryKeys.feeds.list() }),
+        qc.invalidateQueries({ queryKey: queryKeys.articles.newCounts() }),
+      ]);
     },
   });
 }
@@ -151,12 +177,21 @@ export function useRefreshAllFeeds() {
 export function useRefreshFeed() {
   const qc = useQueryClient();
   return useMutation({
+    mutationKey: mutationKeys.feeds.refresh,
     mutationFn: (feedId: string) => api.post<Feed>(`/api/feeds/${feedId}/refresh`, {}),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
-      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+    onMutate: () =>
+      qc.cancelQueries({ queryKey: queryKeys.articles.newCounts() }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: queryKeys.feeds.list() }),
+        qc.invalidateQueries({ queryKey: queryKeys.articles.newCounts() }),
+      ]);
     },
   });
+}
+
+export function useIsFeedRefreshPending() {
+  return useIsMutating({ mutationKey: mutationKeys.feeds.refresh }) > 0;
 }
 
 export function useUpdateFeed() {
@@ -189,9 +224,12 @@ export function useImportOPML() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (file: File) => api.upload<Feed[]>("/api/feeds/import/opml", file),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
-      qc.invalidateQueries({ queryKey: queryKeys.categories.list() });
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: queryKeys.feeds.list() }),
+        qc.invalidateQueries({ queryKey: queryKeys.categories.list() }),
+        qc.invalidateQueries({ queryKey: queryKeys.articles.newCounts() }),
+      ]);
     },
   });
 }
@@ -364,7 +402,7 @@ function applyUnreadTransitionsToFeeds(
 
 // --- Article hooks ---
 
-interface ArticleListParams {
+export interface ArticleListParams {
   feed_id?: string;
   read_status?: string;
   starred?: boolean;
@@ -373,7 +411,7 @@ interface ArticleListParams {
   cursor?: string;
 }
 
-function articleListPath(params: ArticleListParams = {}) {
+function articleListSearchParams(params: ArticleListParams): URLSearchParams {
   const searchParams = new URLSearchParams();
   if (params.feed_id) searchParams.set("feed_id", params.feed_id);
   if (params.read_status) searchParams.set("read_status", params.read_status);
@@ -381,9 +419,23 @@ function articleListPath(params: ArticleListParams = {}) {
   if (params.page) searchParams.set("page", String(params.page));
   if (params.limit) searchParams.set("limit", String(params.limit));
   if (params.cursor) searchParams.set("cursor", params.cursor);
+  return searchParams;
+}
 
+function articleListPath(params: ArticleListParams = {}) {
+  const searchParams = articleListSearchParams(params);
   const qs = searchParams.toString();
   return `/api/articles${qs ? `?${qs}` : ""}`;
+}
+
+function newArticleCountPath(params: ArticleListParams, since: string) {
+  const searchParams = articleListSearchParams({
+    feed_id: params.feed_id,
+    read_status: params.read_status,
+    starred: params.starred,
+  });
+  searchParams.set("since", since);
+  return `/api/articles/new-count?${searchParams.toString()}`;
 }
 
 export function useArticles(params: ArticleListParams = {}) {
@@ -408,7 +460,52 @@ export function useInfiniteArticles(params: ArticleListParams = {}) {
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     staleTime: 2 * 60 * 1000,
-    refetchInterval: 2 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useNewArticleCount(
+  params: ArticleListParams,
+  since: string | null,
+) {
+  const isFeedRefreshPending = useIsFeedRefreshPending();
+
+  return useQuery({
+    queryKey: queryKeys.articles.newCount(params, since ?? ""),
+    queryFn: () =>
+      api.get<NewArticleCountResponse>(newArticleCountPath(params, since ?? "")),
+    enabled: since !== null,
+    staleTime: 0,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    refetchInterval: (query) => {
+      if (isFeedRefreshPending) return false;
+      return query.state.data?.initial_fetch_pending ? 2_000 : 2 * 60 * 1000;
+    },
+  });
+}
+
+export function useRefreshInfiniteArticles(params: ArticleListParams) {
+  const qc = useQueryClient();
+  const queryKey = queryKeys.articles.infiniteList(params);
+
+  return useMutation({
+    mutationFn: () =>
+      api.get<ArticleListResponse>(
+        articleListPath({
+          ...params,
+          page: 1,
+          cursor: undefined,
+        }),
+      ),
+    onSuccess: (firstPage) => {
+      qc.setQueryData<InfiniteData<ArticleListResponse, string | null>>(
+        queryKey,
+        replaceInfiniteDataWithFirstPage(firstPage, null),
+      );
+    },
   });
 }
 

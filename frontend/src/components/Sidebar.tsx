@@ -69,6 +69,7 @@ import {
   useFeeds,
   useDeleteFeed,
   useRefreshFeed,
+  useIsFeedRefreshPending,
   useStarredCount,
   useCategories,
   useCreateCategory,
@@ -106,6 +107,7 @@ export function Sidebar() {
   const { data: categories = [] } = useCategories();
   const deleteFeed = useDeleteFeed();
   const refreshFeed = useRefreshFeed();
+  const isFeedRefreshPending = useIsFeedRefreshPending();
   const updateFeed = useUpdateFeed();
   const createCategory = useCreateCategory();
   const deleteCategory = useDeleteCategory();
@@ -233,6 +235,7 @@ export function Sidebar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
+                  disabled={isFeedRefreshPending}
                   onClick={(e) => {
                     e.stopPropagation();
                     refreshFeed.mutate(feed.id);
@@ -294,6 +297,7 @@ export function Sidebar() {
         </ContextMenuTrigger>
         <ContextMenuContent>
           <ContextMenuItem
+            disabled={isFeedRefreshPending}
             onClick={(e) => {
               e.stopPropagation();
               refreshFeed.mutate(feed.id);
