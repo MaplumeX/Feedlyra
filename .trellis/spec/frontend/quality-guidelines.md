@@ -39,6 +39,33 @@ function App() {
 }
 ```
 
+### Don't: Commit hardcoded user-facing strings
+
+```tsx
+// Bad — ships English to all locales, leaves a TODO that never gets resolved
+<DialogTitle>Edit Rule</DialogTitle> {/* TODO: i18n */}
+const FIELD_LABELS = { title: "Title", author: "Author" }; // TODO: i18n
+```
+
+**Why**: The project is i18n-first (`react-i18next`, `en`/`zh-CN` locales under `src/i18n/locales/`). A hardcoded English string is visible to every user regardless of locale, and a `// TODO: i18n` marker almost never gets a follow-up commit — the RSS automation feature (#82) shipped ~50 of them and they survived a merge. Reverting a merged feature just to retranslate is costly; i18n is cheapest done in the same PR that adds the UI.
+
+**Instead**: Wire the string in the PR that introduces the UI, not later.
+```tsx
+const { t } = useTranslation("settings");          // settings-context components
+<DialogTitle>{t("automation.editRuleTitle")}</DialogTitle>
+
+// In a component whose default namespace is NOT the target one,
+// pass the namespace explicitly — do NOT switch the component's existing useTranslation:
+const { t } = useTranslation("reader");             // reader-context component
+<Button title={t("automation.tooltip", { ns: "settings" })} />
+```
+
+Rules:
+- Add keys to BOTH `en` and `zh-CN` locale files in the same PR; the key sets must match.
+- Pick a namespace by where the UI lives (`settings` for Settings-dialog content; `reader` for reader surface).
+- Proper nouns and universal tokens stay literal: language names (`LANGUAGES` labels), `LOGIC_OPTIONS` rendered as `AND`/`OR` via `opt.toUpperCase()`. Interpolate dynamic values with `{{name}}`.
+- Never leave a `// TODO: i18n` in a merged PR. If you genuinely must defer, block the merge — do not ship the marker.
+
 ### Don't: Use Virtuoso rangeChanged Without Scroll Guards
 
 ```tsx
@@ -140,3 +167,4 @@ None currently. ESLint flat config (`eslint.config.js`) is in place; use `npm ru
 - [ ] Zustand persist `partialize` excludes temporary UI state
 - [ ] API key forms allow empty strings (optional fields: `z.string().or(z.literal(""))`)
 - [ ] New resource type mutations invalidate ALL related query keys (e.g., adding categories means `useDeleteFeed`, `useImportOPML` must also invalidate `categories.list`)
+- [ ] No hardcoded user-facing strings and no `// TODO: i18n` markers — every visible label goes through `t()`, keys added to both `en` and `zh-CN`

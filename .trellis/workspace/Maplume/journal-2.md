@@ -214,3 +214,38 @@ Removed the three-dot more-menu dropdown from individual feed subscription items
 ### Next Steps
 
 - None - task complete
+
+
+## Session 62: i18n support for RSS automation feature
+
+**Date**: 2026-06-17
+**Task**: i18n support for RSS automation feature
+**Branch**: `MaplumeX/automation-i18n-fix`
+
+### Summary
+
+RSS automation feature (#82) shipped ~50 hardcoded English strings with // TODO: i18n markers. Wired them into existing react-i18next: added automation.* keys to en/zh-CN settings locales, replaced markers with t() in RuleEditorDialog/AutomationTab/FeedSettingsDialog/Sidebar/SettingsDialog. Settings-context components use useTranslation('settings'); reader-default components cross-ref via { ns: 'settings' }. Stored field values and proper nouns (language names, AND/OR) left literal. Added 'Don't commit hardcoded strings' forbidden-pattern to frontend quality-guidelines spec with the #82 incident as rationale.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `313ba85` | (see git log) |
+| `fb3d6b6` | (see git log) |
+| `6726910` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

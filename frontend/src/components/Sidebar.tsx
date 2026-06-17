@@ -479,7 +479,7 @@ export function Sidebar() {
         <button
           className="flex shrink-0 items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors duration-100 hover:bg-sidebar-hover hover:text-foreground"
           onClick={() => setReader({ settingsDialogOpen: true, settingsDialogTab: "automation" })}
-          title="Automation" // TODO: i18n
+          title={t("automation.tooltip", { ns: "settings" })}
         >
           <Zap className="h-4 w-4" />
         </button>
