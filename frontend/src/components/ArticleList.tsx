@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
-import { Star, CheckCheck, RefreshCw } from "lucide-react";
+import { CheckCheck, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +12,6 @@ import {
   useInfiniteArticles,
   useFeeds,
   useToggleRead,
-  useToggleStar,
   useMarkAllRead,
   useBatchRead,
   useRefreshAllFeeds,
@@ -42,7 +41,6 @@ function ArticleRow({
   onSelect: () => void;
 }) {
   const { t, i18n } = useTranslation("reader");
-  const toggleStar = useToggleStar();
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = article.image_url && !imageFailed;
 
@@ -55,8 +53,7 @@ function ArticleRow({
     <div
       className={cn(
         "flex cursor-pointer flex-row border-b px-3 py-2 transition-colors duration-100 hover:bg-article-hover/70",
-        isSelected && "bg-article-hover",
-        !article.is_read && "font-medium"
+        isSelected && "bg-article-hover"
       )}
       onClick={onSelect}
     >
@@ -69,18 +66,7 @@ function ArticleRow({
         )}
         <div className="flex items-center gap-2">
           <span className={cn("h-2 w-2 shrink-0", !article.is_read && "rounded-full bg-primary")} />
-          <span className="flex-1 truncate text-sm">{article.title}</span>
-          <button
-            className="shrink-0 p-0.5 hover:text-primary"
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleStar.mutate({ articleId: article.id, starred: !article.is_starred });
-            }}
-          >
-            <Star
-              className={cn("h-3.5 w-3.5", article.is_starred && "fill-primary text-primary")}
-            />
-          </button>
+          <span className="flex-1 truncate text-sm font-medium">{article.title}</span>
         </div>
         {article.content_snippet && (
           <span className="line-clamp-2 pl-4 text-xs text-muted-foreground">
