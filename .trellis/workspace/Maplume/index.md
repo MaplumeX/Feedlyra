@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 62
+- **Total Sessions**: 63
 - **Last Active**: 2026-06-17
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~251 | Active |
+| `journal-2.md` | ~284 | Active |
 | `journal-1.md` | ~1990 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 63 | 2026-06-17 | 优化文章列表条目样式：标题始终加粗并移除行内收藏按钮 | `e1659db` | `MaplumeX/article-list-item-style` |
 | 62 | 2026-06-17 | i18n support for RSS automation feature | `313ba85`, `fb3d6b6`, `6726910` | `MaplumeX/automation-i18n-fix` |
 | 61 | 2026-06-17 | Remove sidebar feed item more-menu dropdown | `cb69a2a` | `MaplumeX/lumeX/sidebar-subscription-no-more-menu` |
 | 60 | 2026-06-12 | Fix new article notification flow | `ea5a088` | `MaplumeX/amman` |
