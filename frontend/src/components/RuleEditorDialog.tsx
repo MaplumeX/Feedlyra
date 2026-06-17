@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2, Plus, Trash2, AlertTriangle } from "lucide-react";
 import {
   Dialog,
@@ -37,25 +38,25 @@ const FIELDS = ["title", "author", "url", "content"] as const;
 const OPERATORS = ["contains", "not_contains", "matches_regex"] as const;
 const LOGIC_OPTIONS = ["and", "or"] as const;
 
-const FIELD_LABELS: Record<string, string> = {
-  title: "Title", // TODO: i18n
-  author: "Author", // TODO: i18n
-  url: "URL", // TODO: i18n
-  content: "Content", // TODO: i18n
+const FIELD_LABEL_KEYS: Record<string, string> = {
+  title: "automation.fieldTitle",
+  author: "automation.fieldAuthor",
+  url: "automation.fieldUrl",
+  content: "automation.fieldContent",
 };
 
-const OPERATOR_LABELS: Record<string, string> = {
-  contains: "contains", // TODO: i18n
-  not_contains: "not contains", // TODO: i18n
-  matches_regex: "matches regex", // TODO: i18n
+const OPERATOR_LABEL_KEYS: Record<string, string> = {
+  contains: "automation.opContains",
+  not_contains: "automation.opNotContains",
+  matches_regex: "automation.opMatchesRegex",
 };
 
-const ACTION_TYPES: { type: AutomationAction["type"]; label: string; needsLang?: boolean }[] = [
-  { type: "mark_read", label: "Mark as Read" }, // TODO: i18n
-  { type: "star", label: "Star" }, // TODO: i18n
-  { type: "delete", label: "Delete (skip)" }, // TODO: i18n
-  { type: "auto_translate", label: "Auto Translate", needsLang: true }, // TODO: i18n
-  { type: "auto_extract", label: "Auto Extract Full Text" }, // TODO: i18n
+const ACTION_TYPES: { type: AutomationAction["type"]; labelKey: string; needsLang?: boolean }[] = [
+  { type: "mark_read", labelKey: "automation.actionMarkRead" },
+  { type: "star", labelKey: "automation.actionStar" },
+  { type: "delete", labelKey: "automation.actionDelete" },
+  { type: "auto_translate", labelKey: "automation.actionAutoTranslate", needsLang: true },
+  { type: "auto_extract", labelKey: "automation.actionAutoExtract" },
 ];
 
 function emptyCondition(): AutomationCondition {
@@ -63,6 +64,7 @@ function emptyCondition(): AutomationCondition {
 }
 
 export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defaultScopeId }: RuleEditorDialogProps) {
+  const { t } = useTranslation("settings");
   const { data: categories = [] } = useCategories();
   const { data: feeds = [] } = useFeeds();
   const createRule = useCreateAutomationRule();
@@ -186,9 +188,9 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[calc(100vh-4rem)] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Rule" : "Create Rule"}</DialogTitle> {/* TODO: i18n */}
+          <DialogTitle>{isEditing ? t("automation.editRuleTitle") : t("automation.createRuleTitle")}</DialogTitle>
           <DialogDescription>
-            {isEditing ? "Modify this automation rule" : "Define conditions and actions for new articles"} {/* TODO: i18n */}
+            {isEditing ? t("automation.editRuleDescription") : t("automation.createRuleDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -196,9 +198,9 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
           {/* Basic Info */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label htmlFor="rule-name">Rule Name</Label> {/* TODO: i18n */}
+              <Label htmlFor="rule-name">{t("automation.ruleName")}</Label>
               <div className="flex items-center gap-2">
-                <Label htmlFor="rule-enabled" className="text-xs text-muted-foreground">Enabled</Label> {/* TODO: i18n */}
+                <Label htmlFor="rule-enabled" className="text-xs text-muted-foreground">{t("automation.enabled")}</Label>
                 <Switch id="rule-enabled" checked={enabled} onCheckedChange={setEnabled} />
               </div>
             </div>
@@ -206,30 +208,30 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
               id="rule-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Auto-read marketing emails" // TODO: i18n
+              placeholder={t("automation.ruleNamePlaceholder")}
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Scope</Label> {/* TODO: i18n */}
+            <Label>{t("automation.scope")}</Label>
             <Select value={scope} onValueChange={(v) => setScope(v as "global" | "category" | "feed")}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="global">Global (all feeds)</SelectItem> {/* TODO: i18n */}
-                <SelectItem value="category">Category</SelectItem>
-                <SelectItem value="feed">Feed</SelectItem>
+                <SelectItem value="global">{t("automation.scopeGlobal")}</SelectItem>
+                <SelectItem value="category">{t("automation.scopeCategory")}</SelectItem>
+                <SelectItem value="feed">{t("automation.scopeFeed")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {scope === "category" && (
             <div className="space-y-2">
-              <Label>Category</Label> {/* TODO: i18n */}
+              <Label>{t("automation.category")}</Label>
               <Select value={scopeId} onValueChange={setScopeId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category..." /> {/* TODO: i18n */}
+                  <SelectValue placeholder={t("automation.categoryPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -242,10 +244,10 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
 
           {scope === "feed" && (
             <div className="space-y-2">
-              <Label>Feed</Label> {/* TODO: i18n */}
+              <Label>{t("automation.feed")}</Label>
               <Select value={scopeId} onValueChange={setScopeId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select feed..." /> {/* TODO: i18n */}
+                  <SelectValue placeholder={t("automation.feedPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {feeds.map((feed) => (
@@ -260,9 +262,9 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
 
           {/* Conditions */}
           <div className="space-y-3">
-            <Label>Conditions</Label> {/* TODO: i18n */}
+            <Label>{t("automation.conditions")}</Label>
             <p className="text-xs text-muted-foreground">
-              Match articles when all AND conditions and any OR conditions are satisfied {/* TODO: i18n */}
+              {t("automation.conditionsDescription")}
             </p>
             {conditions.map((condition, index) => (
               <div key={index} className="space-y-1.5">
@@ -298,7 +300,7 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
                     <SelectContent>
                       {FIELDS.map((f) => (
                         <SelectItem key={f} value={f} className="text-xs">
-                          {FIELD_LABELS[f]}
+                          {t(FIELD_LABEL_KEYS[f]!)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -313,7 +315,7 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
                     <SelectContent>
                       {OPERATORS.map((op) => (
                         <SelectItem key={op} value={op} className="text-xs">
-                          {OPERATOR_LABELS[op]}
+                          {t(OPERATOR_LABEL_KEYS[op]!)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -321,7 +323,7 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
                   <Input
                     value={condition.value}
                     onChange={(e) => updateCondition(index, { value: e.target.value })}
-                    placeholder="Value" // TODO: i18n
+                    placeholder={t("automation.valuePlaceholder")}
                     className="h-7 flex-1 text-xs"
                   />
                   <Button
@@ -330,7 +332,7 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
                     className="h-7 w-7 shrink-0 text-muted-foreground"
                     onClick={() => removeCondition(index)}
                     disabled={conditions.length <= 1}
-                    title="Remove condition" // TODO: i18n
+                    title={t("automation.removeCondition")}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -344,7 +346,7 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
               onClick={addCondition}
             >
               <Plus className="mr-1 h-3 w-3" />
-              Add Condition {/* TODO: i18n */}
+              {t("automation.addCondition")}
             </Button>
           </div>
 
@@ -352,11 +354,11 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
 
           {/* Actions */}
           <div className="space-y-3">
-            <Label>Actions</Label> {/* TODO: i18n */}
+            <Label>{t("automation.actions")}</Label>
             {hasConflict && (
               <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                <span>Delete takes precedence — other actions won&apos;t have effect</span> {/* TODO: i18n */}
+                <span>{t("automation.conflictWarning")}</span>
               </div>
             )}
             <div className="space-y-2">
@@ -364,7 +366,7 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
                 <div key={at.type}>
                   <div className="flex items-center justify-between rounded-md border px-3 py-2">
                     <Label htmlFor={`action-${at.type}`} className="text-sm cursor-pointer">
-                      {at.label}
+                      {t(at.labelKey)}
                     </Label>
                     <Switch
                       id={`action-${at.type}`}
@@ -374,7 +376,7 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
                   </div>
                   {at.needsLang && actionToggles[at.type] && (
                     <div className="mt-1.5 ml-4 flex items-center gap-2">
-                      <Label className="text-xs text-muted-foreground">Target Language</Label> {/* TODO: i18n */}
+                      <Label className="text-xs text-muted-foreground">{t("automation.targetLanguage")}</Label>
                       <Select value={translateLang} onValueChange={setTranslateLang}>
                         <SelectTrigger className="h-7 w-36 text-xs">
                           <SelectValue />
@@ -393,8 +395,7 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
               ))}
             </div>
             {noActionsSelected && (
-              /* TODO: i18n */
-              <p className="text-xs text-destructive">Select at least one action</p>
+              <p className="text-xs text-destructive">{t("automation.selectAction")}</p>
             )}
           </div>
         </div>
@@ -407,14 +408,14 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel {/* TODO: i18n */}
+            {t("automation.cancel")}
           </Button>
           <Button
             onClick={handleSave}
             disabled={isPending || !name.trim() || noActionsSelected}
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEditing ? "Save" : "Create"} {/* TODO: i18n */}
+            {isEditing ? t("automation.save") : t("automation.create")}
           </Button>
         </DialogFooter>
       </DialogContent>

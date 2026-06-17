@@ -44,7 +44,7 @@ export function SettingsDialog() {
             <TabsTrigger value="general" className="flex-1">{t("general")}</TabsTrigger>
             <TabsTrigger value="ai" className="flex-1">{t("aiSettings")}</TabsTrigger>
             <TabsTrigger value="subscriptions" className="flex-1">{t("subscriptions")}</TabsTrigger>
-            <TabsTrigger value="automation" className="flex-1">Automation</TabsTrigger>
+            <TabsTrigger value="automation" className="flex-1">{t("automation.tabLabel")}</TabsTrigger>
           </TabsList>
           <TabsContent value="general" className="mt-4">
             <GeneralSettingsTab />

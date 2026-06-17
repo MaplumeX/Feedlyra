@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2, Plus, Pencil, Trash2, Zap, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,18 +14,31 @@ import { RuleEditorDialog } from "@/components/RuleEditorDialog";
 import { cn } from "@/lib/utils";
 import type { AutomationRule } from "@/api/types";
 
-const SCOPE_LABELS: Record<AutomationRule["scope"], string> = {
-  global: "Global", // TODO: i18n
-  category: "Category", // TODO: i18n
-  feed: "Feed", // TODO: i18n
+const SCOPE_LABEL_KEYS: Record<AutomationRule["scope"], string> = {
+  global: "automation.scopeGlobalShort",
+  category: "automation.scopeCategoryShort",
+  feed: "automation.scopeFeedShort",
 };
 
-const ACTION_LABELS: Record<string, string> = {
-  mark_read: "Mark Read", // TODO: i18n
-  star: "Star", // TODO: i18n
-  delete: "Delete", // TODO: i18n
-  auto_translate: "Auto Translate", // TODO: i18n
-  auto_extract: "Auto Extract", // TODO: i18n
+const ACTION_LABEL_KEYS: Record<string, string> = {
+  mark_read: "automation.actionMarkReadShort",
+  star: "automation.actionStarShort",
+  delete: "automation.actionDeleteShort",
+  auto_translate: "automation.actionAutoTranslateShort",
+  auto_extract: "automation.actionAutoExtractShort",
+};
+
+const FIELD_LABEL_KEYS: Record<string, string> = {
+  title: "automation.fieldTitle",
+  author: "automation.fieldAuthor",
+  url: "automation.fieldUrl",
+  content: "automation.fieldContent",
+};
+
+const OPERATOR_LABEL_KEYS: Record<string, string> = {
+  contains: "automation.opContains",
+  not_contains: "automation.opNotContains",
+  matches_regex: "automation.opMatchesRegex",
 };
 
 const ACTION_COLORS: Record<string, string> = {
@@ -35,20 +49,23 @@ const ACTION_COLORS: Record<string, string> = {
   auto_extract: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
 };
 
-function conditionSummary(conditions: AutomationRule["conditions"]): string {
-  if (conditions.length === 0) return "No conditions"; // TODO: i18n
+function conditionSummary(conditions: AutomationRule["conditions"], t: (key: string, opts?: Record<string, unknown>) => string): string {
+  if (conditions.length === 0) return t("automation.noConditions");
   return conditions
     .map((c, i) => {
-      const prefix = i === 0 ? "" : c.logic === "or" ? " OR " : " AND ";
-      const field = c.field;
-      const op = c.operator === "contains" ? "contains" : c.operator === "not_contains" ? "not contains" : "matches";
-      const val = c.value.length > 20 ? c.value.slice(0, 20) + "..." : c.value;
-      return `${prefix}${field} ${op} "${val}"`;
+      const prefix = i === 0 ? "" : c.logic === "or" ? ` ${t("automation.logicOr")} ` : ` ${t("automation.logicAnd")} `;
+      const field = t(FIELD_LABEL_KEYS[c.field] ?? "automation.fieldTitle");
+      const op = t(OPERATOR_LABEL_KEYS[c.operator] ?? "automation.opContains");
+      const truncated = c.value.length > 20;
+      const val = truncated ? c.value.slice(0, 20) : c.value;
+      const template = truncated ? "automation.conditionSummaryTruncated" : "automation.conditionSummary";
+      return `${prefix}${t(template, { field, operator: op, value: val })}`;
     })
     .join("");
 }
 
 export function AutomationTab() {
+  const { t } = useTranslation("settings");
   const { data, isLoading } = useAutomationRules();
   const toggleRule = useToggleAutomationRule();
   const deleteRule = useDeleteAutomationRule();
@@ -72,7 +89,7 @@ export function AutomationTab() {
   }
 
   function handleDelete(rule: AutomationRule) {
-    if (!window.confirm(`Delete rule "${rule.name}"?`)) return; // TODO: i18n
+    if (!window.confirm(t("automation.deleteConfirm", { name: rule.name }))) return;
     deleteRule.mutate(rule.id);
   }
 
@@ -108,17 +125,17 @@ export function AutomationTab() {
                   {rule.name}
                 </span>
                 <Badge variant="outline" className="text-[10px] shrink-0">
-                  {SCOPE_LABELS[rule.scope]}
+                  {t(SCOPE_LABEL_KEYS[rule.scope])}
                 </Badge>
               </div>
               {hasDeleteAction(rule) && rule.actions.length > 1 && (
                 <div className="mt-1 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
                   <AlertTriangle className="h-3 w-3" />
-                  <span>Delete takes precedence over other actions</span>
+                  <span>{t("automation.conflictHint")}</span>
                 </div>
               )}
               <p className="mt-0.5 text-xs text-muted-foreground truncate">
-                {conditionSummary(rule.conditions)}
+                {conditionSummary(rule.conditions, t)}
               </p>
               <div className="mt-1.5 flex flex-wrap gap-1">
                 {rule.actions.map((action, i) => (
@@ -126,7 +143,7 @@ export function AutomationTab() {
                     key={`${action.type}-${i}`}
                     className={cn("inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium", ACTION_COLORS[action.type])}
                   >
-                    {ACTION_LABELS[action.type] ?? action.type}
+                    {t(ACTION_LABEL_KEYS[action.type] ?? "automation.actionDeleteShort")}
                     {action.type === "auto_translate" && action.params?.translate_target_lang
                       ? ` (${action.params.translate_target_lang})`
                       : null}
@@ -140,7 +157,7 @@ export function AutomationTab() {
                 size="icon"
                 className="h-7 w-7"
                 onClick={() => handleEdit(rule)}
-                title="Edit rule" // TODO: i18n
+                title={t("automation.editRule")}
               >
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
@@ -149,7 +166,7 @@ export function AutomationTab() {
                 size="icon"
                 className="h-7 w-7 text-destructive"
                 onClick={() => handleDelete(rule)}
-                title="Delete rule" // TODO: i18n
+                title={t("automation.deleteRule")}
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
@@ -165,26 +182,26 @@ export function AutomationTab() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm font-medium">
           <Zap className="h-4 w-4" />
-          <span>Automation Rules</span> {/* TODO: i18n */}
+          <span>{t("automation.title")}</span>
         </div>
         <Button size="sm" onClick={handleCreate}>
           <Plus className="mr-1 h-3.5 w-3.5" />
-          Add Rule {/* TODO: i18n */}
+          {t("automation.addRule")}
         </Button>
       </div>
 
       {rules.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
           <Zap className="mb-2 h-8 w-8" />
-          <p className="text-sm">No automation rules yet</p> {/* TODO: i18n */}
-          <p className="text-xs">Create rules to automatically process new articles</p> {/* TODO: i18n */}
+          <p className="text-sm">{t("automation.emptyTitle")}</p>
+          <p className="text-xs">{t("automation.emptyDescription")}</p>
         </div>
       ) : (
         <ScrollArea className="max-h-[400px]">
           <div className="space-y-4">
-            {renderRuleGroup("Global", globalRules)}
-            {renderRuleGroup("Category", categoryRules)}
-            {renderRuleGroup("Feed", feedRules)}
+            {renderRuleGroup(t("automation.groupGlobal"), globalRules)}
+            {renderRuleGroup(t("automation.groupCategory"), categoryRules)}
+            {renderRuleGroup(t("automation.groupFeed"), feedRules)}
           </div>
         </ScrollArea>
       )}

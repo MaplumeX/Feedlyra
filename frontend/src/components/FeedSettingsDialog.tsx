@@ -183,7 +183,7 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
         <div className="flex items-center justify-between rounded-md border px-3 py-2">
           <div className="flex items-center gap-2 text-sm">
             <Zap className="h-4 w-4 text-muted-foreground" />
-            <span>Automation Rules</span> {/* TODO: i18n */}
+            <span>{t("automation.title", { ns: "settings" })}</span>
             {feedRuleCount > 0 && (
               <span className="text-xs text-muted-foreground">({feedRuleCount})</span>
             )}
@@ -197,7 +197,7 @@ export function FeedSettingsDialog({ feed, open, onOpenChange }: FeedSettingsDia
               setReader({ settingsDialogOpen: true, settingsDialogTab: "automation" });
             }}
           >
-            Manage {/* TODO: i18n */}
+            {t("automation.manage", { ns: "settings" })}
           </Button>
         </div>
 
