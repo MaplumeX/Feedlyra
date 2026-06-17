@@ -25,7 +25,7 @@ frontend/
 └── src/
     ├── main.tsx               # React DOM entry
     ├── App.tsx                # Root component (providers + routes)
-    ├── index.css              # Tailwind directives + CSS variables (light/dark)
+    ├── index.css              # Tailwind directives + CSS variables (light/dark + .theme-*)
     ├── api/
     │   ├── client.ts          # Generic fetch wrapper (api object)
     │   ├── hooks.ts           # TanStack Query hooks + query key factory
@@ -35,9 +35,12 @@ frontend/
     │   ├── Sidebar.tsx        # Feed list sidebar
     │   ├── ArticleList.tsx    # Virtualized article list with grouping
     │   ├── ArticleDetail.tsx  # Article reader with TOC
-    │   ├── ArticleTableOfContents.tsx
-    │   ├── AIChatPanel.tsx    # AI chat sidebar panel
+    │   ├── ArticleTableOfContents.tsx  # Draggable in-reader TOC
+    │   ├── AIChatPanel.tsx    # AI chat sidebar/floating panel
+    │   ├── FloatingChatPanel.tsx       # Detached-overlay wrapper for floating chat mode
+    │   ├── ConversationSidebar.tsx     # Conversation list Popover + row (rename/delete)
     │   ├── AddFeedDialog.tsx
+    │   ├── RuleEditorDialog.tsx        # Automation rule create/edit dialog
     │   ├── FeedIcon.tsx       # Favicon with onerror fallback
     │   ├── FeedSortMenu.tsx
     │   ├── FeedSettingsDialog.tsx
@@ -51,6 +54,7 @@ frontend/
     │   │   ├── SettingsDialog.tsx
     │   │   ├── GeneralSettingsTab.tsx
     │   │   ├── AISettingsTab.tsx
+    │   │   ├── AutomationTab.tsx        # Automation rule list (scope groups + toggle/delete)
     │   │   ├── EditEmailDialog.tsx
     │   │   ├── EditPasswordDialog.tsx
     │   │   ├── EditUsernameDialog.tsx
@@ -61,7 +65,8 @@ frontend/
     │       ├── dialog.tsx
     │       └── ...
     ├── hooks/
-    │   └── useKeyboardShortcuts.ts
+    │   ├── useKeyboardShortcuts.ts
+    │   └── useColorScheme.ts   # Reads/applies .theme-* from localStorage
     ├── i18n/
     │   ├── index.ts           # i18next init + zod i18n setup
     │   └── locales/
@@ -70,9 +75,13 @@ frontend/
     ├── lib/
     │   ├── utils.ts           # cn() utility (clsx + tailwind-merge)
     │   ├── feedSort.ts        # Feed sort preference types + defaults
-    │   └── i18n-zod.ts        # Zod error map with i18n integration
+    │   ├── languages.ts       # Language option list (UI labels stay literal)
+    │   ├── colorScheme.ts     # ColorScheme presets + storage key (indigo/amber/forest)
+    │   ├── articleList.ts     # Infinite-list helpers: transitions + first-page replace
+    │   ├── i18n-zod.ts        # Zod error map with i18n integration
+    │   └── articleList.test.ts # Vitest unit tests for articleList helpers
     ├── pages/
-    │   ├── Home.tsx           # Main reader page (3-panel layout)
+    │   ├── Home.tsx           # Main reader page (3-panel layout + floating chat)
     │   └── auth/
     │       ├── LoginPage.tsx
     │       └── RegisterPage.tsx

@@ -31,7 +31,8 @@ This directory contains guidelines for frontend development in the Feedlyra proj
 - **Article pagination**: Infinite article queries use the backend's opaque `next_cursor`; filtered lists must not derive the next page from mutable totals
 - **i18n**: i18next with `en`/`zh-CN` locales, Zod i18n integration
 - **Forms**: react-hook-form + Zod validation
-- **Tests**: Vitest unit tests for reusable frontend logic; run with `npm run test`
+- **Tests**: Vitest unit tests for reusable frontend logic; run with `npm run test` (`vitest run`). `eslint.config.js` flat config in place; `npm run lint` and `npm run build` for verification.
+- **Color schemes**: Brand color (`--primary`/`--ring`/etc.) is switchable between `indigo`/`amber`/`forest` presets. `useColorScheme` toggles `.theme-*` classes on `<html>` and persists to `localStorage` under `feedlyra-color-scheme` (NOT in Zustand). The `.theme-*` selectors live outside `@layer base` so Tailwind does not tree-shake them — see [[component-guidelines]] "Color Scheme Presets".
 
 ---
 

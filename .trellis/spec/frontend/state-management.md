@@ -59,6 +59,11 @@ interface ReaderSettings {
   paragraphSpacing: number; // 0.5–2em, default 1.25
 }
 
+type ChatPanelMode = "sidebar" | "floating";
+
+interface FloatingPanelPosition { x: number; y: number; }
+interface FloatingPanelSize { width: number; height: number; }
+
 export const useReaderStore = create<ReaderState>()(
   persist(
     (set) => ({
@@ -73,9 +78,19 @@ export const useReaderStore = create<ReaderState>()(
       fullContentArticleIds: {},
       chatPanelOpen: false,
       chatPanelWidth: 360,
+      chatPanelMode: "sidebar",
+      floatingPanelPosition: { ...DEFAULT_FLOATING_POSITION },
+      floatingPanelSize: { ...DEFAULT_FLOATING_SIZE },
+      conversationPanelOpen: false,
+      activeConversationId: null,
       commandPaletteOpen: false,
       settingsDialogOpen: false,
+      settingsDialogTab: undefined,
       set: (partial) => set(partial),
+      setReaderSetting: (key, value) =>
+        set((state) => ({ readerSettings: { ...state.readerSettings, [key]: value } })),
+      setArticleFullContentPreference: (articleId, enabled) => /* ... */,
+      resetReaderSettings: () => set({ readerSettings: { ...DEFAULT_READER_SETTINGS } }),
     }),
     {
       name: "feedlyra-reader",
@@ -87,13 +102,26 @@ export const useReaderStore = create<ReaderState>()(
         autoSummarize: state.autoSummarize,
         fullContentArticleIds: state.fullContentArticleIds,
         chatPanelWidth: state.chatPanelWidth,
+        chatPanelMode: state.chatPanelMode,
+        floatingPanelPosition: state.floatingPanelPosition,
+        floatingPanelSize: state.floatingPanelSize,
       }),
     }
   )
 );
 ```
 
+State categories to keep straight:
+
+- **`chatPanelOpen` + `conversationPanelOpen` + `activeConversationId`**: the AI chat surface is open when `conversationPanelOpen && !!activeConversationId`. `chatPanelOpen` is a separate legacy toggle. All three are temporary UI state — NOT in `partialize`.
+- **`chatPanelMode`** (`"sidebar" | "floating"`): persisted. Selects whether `AIChatPanel` renders as a `Group` `Panel` or via `FloatingChatPanel` portal.
+- **`floatingPanelPosition` / `floatingPanelSize`**: persisted. `{x:0,y:0}` is a sentinel meaning "compute default bottom-right on next mount" (see `FloatingChatPanel.tsx`).
+- **`fullContentArticleIds: Record<string, true>`**: persisted per-article toggle (prefer extracted full content over feed content).
+- **`settingsDialogTab`**: optional tab id to open the settings dialog at; temporary, not persisted.
+
 Uses a generic `set` action for simple updates, plus specific typed actions (`setReaderSetting`, `setArticleFullContentPreference`, `resetReaderSettings`) for complex nested state.
+
+> **Color scheme is NOT here.** The indigo/amber/forest preset is stored separately under `localStorage["feedlyra-color-scheme"]` and applied as a `.theme-*` class on `<html>` by `useColorScheme` (see [[component-guidelines]] "Color Scheme Presets"). Do not add it to Zustand — it is read/applied as a side effect, never rendered as store state.
 
 ---
 

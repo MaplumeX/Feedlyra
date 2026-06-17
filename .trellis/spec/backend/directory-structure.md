@@ -29,7 +29,12 @@ backend/
 │       ├── 006_article_full_content.py
 │       ├── 007_article_summaries.py
 │       ├── 008_per_feature_ai_config.py
-│       └── 009_feed_auto_full_text.py
+│       ├── 009_feed_auto_full_text.py
+│       ├── 010_article_chat_history_summary.py
+│       ├── 011_auto_translate_fields.py
+│       ├── 012_conversations_and_references.py
+│       ├── 013_automation_rules.py
+│       └── 014_article_initial_fetch.py
 └── app/
     ├── __init__.py
     ├── main.py             # FastAPI app factory, lifespan, CORS, router includes
@@ -43,7 +48,8 @@ backend/
     │   ├── feed.py         # Feed model
     │   ├── category.py     # Category model
     │   ├── article.py      # Article, ReadStatus, StarredArticle models
-    │   └── ai.py           # ArticleAIData, ArticleSummary, ArticleChat, ChatMessage models
+    │   ├── automation.py   # AutomationRule model (conditions/actions JSON, scope, priority)
+    │   └── ai.py           # ArticleAIData, ArticleSummary, ArticleChat, ChatMessage, Conversation, ConversationReference models
     ├── schemas/
     │   ├── __init__.py
     │   ├── auth.py         # RegisterRequest, LoginRequest, TokenResponse
@@ -51,6 +57,7 @@ backend/
     │   ├── feed.py         # FeedCreate, FeedUpdate, FeedResponse
     │   ├── category.py     # CategoryCreate, CategoryUpdate, CategoryResponse
     │   ├── article.py      # ArticleResponse, ArticleListResponse
+    │   ├── automation.py   # ConditionSchema, ActionSchema, AutomationRuleCreate/Update/Response
     │   └── ai.py           # AI config, summary, translation, chat schemas
     ├── routers/
     │   ├── __init__.py
@@ -58,13 +65,15 @@ backend/
     │   ├── feeds.py        # /api/feeds/*
     │   ├── categories.py   # /api/categories/*
     │   ├── articles.py     # /api/articles/*
-    │   └── ai.py           # /api/ai/*
+    │   ├── ai.py           # /api/ai/*
+    │   └── automation.py   # /api/automation-rules/*
     └── services/
         ├── __init__.py
         ├── auth.py              # JWT + bcrypt password handling
-        ├── feed_fetcher.py      # RSS fetch, parse, OPML, periodic refresh
-        ├── article_summary.py   # Summary content selection, content hash
-        └── llm.py               # OpenAI client, summary, translation, chat streaming
+        ├── feed_fetcher.py      # RSS fetch, parse, OPML, periodic refresh, automation integration
+        ├── article_summary.py   # Summary content selection, content hash, extract_content_for_summary
+        ├── automation.py        # Rule engine: condition matching, scope resolution, action application
+        └── llm.py               # OpenAI client, summary, translation, chat streaming, conversation references
 ```
 
 ---

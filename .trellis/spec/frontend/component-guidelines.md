@@ -136,6 +136,35 @@ colors: {
 - Alpha transparency uses the `/ 0.X` suffix (e.g., `239 84% 58% / 0.08`)
 - Map in `tailwind.config.ts` with `hsl()` wrapper so Tailwind utilities work (`bg-sidebar-bg`, `bg-chat-user`)
 
+### Color Scheme Presets
+
+Brand color is switchable between `indigo` / `amber` / `forest` presets. Each preset overrides only the brand-related CSS variables (`--primary`, `--ring`, `--chat-bubble-user`, `--prose-link`, `--prose-blockquote-border`); the grayscale base tokens stay inherited from `:root` / `.dark`.
+
+```css
+/* index.css — OUTSIDE @layer base */
+.theme-indigo  { --primary: 239 84% 58%; --ring: 239 84% 58%; /* ... */ }
+.dark.theme-indigo { --primary: 240 68% 65%; /* ... */ }
+.theme-amber  { --primary: 28 90% 51%;  /* ... */ }
+.theme-forest { --primary: 152 56% 36%; /* ... */ }
+```
+
+```ts
+// hooks/useColorScheme.ts
+function applySchemeClass(scheme: ColorScheme) {
+  const root = document.documentElement;
+  root.classList.remove(...COLOR_SCHEMES.map((s) => `theme-${s.value}`));
+  root.classList.add(`theme-${scheme}`);
+}
+```
+
+**Why outside `@layer base`**: the `.theme-*` selectors set CSS variables only — they have no utility classes referencing them at build time, so Tailwind's tree-shaker drops them if they sit inside `@layer base`. Placing them as plain top-level rules (the `index.css` comment says so explicitly) keeps them in the build. Each preset also needs a `.dark.theme-*` companion for dark mode.
+
+**Key rules**:
+- Persist the choice via `useColorScheme` → `localStorage` key `feedlyra-color-scheme` (declared in `lib/colorScheme.ts`). This is NOT part of Zustand — it is read/applied as a side effect, not as store state.
+- Apply the `.theme-*` class on `<html>` (`document.documentElement`) so it composes with next-themes' `.dark` class (`<html class="dark theme-amber">`).
+- Toggleable brand variables must each have a `.dark.theme-*` override, or dark mode silently falls back to the light preset hue.
+- The presets list and storage key live in `lib/colorScheme.ts` (`COLOR_SCHEMES`, `COLOR_SCHEME_STORAGE_KEY`, `DEFAULT_COLOR_SCHEME`); UI labels use `labelKey` (e.g., `themeIndigo`) resolved through the `settings` namespace.
+
 ### Google Fonts Integration
 
 When adding or changing Google Fonts:
@@ -1070,3 +1099,47 @@ const handleClose = () => {
 ```
 
 **Why**: When a component unmounts (e.g., closing the chat panel), in-flight async operations may still resolve. Calling `setState` on an unmounted component causes a React error. Without an ErrorBoundary, this crashes the entire app (white screen). The `mountedRef` pattern prevents this; setting it `false` in `handleClose` before `abort()` ensures that abort-triggered callbacks also bail out.
+
+### Automation Rule Editor
+
+The rule editor (`RuleEditorDialog.tsx`) builds a rule from local component state, not react-hook-form, because the conditions/actions array shape does not map cleanly to a flat form schema. Pattern:
+
+```tsx
+const [conditions, setConditions] = useState<AutomationCondition[]>([emptyCondition()]);
+const [actionToggles, setActionToggles] = useState<Record<string, boolean>>({});
+const [translateLang, setTranslateLang] = useState("zh");
+```
+
+**Key details**:
+- Actions are modeled as a **toggle map** (`actionToggles: Record<string, boolean>`) keyed by action type, built up to `AutomationAction[]` only on save. `auto_translate` carries `params: { translate_target_lang }`.
+- A rule with `delete` plus any other action raises a conflict warning (`AlertTriangle` banner) — the backend treats any rule with a `delete` action as a delete-only rule and ignores its other actions (see backend `database-guidelines.md` "Scenario: Automation Rules Engine"). Surface this in the UI rather than silently discarding.
+- Conditions render as a dynamic list; the first row's logic selector is hidden (backend ignores the first condition's `logic`). `LOGIC_OPTIONS` render as `AND`/`OR` via `opt.toUpperCase()` — these are universal tokens, kept literal, not i18n keys.
+- On open, an `useEffect` hydrates local state from `rule` (edit) or resets to defaults (create, honoring `defaultScope`/`defaultScopeId` props).
+- Save validates `name.trim()` and `!noActionsSelected` before `mutate`; `onSuccess` closes the dialog.
+
+### Automation Rule List
+
+`settings/AutomationTab.tsx` renders rules grouped by scope (global / category / feed). Pattern details:
+
+- Optimistic toggle via `useToggleAutomationRule`, which cancels in-flight queries and patches `enabled` across every cached `queryKeys.automation.all` query (not a single key) — see [[hook-guidelines]].
+- Action badges use fixed Tailwind palettes keyed by action type (`ACTION_COLORS: Record<string, string>`). These are decorative categorization chips, not theme-critical text — dark variants are hand-paired (`bg-blue-100 ... dark:bg-blue-900/30`). Do NOT migrate these to semantic variables unless you also handle both modes; the hardcoded pairs are intentional.
+- `conditionSummary()` builds a human-readable preview `"field contains value"` joined by AND/OR i18n tokens, truncating `value` past 20 chars.
+
+### Conversation List Popover
+
+`ConversationSidebar.tsx` exports `ConversationListPopover`, rendered inside a controlled Radix Popover (see "Conversation Popover" above). Row pattern details:
+
+- Inline rename: replace the title `<span>` with an `<input>`, focus+select on mount, save on Enter/blur, cancel on Escape. The active/renaming row keeps the same `border-l-2 border-primary bg-conversation-selected` treatment.
+- Dual-trigger menu (right-click `ContextMenu` + hover `DropdownMenu` with identical items) — same pattern as the feed sidebar row.
+- Delete confirmation uses a local `Dialog` (not `window.confirm`) so it matches the app's dialog styling. `deleteConversation.mutate(id, { onSuccess })` closes both the confirm dialog.
+- `formatRelativeTime()` renders `last_message_at` as `now`/`Nm`/`Nh`/`Nd`/locale date.
+
+### Floating Chat Panel Drag & Resize
+
+`FloatingChatPanel.tsx` is a `createPortal` overlay with pointer-event-driven drag + 8-edge resize. Pattern details:
+
+- Drag and resize share the same pointer-capture technique: store start state in a ref (`dragStateRef` / `resizeStateRef`) on `pointerdown`, mutate on `pointermove`, persist to the Zustand store on `pointerup`. Use `setPointerCapture`/`releasePointerCapture` so moves continue outside the element.
+- Edge detection in `getResizeEdge()` uses a 6px threshold on `getBoundingClientRect()`; corners win over edges (`top-left` before `top`).
+- Min size 280×300 (matches sidebar panel min width). Position is clamped to the viewport on both drag and window resize.
+- Persist only on pointer-up (`persistPosition`/`persistSize`), not on every move — avoid thrashing the store and localStorage.
+- Default position computed once on first mount when the stored position is the `{0,0}` sentinel.

@@ -33,7 +33,7 @@ This directory contains guidelines for backend development in the Feedlyra proje
 - **Pydantic schemas**: Separate schema files per domain. `model_config = {"from_attributes": True}` for ORM compatibility
 - **No repository pattern**: Routers and services both write SQL directly
 - **Encryption of secrets**: User AI API keys are encrypted at rest with Fernet (key derived from `SECRET_KEY` via SHA256)
-- **No tests, no linting, no CI** — currently not configured
+- **Tests**: Backend uses `pytest` (dev dependency, listed in `[dependency-groups].dev`). Tests live in `backend/tests/`. Trusted unit tests cover pure logic that has no DB/HTTP coupling — e.g. `test_automation.py` validates `_matches_conditions` AND/OR/regex evaluation against plain `Article` instances, and `test_article_pagination.py` validates cursor round-trips. There is no linting or CI pipeline; rely on `uv run pytest` for the covered units and manual verification elsewhere.
 - **Content extraction**: Use `readability-lxml` + httpx for web content extraction. Sync library calls wrapped in `run_in_executor()`. Never use `trafilatura.fetch_url()` — always use httpx for HTTP requests (proxy support). See `feed_fetcher.py:_fetch_and_extract_content` for the pattern.
 - **Summary content extraction**: For LLM summarization, use `extract_content_for_summary()` instead of simple `content[:N]` truncation. It preserves first/last paragraphs and extracts first sentences from middle paragraphs, ensuring conclusions aren't lost. Falls back to simple truncation when no paragraph structure detected.
 - **Chat content extraction**: Chat feature reuses `extract_content_for_summary()` with a 20000-char limit (vs 8000 for summary). Same smart paragraph extraction, wider window for Q&A context.
@@ -42,6 +42,7 @@ This directory contains guidelines for backend development in the Feedlyra proje
 - **Multi-article LLM context**: `build_chat_messages()` accepts a list of articles + budget-aware truncation with separator overhead calculation. Each article uses `extract_content_for_summary()` with a per-article char budget.
 - **Image attachments**: Chat messages support image attachments via `attachments` JSON column. Images stored on local filesystem under `UPLOAD_DIR`. Uploaded images sent to LLM as OpenAI vision `image_url` content blocks.
 - **Migration transition**: `chat_messages.conversation_id` (new FK) coexists with `chat_id` (legacy FK to `article_chats`). Both nullable. Migration copies `article_chats` → `conversations` + creates references.
+- **Automation rules engine**: Conditions-based rules (`title`/`author`/`url`/`content` × `contains`/`not_contains`/`matches_regex` with AND/OR logic) trigger actions (`mark_read`, `star`, `delete`, `auto_translate`, `auto_extract`). Rules are scoped `global`/`category`/`feed`, ordered by `priority DESC, created_at ASC`. Delete actions filter articles *before* storage; non-delete actions apply *after* storage within the same feed-fetch transaction in `feed_fetcher.py`. See [[database-guidelines]] "Scenario: Automation Rules Engine".
 
 ---
 

@@ -152,22 +152,30 @@ Co-located in `src/api/hooks.ts`:
 
 ```tsx
 const queryKeys = {
-  feeds: {
-    all: ["feeds"] as const,
-    list: () => [...queryKeys.feeds.all, "list"] as const,
-  },
+  feeds:       { all: ["feeds"] as const, list: () => [...queryKeys.feeds.all, "list"] as const },
+  categories:  { all: ["categories"] as const, list: () => [...queryKeys.categories.all, "list"] as const },
   articles: {
     all: ["articles"] as const,
-    list: (params: ArticleListParams) => [...queryKeys.articles.all, params] as const,
-    detail: (id: string) => [...queryKeys.articles.all, "detail", id] as const,
+    list: (params) => [...queryKeys.articles.all, params] as const,
+    infiniteList: (params) => [...queryKeys.articles.all, "infinite", params] as const,
+    newCounts: () => [...queryKeys.articles.all, "new-count"] as const,
+    newCount: (params, since) => [...queryKeys.articles.newCounts(), params, since] as const,
+    detail: (id) => [...queryKeys.articles.all, "detail", id] as const,
   },
-  ai: {
-    config: ["ai", "config"] as const,
+  ai:           { config: ["ai", "config"] as const },
+  conversations: {
+    all: ["conversations"] as const,
+    list: (params?) => [...queryKeys.conversations.all, params] as const,
+    detail: (id) => [...queryKeys.conversations.all, "detail", id] as const,
+    references: (id) => [...queryKeys.conversations.all, id, "references"] as const,
+    chat: (id) => [...queryKeys.conversations.all, id, "chat"] as const,
   },
+  auth:         { me: ["auth", "me"] as const },
+  automation:   { all: ["automation"] as const, list: (params?) => [...queryKeys.automation.all, params] as const },
 } as const;
 ```
 
-All query keys use `as const` for type safety and are used in both `useQuery` and `queryClient.invalidateQueries`.
+All query keys use `as const` for type safety and are used in both `useQuery` and `queryClient.invalidateQueries`. The factory is exported (`export { queryKeys }`) so non-hook code (e.g. `Home.tsx` prefetch/swap helpers) can reference the same keys.
 
 ---
 
@@ -227,10 +235,28 @@ const handleSend = async () => {
 - **Forgetting to invalidate queries after mutations** — Without `qc.invalidateQueries()`, the UI shows stale data after create/update/delete.
 - **Not using the query key factory** — Hard-coded query keys break when the factory changes. Always use `queryKeys.*`.
 - **Missing cross-entity invalidation** — When a mutation changes data referenced by another entity's queries, invalidate both. Example: updating a feed's title changes `feed_title` in article list responses, so `useUpdateFeed` must invalidate both `queryKeys.feeds.list()` and `queryKeys.articles.all`.
+- **Conversation mutations must invalidate the full `conversations.all` tree** — `useCreateConversation`/`useUpdateConversation`/`useDeleteConversation`/`useAddConversationReference`/`useRemoveConversationReference` all invalidate `queryKeys.conversations.all` (plus the specific `detail`/`references` keys they touch). The conversation list query is parameterized (`list(params)`), so invalidating the umbrella `all` key is the only way to refresh every filtered list variant. Do not narrowly invalidate just `list()`.
+- **Optimistic automation toggle must patch EVERY cached automation query** — `useToggleAutomationRule` does `qc.getQueryCache().findAll({ queryKey: queryKeys.automation.all })` and `setQueryData` on each, because the list is parameterized (`list(params?)`). Patching only one cached key leaves other scope-filtered lists stale. Roll back with `invalidateQueries` on `onError`.
 - **Mutation hooks with dynamic IDs** — When a mutation hook needs to operate on different entities by ID (e.g. `useUpdateFeed`), pass the ID as part of `mutate()` payload — NOT as a hook creation parameter. This allows one hook instance to serve multiple entities. Hook signature: `useUpdateFeed()` → `mutate({ feedId, ...data })`. Do NOT use `useUpdateFeed(feedId)` which requires a separate hook instance per entity.
 - **Deriving values from query data before it arrives** — When using `data?.pages?.[0]?.total ?? 0` or similar, the fallback (`0`) fires on the first render before data loads. If a `useEffect` compares this value against a ref, the "0 → realTotal" jump looks like a real increase. Guard with `isLoading` (skip the effect while loading) or use a `hasLoadedRef` boolean to only start comparing after the first real data arrives.
-- **Refetching active article queries after inline mutations** — Mutations that change a property the user is currently viewing (e.g., `is_read`/`is_starred` in the article list) should not immediately refetch active article queries; it causes rows to disappear from filtered views and can falsely trigger the "new articles" banner. Use `applyArticleTransitionsToCache` to update fields and totals, then invalidate with `refetchType: "none"`. Reserve immediate refetches for explicit bulk actions like `markAllRead` or structural changes like adding/deleting feeds.
+- **Refetching active article queries after inline mutations** — Mutations that change a property the user is currently viewing (e.g., `is_read`/`is_starred` in the article list) should not immediately refetch active article queries; it causes rows to disappear from filtered views and can falsely trigger the "new articles" banner. Use `applyArticleTransitionsToCache` (from `src/lib/articleList.ts`) to update fields and totals, then invalidate with `refetchType: "none"`. Reserve immediate refetches for explicit bulk actions like `markAllRead` or structural changes like adding/deleting feeds.
 - **Using offset pagination for mutable filtered infinite lists** — Read/star mutations change membership in `read_status=unread` and `starred=true` while the user is paging. A later offset request then skips the row that shifted across the page boundary. Use the backend's opaque `next_cursor`; never derive the next article page from `page * limit < total`.
 - **Treating every unknown loaded ID as a new article** — Infinite scrolling deliberately loads unknown historical IDs. New-article detection must compare unknown IDs from the first page only, while automatically acknowledging IDs from appended history pages.
 - **Resetting only the virtual scroll position when acknowledging new articles** — `scrollToIndex(0)` does not reset React Query pagination. Trim the current query's `pages` and `pageParams` to one entry before continuing from the refreshed first page.
 - **Scrolling Virtuoso before a pagination reset commits** — An imperative `scrollToIndex(0)` issued in the same click handler as `setQueryData` still targets the old long list. Defer the final scroller and virtual-index reset to a layout effect that observes the one-page data; otherwise the stale offset can land in the full-height footer spacer and render as an empty list.
+
+---
+
+## Complete Hook Inventory
+
+`src/api/hooks.ts` exports (naming: `use` + entity + verb). Verify with `grep -nE "^export (async )?function use" src/api/hooks.ts` — this list is a snapshot, not authoritative:
+
+- **Auth/User**: `useCurrentUser`, `useUpdateProfile`, `useUpdateEmail`, `useUpdatePassword`.
+- **Feeds**: `useFeeds`, `useDiscoverFeeds`, `useAddFeed`, `useUpdateFeed`, `useDeleteFeed`, `useRefreshFeed`, `useRefreshAllFeeds`, `useIsFeedRefreshPending`, `useImportOPML`, `useExportOPML`.
+- **Categories**: `useCategories`, `useCreateCategory`, `useUpdateCategory`, `useDeleteCategory`.
+- **Articles**: `useArticles`, `useInfiniteArticles`, `useArticle`, `useToggleRead`, `useToggleStar`, `useMarkAllRead`, `useBatchRead`, `useStarredCount`, `useNewArticleCount`, `useRefreshInfiniteArticles`, `useExtractContent`.
+- **AI**: `useAIConfig`, `useUpdateAIConfig`, `useSummarize`, `useTranslate`, `useChatHistory`, `useUploadConversationImage`. (The SSE chat stream is NOT a hook — `streamChat` is a plain async function in `src/api/sse.ts`.)
+- **Conversations**: `useConversations`, `useConversation`, `useCreateConversation`, `useUpdateConversation`, `useDeleteConversation`, `useConversationReferences`, `useAddConversationReference`, `useRemoveConversationReference`.
+- **Automation**: `useAutomationRules`, `useCreateAutomationRule`, `useUpdateAutomationRule`, `useDeleteAutomationRule`, `useToggleAutomationRule`.
+
+UI hooks in `src/hooks/`: `useKeyboardShortcuts` (react-hotkeys-hook, scoped to `"reader"`), `useColorScheme` (side-effect only, not a data hook).

@@ -464,3 +464,102 @@ for article in articles:
     chunk = extract_content_for_summary(article.title, article.readable_content, per_article)
     parts.append(chunk)
 ```
+
+---
+
+## Scenario: Automation Rules Engine
+
+### 1. Scope / Trigger
+
+- Trigger: when `feed_fetcher.fetch_and_store_feed` ingests new articles, the automation engine filters and mutates them before the feed transaction commits.
+- Rules let users auto-`mark_read`, `star`, `delete`, `auto_translate`, or `auto_extract` matching articles without writing per-feed code.
+
+### 2. Signatures
+
+- DB: `automation_rules.id: UUID` PK (manual `uuid4`, not `UUIDMixin`).
+- DB: `automation_rules.user_id: UUID` FK `users.id` `ondelete="CASCADE"` NOT NULL.
+- DB: `automation_rules.scope: String(20)` — `"global" | "category" | "feed"`.
+- DB: `automation_rules.scope_id: UUID | null` — the category/feed id; NULL for global.
+- DB: `automation_rules.conditions: JSON NOT NULL` — `list[ConditionSchema]`.
+- DB: `automation_rules.actions: JSON NOT NULL` — `list[ActionSchema]`.
+- DB: `automation_rules.priority: Integer NOT NULL` default `0`.
+- DB: `automation_rules.enabled: Boolean NOT NULL` default `true`.
+- Schema: `ConditionSchema { field: "title"|"author"|"url"|"content", operator: "contains"|"not_contains"|"matches_regex", value: str, logic: "and"|"or" }`.
+- Schema: `ActionSchema { type: "mark_read"|"star"|"delete"|"auto_translate"|"auto_extract", params: dict | None }`.
+- Service: `apply_delete_rules(feed, articles, db) -> list[Article]` — runs before `db.add_all`.
+- Service: `apply_non_delete_rules(feed, articles, db) -> None` — runs after articles are added; flushes within the caller's transaction.
+- Service: `_matches_conditions(article, conditions) -> bool` — pure function, unit-tested in `tests/test_automation.py`.
+- API: `GET/POST /api/automation-rules`, `GET/PUT/DELETE /api/automation-rules/{id}`.
+
+### 3. Contracts
+
+- **Two-phase application inside one feed fetch** (see `feed_fetcher.py:fetch_and_store_feed`):
+  1. `apply_delete_rules` filters `new_articles` in-memory **before** `db.add_all(new_articles)`. Deleted articles never reach the DB.
+  2. `db.add_all(new_articles)` stores the survivors.
+  3. `apply_non_delete_rules` applies `mark_read`/`star`/`auto_translate`/`auto_extract` to the now-persisted articles, then `await db.flush()` so changes ride the caller's `commit`.
+- **Scope resolution** (`_load_rules_for_feed`): enabled rules where `scope == "global"`, OR (`scope == "category"` AND `scope_id == feed.category_id`), OR (`scope == "feed"` AND `scope_id == feed.id`). Category scope is skipped when the feed has no category.
+- **Rule order**: `priority DESC, created_at ASC`. Higher priority runs first; deletes winnow before lower-priority non-delete rules see the article.
+- **A rule that has any `delete` action is treated as a delete rule** — ALL its actions are evaluated in the delete phase, and the rule is excluded from the non-delete phase. A rule with both `delete` and `mark_read` surprises users; the frontend (`RuleEditorDialog`) warns about this combination. Do not split one rule's actions across phases.
+- **Condition evaluation** (`_matches_conditions`):
+  - `getattr(article, cond["field"], "") or ""` — missing/None field coerces to empty string, never crashes.
+  - `contains`/`not_contains` are case-insensitive substring tests on the lowercased field.
+  - `matches_regex` uses `re.search(..., re.IGNORECASE)`; an invalid pattern (`re.error`) is swallowed → no match (does not raise).
+  - The first condition's `logic` is ignored (treated as `and`); subsequent conditions combine with the previous result via their own `logic`.
+  - Empty `conditions` list matches everything.
+- **`auto_translate` action** reuses `get_user_llm_client(user, "translate")` + `get_user_model(user, "translate")` and writes `ArticleAIData.translated_*` (creates the row if absent, updates if the lang/model changed). Missing AI config is caught and skipped with a warning.
+- **`auto_extract` action** calls `_fetch_and_extract_content(article.url)` and stores `article.full_content`; skipped if already present. Never overwrites `content`.
+- **Per-rule / per-action error isolation**: a failing rule or action is caught and logged (`logger.warning(...)`) and skipped — one bad rule must not abort the feed fetch. The top-level `try/except` in `feed_fetcher` around each `apply_*` call additionally falls back to "store all articles" if the engine itself throws.
+
+### 4. Validation & Error Matrix
+
+- Create/update with `scope == "global"` and a non-null `scope_id` → `400 Global rules must not have scope_id`.
+- Create/update with `scope in ("category","feed")` and null `scope_id` → `400 Category/Feed rules require scope_id`.
+- Category scope references a category not owned by the user → `404 Category not found`.
+- Feed scope references a feed not owned by the user → `404 Feed not found`.
+- `scope_id` query filter on `list` endpoint uses `Query(pattern="^(global|category|feed)$")`.
+- Rule not owned by the user on get/update/delete → `404 Automation rule not found`.
+- Invalid regex in a condition → no raise; condition does not match.
+
+### 5. Good/Base/Bad Cases
+
+- Good: a `global` rule with `title contains "sponsored"` + `delete` removes sponsored entries across all feeds before they are stored; a `feed`-scoped `mark_read` rule still sees the survivors.
+- Base: a feed has no matching rules; `new_articles` pass through both phases unchanged.
+- Bad: a rule combines `delete` and `star` — the `star` action is silently ignored because the whole rule runs only in the delete phase. Either split into two rules or drop one action.
+- Bad: lowering an article into DB before `apply_delete_rules` — the article is briefly committed and shows up in counts/lists before being filtered.
+
+### 6. Tests Required
+
+- Unit (`tests/test_automation.py`): `_matches_conditions` covers empty conditions, single contains/no-match, not_contains, valid + invalid regex, AND/OR logic, first-condition-logic-ignored, case-insensitive, None-field handling for both `contains` and `not_contains`.
+- Integration: `apply_delete_rules` removes matching articles and returns survivors before `db.add_all`.
+- Integration: `apply_non_delete_rules` creates `ReadStatus`/`StarredArticle` rows only for rules whose conditions match, deduping against existing rows via a pre-fetched id set.
+- Integration: a rule with a `delete` action is excluded from the non-delete phase.
+- Integration: a failing rule/action does not abort the feed fetch.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```python
+# Deleting inside the non-delete phase — deleted articles hit the DB first
+db.add_all(new_articles)
+await apply_delete_rules(feed, new_articles, db)  # articles already persisted!
+```
+
+#### Correct
+
+```python
+# Delete phase filters in-memory BEFORE storage; non-delete phase runs AFTER
+new_articles = await apply_delete_rules(feed, new_articles, db)
+db.add_all(new_articles)
+await apply_non_delete_rules(feed, new_articles, db)
+```
+
+```python
+# Wrong: treating a rule as delete-only based on the presence of a delete action
+# but still running its mark_read in the non-delete phase
+delete_rules = [r for r in rules if _rule_has_delete_action(r)]
+non_delete_rules = rules  # ❌ includes delete-rule actions again
+
+# Correct: a rule with a delete action is fully excluded from the non-delete phase
+non_delete_rules = [r for r in rules if not _rule_has_delete_action(r)]
+```
