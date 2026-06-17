@@ -100,6 +100,54 @@
   }
 }
 
+/* === Color schemes (override brand-related variables only;
+     grayscale base tokens are inherited from :root / .dark).
+     Outside @layer so Tailwind does not tree-shake the selectors. === */
+.theme-indigo {
+  --primary: 239 84% 58%;
+  --ring: 239 84% 58%;
+  --chat-bubble-user: 239 84% 58% / 0.12;
+  --prose-link: 239 84% 58%;
+  --prose-blockquote-border: 239 84% 58%;
+}
+.dark.theme-indigo {
+  --primary: 240 68% 65%;
+  --ring: 240 68% 65%;
+  --chat-bubble-user: 240 68% 65% / 0.18;
+  --prose-link: 240 68% 65%;
+  --prose-blockquote-border: 240 68% 65%;
+}
+
+.theme-amber {
+  --primary: 28 90% 51%;
+  --ring: 28 90% 51%;
+  --chat-bubble-user: 28 90% 51% / 0.12;
+  --prose-link: 28 90% 51%;
+  --prose-blockquote-border: 28 90% 51%;
+}
+.dark.theme-amber {
+  --primary: 32 95% 60%;
+  --ring: 32 95% 60%;
+  --chat-bubble-user: 32 95% 60% / 0.18;
+  --prose-link: 32 95% 60%;
+  --prose-blockquote-border: 32 95% 60%;
+}
+
+.theme-forest {
+  --primary: 152 56% 36%;
+  --ring: 152 56% 36%;
+  --chat-bubble-user: 152 56% 36% / 0.12;
+  --prose-link: 152 56% 36%;
+  --prose-blockquote-border: 152 56% 36%;
+}
+.dark.theme-forest {
+  --primary: 152 50% 50%;
+  --ring: 152 50% 50%;
+  --chat-bubble-user: 152 50% 50% / 0.18;
+  --prose-link: 152 50% 50%;
+  --prose-blockquote-border: 152 50% 50%;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -107,6 +155,14 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-ui);
+  }
+  /* Smooth color-scheme transitions */
+  *,
+  *::before,
+  *::after {
+    transition-property: color, background-color, border-color, fill, stroke;
+    transition-duration: 150ms;
+    transition-timing-function: ease;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);

@@ -2,6 +2,8 @@ import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useReaderStore } from "@/stores/reader";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { COLOR_SCHEMES } from "@/lib/colorScheme";
 import { cn } from "@/lib/utils";
 
 const languages = [
@@ -17,6 +19,7 @@ const chatModes = [
 export function GeneralSettingsTab() {
   const { t, i18n } = useTranslation("settings");
   const { scrollMarkRead, chatPanelMode, set: setReader } = useReaderStore();
+  const { scheme, setScheme } = useColorScheme();
 
   return (
     <div className="space-y-4">
@@ -35,6 +38,30 @@ export function GeneralSettingsTab() {
               )}
             >
               {lang.name}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>{t("accentColor")}</Label>
+        <div className="flex gap-2">
+          {COLOR_SCHEMES.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setScheme(option.value)}
+              title={t(option.labelKey)}
+              className={cn(
+                "flex items-center gap-2 rounded-md border px-4 py-2 text-sm transition-colors",
+                scheme === option.value
+                  ? "border-primary bg-primary/10 text-foreground"
+                  : "border-border bg-background hover:bg-accent hover:text-accent-foreground"
+              )}
+            >
+              <span
+                className="h-3 w-3 rounded-full border border-black/10"
+                style={{ backgroundColor: option.swatch }}
+              />
+              {t(option.labelKey)}
             </button>
           ))}
         </div>

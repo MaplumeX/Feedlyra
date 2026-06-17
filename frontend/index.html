@@ -18,6 +18,13 @@
         if (dark) document.documentElement.classList.add('dark');
       })()
     </script>
+    <script>
+      (function() {
+        var scheme = localStorage.getItem('feedlyra-color-scheme');
+        if (scheme !== 'amber' && scheme !== 'forest') scheme = 'indigo';
+        document.documentElement.classList.add('theme-' + scheme);
+      })()
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
