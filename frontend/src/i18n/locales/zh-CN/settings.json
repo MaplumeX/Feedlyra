@@ -81,6 +81,10 @@
   "defaultChatMode": "默认对话模式",
   "chatModeSidebar": "侧边栏",
   "chatModeFloating": "浮动",
+  "accentColor": "主题配色",
+  "themeIndigo": "蓝紫",
+  "themeAmber": "暖橙",
+  "themeForest": "墨绿",
   "automation": {
     "tabLabel": "自动化",
     "tooltip": "自动化",

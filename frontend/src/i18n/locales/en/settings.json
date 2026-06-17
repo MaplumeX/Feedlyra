@@ -81,6 +81,10 @@
   "defaultChatMode": "Default Chat Mode",
   "chatModeSidebar": "Sidebar",
   "chatModeFloating": "Floating",
+  "accentColor": "Accent Color",
+  "themeIndigo": "Indigo",
+  "themeAmber": "Amber",
+  "themeForest": "Forest",
   "automation": {
     "tabLabel": "Automation",
     "tooltip": "Automation",
