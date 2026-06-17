@@ -219,6 +219,8 @@ Group (orientation="horizontal")
 - Settings: "Default Chat Mode" option in GeneralSettingsTab (sidebar/floating)
 - All chat open triggers (toolbar button, Shift+C, Command Palette) read `chatPanelMode` from store to respect user's configured default
 
+**Runtime layout-key race**: The conditional `ai-chat` Panel unmount can crash the app mid-session when the Group's internal `ResizeObserver` reads a stale `ai-chat` layout key. Forwarded to its own section below (`Runtime layout-key race on conditional Panel unmount`), where the `key={groupKey}` remount convention is documented.
+
 **Collapse behavior**: When `sidebarCollapsed` is true, the sidebar Panel collapses to 40px via `collapsible` + `collapsedSize={40}`. Controlled by Zustand store (`sidebarCollapsed`), toggled via Shift+S shortcut and Command Palette.
 
 **Persistence**: Layout saved to localStorage via `onLayoutChanged` callback; restored via `defaultLayout` prop on mount.
@@ -241,7 +243,35 @@ function loadLayout(): Record<string, number> | undefined {
 }
 ```
 
-**Why**: Conditionally unmounted Panels leave stale entries in the persisted layout. When re-mounted, `defaultLayout` feeds the stale pixel value to the Panel, which may violate its current constraints. Stripping these entries ensures the Panel always initializes from its `defaultSize` prop rather than a stale persisted value.
+**Why**: The stale entry removal in `loadLayout()` is a **mount-time localStorage guard only**. It does NOT prevent the runtime crash that happens *during a session* when a conditionally rendered Panel unmounts (see "Runtime layout-key race" below). Both mechanisms are required; neither alone suffices.
+
+### Runtime layout-key race on conditional Panel unmount
+
+When a conditionally rendered Panel (e.g. `ai-chat`) unmounts mid-session — closing the chat, or switching sidebar→floating mode — the `<Group>`'s internal mutable `layout` object keeps the `ai-chat` key for a short window while only N−1 panels remain registered. `loadLayout()` cannot help here because it only runs on Group mount, not on panel-set transitions inside a session.
+
+**Crash path** (`react-resizable-panels@4.11.1`):
+1. `jt({ prevLayout, ... })` recomputes layout on group-size change with `const u = { ...prevLayout }` — it copies ALL keys verbatim, including the just-unmounted `ai-chat`.
+2. A `<Group>`-level `ResizeObserver` fires on container-size changes and feeds `jt`'s output into `U`.
+3. `U({ layout, panelConstraints })` throws `Invalid ${t.length} panel layout: <pct...>` when layout value count ≠ registered panel count.
+
+The throw propagates to `HomeErrorBoundary` → "Something went wrong". The same path intermittently breaks separator drag-resize. It is intermittent because it only triggers when the `ResizeObserver` fires inside the short inconsistency window after a panel-set change.
+
+**Convention**: When a `<Group>` contains conditionally mounted `<Panel>`s, give it a `key` derived from the panel set, so React tears down the whole Group (and its ResizeObserver + mutable layout) on every transition and re-seeds from `defaultSize`/`defaultLayout`:
+
+```tsx
+// In Home.tsx
+const showChatPanel = conversationPanelOpen && !!activeConversationId;
+const isSidebarMode = chatPanelMode === "sidebar";
+// Force react-resizable-panels to re-init its internal layout when the panel
+// set changes, so no stale "ai-chat" key survives an unmount.
+const groupKey = showChatPanel && isSidebarMode ? "with-chat" : "without-chat";
+
+<Group key={groupKey} orientation="horizontal" defaultLayout={defaultLayout} onLayoutChanged={onLayoutChanged}>
+```
+
+**Why a Group remount wins the race**: it does not try to beat the `ResizeObserver` (an imperative `setLayout()` cleanup would still leave an exposure window). It removes the precondition entirely — the new Group's layout is seeded only from `defaultSize` props and (if key count matches) `defaultLayout`, never from stale runtime keys. Even an immediate `ResizeObserver` callback operates on a fresh layout whose keys exactly match the registered panels.
+
+**Cost (accepted)**: panels sharing the Group remount on chat open/close and sidebar↔floating switch, resetting their scroll position. Content is served from React Query cache so it re-renders quickly, but scroll returns to top. Pure separator drags (no toggle) do NOT change `groupKey`, so no remount — prior behavior and performance preserved.
 
 > **Note**: `react-resizable-panels` v4 uses `Group`/`Panel`/`Separator` naming (not v3's `PanelGroup`/`Panel`/`PanelResizeHandle`). v4 supports pixel values directly for `minSize`/`maxSize`/`defaultSize`.
 
@@ -319,7 +349,7 @@ const [scrollViewport, setScrollViewport] = useState<HTMLDivElement | null>(null
 - **Using `position: sticky` inside plain `Virtuoso`** — plain `Virtuoso` wraps each item in an element with `position: absolute` + computed `top`, so CSS `position: sticky` on child content silently fails. For sticky group headers, use `GroupedVirtuoso` which applies sticky on its group wrapper element automatically.
 - **Hardcoded Tailwind color classes for text/background** — classes like `text-green-600`, `bg-white`, `text-gray-500` use fixed hues that don't respond to dark mode. Always use semantic classes (`text-primary`, `text-muted-foreground`, `bg-background`, `bg-muted`, etc.) which map to CSS variables that flip in `.dark`.
 - **Applying `animate-in` to all items in a list unconditionally** — `tailwindcss-animate`'s `animate-in` triggers on every DOM mount. When applied inside a `.map()` for all messages, historical messages also animate when the component mounts or a conversation is switched. This creates a distracting cascade effect. Only apply entrance animations to newly appended items (e.g., track the last rendered message count or use an `isNew` flag).
-- **Stale persisted layout entries for conditionally rendered Panels** — `onLayoutChanged` saves layouts without IDs of unmounted Panels. On remount, stale persisted pixel values may violate `minSize`/`maxSize` constraints and make the Panel undraggable. Always strip stale panel IDs in `loadLayout()` so the Panel initializes from its `defaultSize` prop.
+- **Stale persisted layout entries for conditionally rendered Panels** — `onLayoutChanged` saves layouts without IDs of unmounted Panels. On remount, stale persisted pixel values may violate `minSize`/`maxSize` constraints and make the Panel undraggable. Always strip stale panel IDs in `loadLayout()` so the Panel initializes from its `defaultSize` prop. NOTE: this is the **mount-time/localStorage guard only**; an *in-session* unmount can still trip the Group `ResizeObserver` on a stale runtime key — that requires the `key={groupKey}` remount convention (see "Runtime layout-key race on conditional Panel unmount").
 - **Async callbacks updating state after unmount** — Components with async operations (SSE streams, fetch, `setTimeout`) that call `setState` after the component unmounts will cause React errors. Without an ErrorBoundary, this crashes the entire app. Use a `mountedRef` guard in callbacks, and set it `false` before aborting in close handlers.
 - **Including derived identity values (e.g., `articlesIdentity`) in cleanup effect deps** — When optimistic updates change item state (e.g., `is_read` toggle), any derived identity value changes too, triggering cleanup effects that clear dedup refs (`submittedIdsRef`) and pending queues. This breaks error rollback (the `onError` callback can no longer remove IDs from a cleared set) and loses pending IDs that haven't been flushed yet. Only include deps that represent true context switches (feed/filter changes), not data mutations within the same context.
 
@@ -892,6 +922,8 @@ const isSidebarMode = chatPanelMode === "sidebar";
 - Shadow and border styling to visually distinguish from content below
 
 **Gotcha**: When switching from sidebar to floating mode (or vice versa), the `Panel` in the `Group` unmounts, and `onLayoutChanged` saves a layout without the `ai-chat` ID. When switching back to sidebar mode, the `loadLayout()` function strips stale entries so the Panel initializes from `defaultSize`. This is already handled by the existing stale layout migration logic.
+
+> **Note**: `loadLayout()` only handles the mount-time/localStorage half of stale keys. The *runtime* half — a stale `ai-chat` layout key surviving an in-session unmount and tripping the Group's `ResizeObserver` → `Invalid N panel layout` crash — is handled by the `key={groupKey}` convention in "Runtime layout-key race on conditional Panel unmount" above. Both are required.
 
 ### Image Upload & Paste in Chat Input
 
