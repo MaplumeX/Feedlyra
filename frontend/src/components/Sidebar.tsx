@@ -31,9 +31,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -222,77 +219,6 @@ export function Sidebar() {
                 {feed.unread_count}
               </Badge>
             )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreHorizontal className="h-3.5 w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  disabled={isFeedRefreshPending}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    refreshFeed.mutate(feed.id);
-                  }}
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  {t("refresh", { ns: "common" })}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setFeedSettingsFeed(feed);
-                  }}
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  {t("feedSettings")}
-                </DropdownMenuItem>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <FolderOpen className="mr-2 h-4 w-4" />
-                    {t("moveToCategory")}
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleMoveFeed(feed.id, null);
-                      }}
-                    >
-                      {t("uncategorized")}
-                    </DropdownMenuItem>
-                    {categories.map((cat) => (
-                      <DropdownMenuItem
-                        key={cat.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMoveFeed(feed.id, cat.id);
-                        }}
-                      >
-                        {cat.title}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteFeed.mutate(feed.id);
-                  }}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {t("delete", { ns: "common" })}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent>
