@@ -181,3 +181,36 @@ Replaced ID-based detection with snapshot/count APIs, stabilized refresh and ini
 ### Next Steps
 
 - None - task complete
+
+
+## Session 61: Remove sidebar feed item more-menu dropdown
+
+**Date**: 2026-06-17
+**Task**: Remove sidebar feed item more-menu dropdown
+**Branch**: `MaplumeX/lumeX/sidebar-subscription-no-more-menu`
+
+### Summary
+
+Removed the three-dot more-menu dropdown from individual feed subscription items in the sidebar (renderFeedItem in Sidebar.tsx). Refresh / settings / move-to-category / delete remain accessible via the feed item right-click context menu. Cleaned up now-unused DropdownMenuSub imports. Category-group more-menu left untouched per scope. tsc and lint both green.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cb69a2a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
