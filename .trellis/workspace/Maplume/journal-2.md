@@ -249,3 +249,36 @@ RSS automation feature (#82) shipped ~50 hardcoded English strings with // TODO:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 63: 优化文章列表条目样式：标题始终加粗并移除行内收藏按钮
+
+**Date**: 2026-06-17
+**Task**: 优化文章列表条目样式：标题始终加粗并移除行内收藏按钮
+**Branch**: `MaplumeX/article-list-item-style`
+
+### Summary
+
+ArticleRow 标题改为固定 font-medium，不再随已读/未读状态变化字重；删除行内 Star 收藏按钮及 toggleStar/Star/useToggleStar 孤儿导入。收藏功能在文章详情与键盘快捷键中保留。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e1659db` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
