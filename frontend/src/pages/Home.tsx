@@ -137,10 +137,14 @@ export function Home() {
 
   const showChatPanel = conversationPanelOpen && !!activeConversationId;
   const isSidebarMode = chatPanelMode === "sidebar";
+  // Force react-resizable-panels to re-init its internal layout when the panel
+  // set changes, so no stale "ai-chat" key survives an unmount.
+  const groupKey = showChatPanel && isSidebarMode ? "with-chat" : "without-chat";
 
   return (
     <div className="h-screen w-screen overflow-hidden">
       <Group
+        key={groupKey}
         orientation="horizontal"
         defaultLayout={defaultLayout}
         onLayoutChanged={onLayoutChanged}

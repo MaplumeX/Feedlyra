@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "verify additive change adheres to code standards / forbidden patterns"}
+{"file": ".trellis/tasks/06-17-fix-conditional-panel-layout-crash/prd.md", "reason": "acceptance criteria to verify against"}
+{"file": ".trellis/tasks/06-17-fix-conditional-panel-layout-crash/design.md", "reason": "Approach A scope: diff must be exactly groupKey const + key prop on <Group>"}
