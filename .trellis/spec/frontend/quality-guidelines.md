@@ -91,6 +91,36 @@ const timer = setTimeout(flushPending, 300);
 
 **Instead**: Always return a cleanup function from `useEffect` that clears the timer.
 
+### Don't: Leave a direct `async` form `onSubmit` without try/catch
+
+```tsx
+// Bad — api failure throws, handleSubmit doesn't catch it, user sees nothing
+const onSubmit = async (data: LoginForm) => {
+  const tokens = await api.post("/api/auth/login", data); // throws on 4xx
+  setTokens(tokens.access_token, tokens.refresh_token);
+  navigate("/");
+};
+```
+
+**Why**: `api/client.ts` throws `new Error(error.detail)` on non-2xx responses. `react-hook-form`'s `handleSubmit` does NOT catch errors thrown by the async submitter — the promise rejects unhandled. The login/register pages shipped this way: a wrong password silently re-rendered the form with no feedback (page appeared to just refresh). `isSubmitting` only resets cleanly when `onSubmit` settles through the form's lifecycle; an unhandled rejection leaves the user with no visible error path.
+
+**Instead**: Wrap direct `api.*` calls in `try/catch` and surface the error via `toast.error` (sonner). Map known backend `detail` strings to i18n keys; fall back to a generic message for unknown details so raw English never leaks to non-`en` locales.
+
+```tsx
+const onSubmit = async (data: LoginForm) => {
+  try {
+    const tokens = await api.post<{ access_token: string; refresh_token: string }>("/api/auth/login", data);
+    setTokens(tokens.access_token, tokens.refresh_token);
+    navigate("/");
+  } catch (error) {
+    toast.error(t(resolveAuthError(error)));
+  }
+};
+// resolveAuthError maps backend detail -> auth.json i18n key, defaulting to errors.unexpected
+```
+
+**Contrast — React Query mutations need NO try/catch**: forms that submit via `useMutation(...).mutate(payload, { onError })` must use the mutation's `onError: (error) => toast.error(error.message)` callback instead, because `mutate` does not throw. See `EditEmailDialog` / `EditPasswordDialog` / `EditUsernameDialog` for the canonical mutation pattern. Only `await api.*` call sites need the try/catch wrapper — do not copy it onto mutation-based forms.
+
 ---
 
 ## Required Patterns
@@ -168,3 +198,4 @@ None currently. ESLint flat config (`eslint.config.js`) is in place; use `npm ru
 - [ ] API key forms allow empty strings (optional fields: `z.string().or(z.literal(""))`)
 - [ ] New resource type mutations invalidate ALL related query keys (e.g., adding categories means `useDeleteFeed`, `useImportOPML` must also invalidate `categories.list`)
 - [ ] No hardcoded user-facing strings and no `// TODO: i18n` markers — every visible label goes through `t()`, keys added to both `en` and `zh-CN`
+- [ ] Any form `onSubmit` that `await api.*` directly is wrapped in `try/catch` + `toast.error`; mutation-based forms route errors via `useMutation` `onError`, not try/catch
