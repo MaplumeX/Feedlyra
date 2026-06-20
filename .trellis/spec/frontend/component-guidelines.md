@@ -374,10 +374,11 @@ const [scrollViewport, setScrollViewport] = useState<HTMLDivElement | null>(null
 
 - **Unconstrained resizable panels** — `react-resizable-panels` without `minSize`/`maxSize` lets users shrink panels below readable widths. Always set pixel constraints that keep content readable (e.g., sidebar min 120px, article list min 180px).
 - **Relying on `truncate` alone in ScrollArea sidebars** — long text can still expand the Radix internal wrapper or the flex row. Use `[&>div]:!block` on the shared ScrollArea viewport plus `w-full min-w-0 overflow-hidden` on rows and `min-w-0 flex-1 truncate` on text.
+- **Wrapping a single child in a horizontal `flex` without stretching it** — a `flex` row container gives its children `flex: 0 1 auto` by default (`flex-grow: 0`), so a single non-`flex-1`/non-`w-full` child sizes to its content and leaves the container's remaining width blank on the right. This is invisible when the child happens to be full-width (e.g., a `block` header bar above it visually masks the gap), then surfaces later when that sibling is removed. Symptom: a panel with a fixed width renders its body narrower than the panel, with a blank strip on the right. Fix: either drop the pointless `flex` on a single-child wrapper (let it be a plain block container so the `block`-flow child fills the width), or give the child `w-full`/`flex-1`. In `FloatingChatPanel` the content area holds exactly one `AIChatPanel`, so it is `min-h-0 flex-1` block, not `flex min-h-0 flex-1`.
 - **"Fixing" macOS overlay scrollbar layout differences** — macOS uses overlay scrollbars by default (no layout space). Custom `::-webkit-scrollbar` CSS forces Chrome into classic mode, which reserves a 6px layout gutter. This is expected behavior, not a bug. Do not remove custom scrollbar CSS or replace `<ScrollArea>` with native `overflow-y-auto` to "fix" this. (See: PR #16/#18 revert)
 - **Using `position: sticky` inside plain `Virtuoso`** — plain `Virtuoso` wraps each item in an element with `position: absolute` + computed `top`, so CSS `position: sticky` on child content silently fails. For sticky group headers, use `GroupedVirtuoso` which applies sticky on its group wrapper element automatically.
 - **Hardcoded Tailwind color classes for text/background** — classes like `text-green-600`, `bg-white`, `text-gray-500` use fixed hues that don't respond to dark mode. Always use semantic classes (`text-primary`, `text-muted-foreground`, `bg-background`, `bg-muted`, etc.) which map to CSS variables that flip in `.dark`.
-- **Applying `animate-in` to all items in a list unconditionally** — `tailwindcss-animate`'s `animate-in` triggers on every DOM mount. When applied inside a `.map()` for all messages, historical messages also animate when the component mounts or a conversation is switched. This creates a distracting cascade effect. Only apply entrance animations to newly appended items (e.g., track the last rendered message count or use an `isNew` flag).
+- **Applying `animate-in` to all items in a list unconditionally** — `tailwindcss-animate`'s `animate-in` triggers on every DOM mount. When applied inside a `.map()` for all messages, historical messages also animate when the component mounts or a conversation is switched. This creates a distracting cascade effect. Only apply entrance animations to newly appended items (e.g., track the last rendered message count or use an `isNew` flag). See "Chat Message Entrance Animation" pattern for the executable Set-based approach used by `AIChatPanel`.
 - **Stale persisted layout entries for conditionally rendered Panels** — `onLayoutChanged` saves layouts without IDs of unmounted Panels. On remount, stale persisted pixel values may violate `minSize`/`maxSize` constraints and make the Panel undraggable. Always strip stale panel IDs in `loadLayout()` so the Panel initializes from its `defaultSize` prop. NOTE: this is the **mount-time/localStorage guard only**; an *in-session* unmount can still trip the Group `ResizeObserver` on a stale runtime key — that requires the `key={groupKey}` remount convention (see "Runtime layout-key race on conditional Panel unmount").
 - **Async callbacks updating state after unmount** — Components with async operations (SSE streams, fetch, `setTimeout`) that call `setState` after the component unmounts will cause React errors. Without an ErrorBoundary, this crashes the entire app. Use a `mountedRef` guard in callbacks, and set it `false` before aborting in close handlers.
 - **Including derived identity values (e.g., `articlesIdentity`) in cleanup effect deps** — When optimistic updates change item state (e.g., `is_read` toggle), any derived identity value changes too, triggering cleanup effects that clear dedup refs (`submittedIdsRef`) and pending queues. This breaks error rollback (the `onError` callback can no longer remove IDs from a cleared set) and loses pending IDs that haven't been flushed yet. Only include deps that represent true context switches (feed/filter changes), not data mutations within the same context.
@@ -837,6 +838,59 @@ CSS keyframe in `index.css`:
 - `bg-foreground/50` ensures visibility in both light and dark modes
 - The `chat-typing-dot` class is defined in `index.css`, not as a Tailwind utility
 
+### Chat Message Entrance Animation (only newly appended messages)
+
+Entrance animations (`animate-in fade-in slide-in-from-bottom`) must only play for messages appended **during the current session**, not for history loaded from the server or when switching conversations (which would cascade-animate the whole list on every mount).
+
+Track a `Set` of message ids that are "new" — populate it only at append sites, clear it at history-sync and conversation-reset sites:
+
+```tsx
+const [messages, setMessages] = useState<ChatMessage[]>([]);
+// ids appended this session — only these animate on mount
+const [newIds, setNewIds] = useState<Set<string>>(() => new Set());
+
+// History from server → nothing animates
+useEffect(() => {
+  if (chatHistory?.messages) {
+    setNewIds(new Set());
+    setMessages(chatHistory.messages);
+  }
+}, [chatHistory]);
+
+// Conversation switch → full reset
+useEffect(() => {
+  setMessages([]);
+  setNewIds(new Set());
+  // ... other per-conversation resets
+}, [conversationId]);
+
+// Every append site records the id as new
+function appendUser(text: string) {
+  const userMsg = { id: `temp-${Date.now()}`, /* ... */ };
+  setMessages((prev) => [...prev, userMsg]);
+  setNewIds((prev) => new Set(prev).add(userMsg.id));
+}
+```
+
+Render with a conditional className so the animation class only attaches to new ids:
+
+```tsx
+{messages.map((msg) => (
+  <div
+    key={msg.id}
+    className={cn("duration-300", newIds.has(msg.id) && "animate-in fade-in slide-in-from-bottom-2")}
+  >
+    <ChatMessageBubble msg={msg} /* ... */ />
+  </div>
+))}
+```
+
+**Why a Set of ids (not "last N")**: supports batch appends, survives re-orders/regenerate (the regenerated assistant gets a fresh id via the stream's `temp-assistant-*`), and naturally re-animates a genuinely new message after an edit-and-resend.
+
+**Streaming updates are safe**: `onChunk` mutates the *content* of the last assistant message via its id, not its identity — React diffs in place and does NOT remount the node, so the CSS animation does not replay on each token.
+
+**Gotcha**: do NOT track "already-rendered" ids in a ref in parallel with the `newIds` state — the state is the single source of truth for rendering. A parallel ref becomes dead code (only written, never read) once the Set-based render condition is in place.
+
 ### Chat Message Hover Actions
 
 For inline actions that appear on message hover (copy, regenerate, etc.), use a group-hover pattern with `opacity-0 group-hover:opacity-100` transition:
@@ -942,13 +996,16 @@ const isSidebarMode = chatPanelMode === "sidebar";
 ```
 
 **Key details**:
-- Drag via header area using pointer events (`pointerdown`/`pointermove`/`pointerup`), same approach as `ArticleTableOfContents.tsx`
-- Resize from all 4 edges and 4 corners via edge detection in `pointerdown` — 6px edge zone triggers resize instead of drag
-- Min size: 280×300 (same min width as sidebar panel)
-- Position/size persisted via Zustand store (`floatingPanelPosition`, `floatingPanelSize`), included in `partialize`
+- **Single shared header (no stacked title bars)**: floating mode reuses the `AIChatPanel`'s own header as the drag handle — `FloatingChatPanel` renders NO own title bar. Drag handler props are injected into the child via `React.cloneElement(children, { draggable: true, ...dragProps })`. `AIChatPanelProps extends FloatingChildProps` so it accepts `draggable` + `onHeaderPointerDown/Move/Up`. Sidebar mode omits these props, so the header behaves identically in both modes.
+- **Drag handle = the whole header title area**; `cursor-grab` on hover, `active:cursor-grabbing` on press (no persistent grip icon — discoverability via cursor only, macOS-native feel).
+- Header's internal buttons (History `PopoverTrigger`, Pin, Close) must add `onPointerDown={(e) => e.stopPropagation()}` so clicking them does not start a drag. `stopPropagation` on `pointerdown` only blocks the drag; `click` still fires normally.
+- **Drag-vs-resize conflict on the header-overlapping top edge**: the header occupies the top ~44px, which covers the entire top 6px resize zone. Two guards make header always drag and never resize there: (1) `handleDragPointerDown` calls `e.stopPropagation()` so the container's resize `pointerdown` (attached via bubbling) never fires; (2) `getResizeEdge()` returns `null` when `e.target.closest("[data-floating-drag-handle]")`, so no resize highlight/cursor appears over the header. The header is marked `data-floating-drag-handle` only when `draggable`.
+- Resize from all 4 edges and 4 corners via edge detection in `pointerdown` — 6px edge zone triggers resize instead of drag. A `ResizeEdgeOverlay` renders a 1px `bg-primary/30` highlight (→ `opacity-50` while actively resizing) on the hovered edge/corner; `pointer-events-none` so it never blocks edge detection.
+- Shadow/border: `rounded-xl border bg-background shadow-xl` base, `transition-shadow focus-within:shadow-2xl focus-within:ring-1 focus-within:ring-primary/10` to lift the panel on focus. Note the global `* { transition-property: color, background-color, border-color, fill, stroke }` in `index.css` does NOT include `box-shadow`/`ring` — add `transition-shadow` explicitly when relying on these transitions.
+- Min size: 320×420 (2-col suggestion grid + ≥260px message area after header+reference+input ≈160px). Default size `DEFAULT_FLOATING_SIZE = { width: 420, height: 560 }` (stored in `stores/reader.ts`, not the component). The min-size constants live inside `FloatingChatPanel.tsx` (`MIN_WIDTH`/`MIN_HEIGHT`).
+- Position/size persisted via Zustand store (`floatingPanelPosition`, `floatingPanelSize`), included in `partialize`. Changing `DEFAULT_FLOATING_SIZE` only affects users who never customized — persist reads their stored value back; do NOT add a migrate unless forcing an upgrade.
 - Window resize listener clamps position back into visible viewport
 - Non-modal: no click-outside handler, no overlay backdrop — underlying content remains interactive
-- Shadow and border styling to visually distinguish from content below
 
 **Gotcha**: When switching from sidebar to floating mode (or vice versa), the `Panel` in the `Group` unmounts, and `onLayoutChanged` saves a layout without the `ai-chat` ID. When switching back to sidebar mode, the `loadLayout()` function strips stale entries so the Panel initializes from `defaultSize`. This is already handled by the existing stale layout migration logic.
 
@@ -1139,7 +1196,7 @@ const [translateLang, setTranslateLang] = useState("zh");
 `FloatingChatPanel.tsx` is a `createPortal` overlay with pointer-event-driven drag + 8-edge resize. Pattern details:
 
 - Drag and resize share the same pointer-capture technique: store start state in a ref (`dragStateRef` / `resizeStateRef`) on `pointerdown`, mutate on `pointermove`, persist to the Zustand store on `pointerup`. Use `setPointerCapture`/`releasePointerCapture` so moves continue outside the element.
-- Edge detection in `getResizeEdge()` uses a 6px threshold on `getBoundingClientRect()`; corners win over edges (`top-left` before `top`).
-- Min size 280×300 (matches sidebar panel min width). Position is clamped to the viewport on both drag and window resize.
+- Edge detection in `getResizeEdge()` uses a 6px threshold on `getBoundingClientRect()`; corners win over edges (`top-left` before `top`). It MUST bail out (`return null`) when the pointer target is inside `[data-floating-drag-handle]` — see the "Single shared header" notes in the "Floating Chat Panel" section above, otherwise the top edge resize zone and the drag-handle header overlap and both gestures start at once.
+- Min size 320×420. Default size `420×560` (defined as `DEFAULT_FLOATING_SIZE` in `stores/reader.ts`). Position is clamped to the viewport on both drag and window resize.
 - Persist only on pointer-up (`persistPosition`/`persistSize`), not on every move — avoid thrashing the store and localStorage.
 - Default position computed once on first mount when the stored position is the `{0,0}` sentinel.

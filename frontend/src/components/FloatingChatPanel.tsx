@@ -1,11 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { cloneElement, useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import { createPortal } from "react-dom";
-import { useTranslation } from "react-i18next";
 import { useReaderStore, type FloatingPanelPosition, type FloatingPanelSize } from "@/stores/reader";
+import { cn } from "@/lib/utils";
 
-const MIN_WIDTH = 280;
-const MIN_HEIGHT = 300;
+const MIN_WIDTH = 320;
+const MIN_HEIGHT = 420;
 const EDGE_THRESHOLD = 6;
+
+// Pointer event handlers injected into the child (AIChatPanel) header to make it a drag handle.
+export type FloatingDragHandlers = {
+  onHeaderPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void;
+  onHeaderPointerMove: (e: React.PointerEvent<HTMLDivElement>) => void;
+  onHeaderPointerUp: (e: React.PointerEvent<HTMLDivElement>) => void;
+};
 
 interface DragState {
   pointerId: number;
@@ -24,11 +31,52 @@ interface ResizeState {
 }
 
 interface FloatingChatPanelProps {
-  children: React.ReactNode;
+  children: ReactElement<FloatingChildProps>;
+}
+
+/**
+ * Props the panel injects into its single child via cloneElement. Declared locally
+ * so FloatingChatPanel does not need to import the child component's full prop type.
+ */
+export interface FloatingChildProps {
+  draggable?: boolean;
+  onHeaderPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
+  onHeaderPointerMove?: (e: React.PointerEvent<HTMLDivElement>) => void;
+  onHeaderPointerUp?: (e: React.PointerEvent<HTMLDivElement>) => void;
+}
+
+/**
+ * Highlight overlay shown when the pointer enters a resize edge / corner.
+ * pointer-events-none so it never blocks the container's edge detection.
+ */
+function ResizeEdgeOverlay({ edge, active }: { edge: string | null; active: boolean }) {
+  if (!edge) return null;
+  const opacity = active ? "opacity-50" : "opacity-30";
+  const edgeStyles: Record<string, string> = {
+    top: "inset-x-0 top-0 h-px",
+    bottom: "inset-x-0 bottom-0 h-px",
+    left: "inset-y-0 left-0 w-px",
+    right: "inset-y-0 right-0 w-px",
+    "top-left": "top-0 left-0 h-1.5 w-1.5",
+    "top-right": "top-0 right-0 h-1.5 w-1.5",
+    "bottom-left": "bottom-0 left-0 h-1.5 w-1.5",
+    "bottom-right": "bottom-0 right-0 h-1.5 w-1.5",
+  };
+  const pos = edgeStyles[edge];
+  if (!pos) return null;
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "pointer-events-none absolute bg-primary transition-opacity",
+        pos,
+        opacity,
+      )}
+    />
+  );
 }
 
 export function FloatingChatPanel({ children }: FloatingChatPanelProps) {
-  const { t } = useTranslation("reader");
   const {
     floatingPanelPosition,
     floatingPanelSize,
@@ -99,6 +147,9 @@ export function FloatingChatPanel({ children }: FloatingChatPanelProps) {
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (e.button !== 0) return;
       e.preventDefault();
+      // Header is the explicit drag handle — never let the container's resize
+      // edge detection (which fires via bubbling) also start a resize here.
+      e.stopPropagation();
       dragStateRef.current = {
         pointerId: e.pointerId,
         startX: e.clientX,
@@ -140,6 +191,9 @@ export function FloatingChatPanel({ children }: FloatingChatPanelProps) {
   );
 
   const getResizeEdge = useCallback((e: React.PointerEvent<HTMLDivElement>): string | null => {
+    // The header is an explicit drag handle — never treat it as a resize edge,
+    // even when the pointer sits within the top 6px zone that overlaps the header.
+    if ((e.target as HTMLElement).closest("[data-floating-drag-handle]")) return null;
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return null;
 
@@ -272,10 +326,19 @@ export function FloatingChatPanel({ children }: FloatingChatPanelProps) {
 
   const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
 
+  const dragProps: FloatingDragHandlers = {
+    onHeaderPointerDown: handleDragPointerDown,
+    onHeaderPointerMove: handleDragPointerMove,
+    onHeaderPointerUp: handleDragPointerUp,
+  };
+
   return createPortal(
     <div
       ref={containerRef}
-      className="fixed z-50 flex flex-col overflow-hidden rounded-lg border bg-background shadow-xl select-none"
+      className={cn(
+        "fixed z-50 flex flex-col overflow-hidden rounded-xl border bg-background shadow-xl select-none transition-shadow",
+        "focus-within:shadow-2xl focus-within:ring-1 focus-within:ring-primary/10",
+      )}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
@@ -293,18 +356,15 @@ export function FloatingChatPanel({ children }: FloatingChatPanelProps) {
       }}
       onPointerUp={handleResizePointerUp}
     >
-      {/* Draggable header */}
-      <div
-        className="flex h-10 shrink-0 cursor-grab items-center border-b px-3 active:cursor-grabbing"
-        onPointerDown={handleDragPointerDown}
-        onPointerMove={handleDragPointerMove}
-        onPointerUp={handleDragPointerUp}
-      >
-        <span className="text-xs text-muted-foreground">{t("chatPanel")}</span>
-      </div>
+      {/* Resize edge highlight overlay (8 edges/corners) */}
+      <ResizeEdgeOverlay edge={hoveredEdge} active={!!resizeStateRef.current} />
 
-      {/* Content area */}
-      <div className="flex min-h-0 flex-1">{children}</div>
+      {/* Content area — inject drag handlers into the child (AIChatPanel) header.
+          Plain block (not flex) so the child fills the panel width; a flex row
+          with one non-flex-1 child leaves the panel's right edge blank. */}
+      <div className="min-h-0 flex-1">
+        {cloneElement(children, { draggable: true, ...dragProps })}
+      </div>
     </div>,
     document.body,
   );

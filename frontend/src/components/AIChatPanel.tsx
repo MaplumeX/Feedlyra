@@ -15,10 +15,11 @@ import {
 import { streamChat, truncateChatMessages } from "@/api/sse";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { useReaderStore } from "@/stores/reader";
+import { type FloatingChildProps } from "@/components/FloatingChatPanel";
 import type { ChatMessage, ImageAttachment, ConversationReference } from "@/api/types";
 import { cn } from "@/lib/utils";
 
-interface AIChatPanelProps {
+interface AIChatPanelProps extends FloatingChildProps {
   conversationId: string;
 }
 
@@ -494,7 +495,7 @@ function ChatInput({
           placeholder={t("chatPlaceholder")}
           disabled={isStreaming}
           rows={1}
-          className="flex-1 resize-none rounded-xl border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 resize-none rounded-xl border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground transition-shadow focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
         />
         <Button
           variant="ghost"
@@ -541,7 +542,13 @@ function ChatInput({
 
 // --- Main component ---
 
-export function AIChatPanel({ conversationId }: AIChatPanelProps) {
+export function AIChatPanel({
+  conversationId,
+  draggable,
+  onHeaderPointerDown,
+  onHeaderPointerMove,
+  onHeaderPointerUp,
+}: AIChatPanelProps) {
   const { t } = useTranslation("reader");
   const { data: chatHistory, isLoading } = useChatHistory(conversationId);
   const { data: conversation } = useConversation(conversationId);
@@ -551,6 +558,8 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
   const [pendingImages, setPendingImages] = useState<File[]>([]);
+  // Message ids that were appended during this session — only these animate on mount.
+  const [newIds, setNewIds] = useState<Set<string>>(() => new Set());
   const abortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
@@ -564,9 +573,11 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
     };
   }, []);
 
-  // Sync server history into local state
+  // Sync server history into local state. Historical messages never animate;
+  // clear the new-id set so only newly appended messages animate on mount.
   useEffect(() => {
     if (chatHistory?.messages) {
+      setNewIds(new Set());
       setMessages(chatHistory.messages);
     }
   }, [chatHistory]);
@@ -576,6 +587,7 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
     setMessages([]);
     setPendingImages([]);
     setEditingMsgId(null);
+    setNewIds(new Set());
   }, [conversationId]);
 
   // Auto-scroll to bottom on new messages or streaming content
@@ -611,6 +623,12 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMsg]);
+      const assistantId = assistantMsg.id;
+      setNewIds((prev) => {
+        const next = new Set(prev);
+        next.add(assistantId);
+        return next;
+      });
 
       const controller = await streamChat({
         conversationId,
@@ -669,6 +687,12 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, userMsg]);
+      const userId = userMsg.id;
+      setNewIds((prev) => {
+        const next = new Set(prev);
+        next.add(userId);
+        return next;
+      });
       setPendingImages([]);
       doStream(text, images.length > 0 ? images : undefined);
     },
@@ -737,6 +761,11 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
         created_at: new Date().toISOString(),
       };
       setMessages([...truncatedMessages, editedUserMsg]);
+      setNewIds((prev) => {
+        const next = new Set(prev);
+        next.add(editedUserMsg.id);
+        return next;
+      });
       setEditingMsgId(null);
 
       truncateChatMessages(conversationId, msgId)
@@ -788,10 +817,25 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center gap-2 border-b px-3 py-2">
+      <div
+        data-floating-drag-handle={draggable ? "" : undefined}
+        className={cn(
+          "flex items-center gap-2 border-b px-3 py-2",
+          draggable && "cursor-grab select-none active:cursor-grabbing",
+        )}
+        onPointerDown={draggable ? onHeaderPointerDown : undefined}
+        onPointerMove={draggable ? onHeaderPointerMove : undefined}
+        onPointerUp={draggable ? onHeaderPointerUp : undefined}
+      >
         <Popover open={convoPopoverOpen} onOpenChange={setConvoPopoverOpen}>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title={t("conversations")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0"
+              title={t("conversations")}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               <History className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
@@ -800,10 +844,24 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
           </PopoverContent>
         </Popover>
         <h3 className="flex-1 truncate text-sm font-medium">{convTitle}</h3>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleToggleMode} title={chatPanelMode === "sidebar" ? t("switchToFloating") : t("switchToSidebar")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={handleToggleMode}
+          title={chatPanelMode === "sidebar" ? t("switchToFloating") : t("switchToSidebar")}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           {chatPanelMode === "sidebar" ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
         </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClose} title={t("closeChat")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={handleClose}
+          title={t("closeChat")}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -830,11 +888,15 @@ export function AIChatPanel({ conversationId }: AIChatPanelProps) {
         <ChatEmptyState onSuggestionClick={(text) => handleSend(text, [])} />
       ) : (
         <ScrollArea className="flex-1" viewportRef={setScrollViewport}>
-          <div className="space-y-5 px-3 py-3">
+          <div className="space-y-4 px-4 py-4">
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+                className={cn(
+                  "duration-300",
+                  newIds.has(msg.id) &&
+                    "animate-in fade-in slide-in-from-bottom-2",
+                )}
               >
                 <ChatMessageBubble
                   msg={msg}

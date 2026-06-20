@@ -33,7 +33,7 @@ export interface FloatingPanelSize {
 }
 
 export const DEFAULT_FLOATING_POSITION: FloatingPanelPosition = { x: 0, y: 0 };
-export const DEFAULT_FLOATING_SIZE: FloatingPanelSize = { width: 380, height: 500 };
+export const DEFAULT_FLOATING_SIZE: FloatingPanelSize = { width: 420, height: 560 };
 
 interface ReaderState {
   selectedFeedId: string | null;
