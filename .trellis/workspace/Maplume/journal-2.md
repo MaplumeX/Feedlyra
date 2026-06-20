@@ -316,3 +316,36 @@ Diagnosed 'Invalid N panel layout' crash (HomeErrorBoundary) and resize failure 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 65: Polish floating AI chat panel UI
+
+**Date**: 2026-06-20
+**Task**: Polish floating AI chat panel UI
+**Branch**: `main`
+
+### Summary
+
+Merged the floating panel's stacked title bars by reusing AIChatPanel's header as the drag handle (props injected via cloneElement). Added hover edge/corner resize highlights, rounded-xl + focus-within shadow lift, and recalibrated default/min sizes (420x560 / 320x420). Fixed the entrance-animation bug so only newly appended messages animate, tightened message spacing, and gave the input a more tactile focus state. Fixed a floating-mode right-side blank strip (redundant horizontal flex wrapping a single non-flex-1 child). Updated specs for the merged-header drag model, the entrance-animation pattern, and the flex single-child width-collapse gotcha.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `841ef60` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
