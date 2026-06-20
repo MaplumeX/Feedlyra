@@ -3,7 +3,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "@/lib/i18n-zod";
 import { useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { api } from "@/api/client";
+import { resolveAuthError } from "@/lib/auth-errors";
 import type { User } from "@/api/types";
 import { useAuthStore } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
@@ -37,15 +39,19 @@ export function RegisterPage() {
 
   const onSubmit = async (data: RegisterForm) => {
     const { confirmPassword: _, ...body } = data;
-    await api.post("/api/auth/register", body);
-    const tokens = await api.post<{ access_token: string; refresh_token: string }>("/api/auth/login", {
-      email: data.email,
-      password: data.password,
-    });
-    setTokens(tokens.access_token, tokens.refresh_token);
-    const user = await api.get<User>("/api/auth/me");
-    setUser(user);
-    navigate("/");
+    try {
+      await api.post("/api/auth/register", body);
+      const tokens = await api.post<{ access_token: string; refresh_token: string }>("/api/auth/login", {
+        email: data.email,
+        password: data.password,
+      });
+      setTokens(tokens.access_token, tokens.refresh_token);
+      const user = await api.get<User>("/api/auth/me");
+      setUser(user);
+      navigate("/");
+    } catch (error) {
+      toast.error(t(resolveAuthError(error)));
+    }
   };
 
   return (
