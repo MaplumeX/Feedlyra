@@ -349,3 +349,37 @@ Merged the floating panel's stacked title bars by reusing AIChatPanel's header a
 ### Next Steps
 
 - None - task complete
+
+
+## Session 66: 修复登录/注册表单提交失败无错误提示
+
+**Date**: 2026-06-21
+**Task**: 修复登录/注册表单提交失败无错误提示
+**Branch**: `main`
+
+### Summary
+
+LoginPage/RegisterPage 的 onSubmit 用 await api.* 但无 try/catch,失败抛出 unhandled promise rejection 导致用户看不到错误。修复:两页 onSubmit 包 try/catch + toast.error;新增 src/lib/auth-errors.ts 把后端 detail 映射到 i18n key(未知 detail 兜底 errors.unexpected);en/zh-CN auth.json 同步加 4 个 errors.* key;补 auth-errors.test.ts 单测。沉淀 spec:quality-guidelines 新增 Forbidden Pattern「未 catch 的 async form onSubmit」,并区分直接 await api.* (需 try/catch) vs React Query mutation (走 onError,无需 try/catch) 两种模式。验证: tsc/lint 0 errors, test 12 passed。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `57383ac` | (see git log) |
+| `3bd45e2` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

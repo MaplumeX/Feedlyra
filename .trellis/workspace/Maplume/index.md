@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 65
-- **Last Active**: 2026-06-20
+- **Total Sessions**: 66
+- **Last Active**: 2026-06-21
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~351 | Active |
+| `journal-2.md` | ~385 | Active |
 | `journal-1.md` | ~1990 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 66 | 2026-06-21 | 修复登录/注册表单提交失败无错误提示 | `57383ac`, `3bd45e2` | `main` |
 | 65 | 2026-06-20 | Polish floating AI chat panel UI | `841ef60` | `main` |
 | 64 | 2026-06-17 | Fix AI chat panel layout crash on toggle | `47a4fb8`, `513313f` | `MaplumeX/lumeX/ai-chat-window-resize-bug` |
 | 63 | 2026-06-17 | 优化文章列表条目样式：标题始终加粗并移除行内收藏按钮 | `e1659db` | `MaplumeX/article-list-item-style` |
