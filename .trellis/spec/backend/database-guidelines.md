@@ -563,3 +563,94 @@ non_delete_rules = rules  # ❌ includes delete-rule actions again
 # Correct: a rule with a delete action is fully excluded from the non-delete phase
 non_delete_rules = [r for r in rules if not _rule_has_delete_action(r)]
 ```
+
+## Scenario: Cross-Article Auto-Retrieval Service
+
+### 1. Scope / Trigger
+- Trigger: when a user asks a question in a conversation that has **no** references and has `users.ai_cross_article_search = true`, the chat flow auto-retrieves related recent articles and injects them as `is_auto=True` `ConversationReference` rows before assembling the multi-article prompt.
+- The retrieval function is the shared building block for future candidates ②③④ (daily digest, dedup/clustering, semantic filter). Its **signature** is the stable contract; the **keyword implementation** may be swapped for a vector implementation later.
+
+### 2. Signatures
+- DB: `users.ai_cross_article_search: Boolean NOT NULL default true` (migration 015).
+- Schema: `AIConfigUpdate.cross_article_search: bool | None`; `AIConfigResponse.cross_article_search: bool = True`.
+- Service: `app/services/retrieval.py::retrieve_relevant_articles(db, *, user_id, query, since=None, days=7, limit=5) -> list[Article]`.
+- Service (pure helpers, unit-tested without a DB): `_tokenize(query) -> list[str]`, `_score_and_rank(candidates: list[tuple[Article, str]], tokens, limit) -> list[Article]`.
+- Router: `_do_conversation_chat` inserts an auto-retrieval block **before** the existing "Get all referenced articles" query, so auto-refs and manual refs flow through the **same** `build_chat_messages(articles=...)` prompt path — no separate branch.
+
+### 3. Contracts
+- **Stable contract**: the function returns `list[Article]` sorted by relevance then recency; the caller is responsible for converting to `ConversationReference`. `since: datetime` is an explicit parameter so future ②digest (past 24h) can reuse the entry without changing the signature.
+- **Tokenization**: `re.findall(r"[A-Za-z0-9]{2,}|[\u4e00-\u9fff]{2,}")` after char-level stripping of Chinese particles (`的了是在和与`). Single Chinese particles never form tokens on their own (regex requires `{2,}`), but they DO glue real tokens (`"的动态"` would be one block without the strip). Whole-token STOPWORDS frozenset alone cannot split glued CJK — char-level strip is mandatory.
+- **Candidate set**: `Article JOIN Feed LEFT JOIN ArticleSummary ON source='feed'`, `WHERE Feed.user_id == user_id AND COALESCE(published_at, created_at) >= since`. User isolation reuses `Feed.user_id` (same convention as `routers/articles.py::_apply_article_filters`), not an article-level user column.
+- **Scoring**: Python-side `sum(1 for t in lower_tokens if t in f"{title} {summary_text}".lower())`; sort `hits DESC, then (published_at or created_at) DESC`; return top-`limit`. Zero-hit articles dropped; empty `tokens` → return `[]` immediately (caller degrades to no-ref chat, not an error).
+- **Failure mode**: auto-retrieval is wrapped in `try/except Exception` with `logger.exception(...)` and falls through to the no-ref path. The chat stream must never break because retrieval failed.
+
+### 4. Validation & Error Matrix
+- Query has no extractable tokens (all stopwords / punctuation / single chars) → return `[]`, no refs inserted, chat proceeds with question-only context. `200`.
+- No article matches within the time window → return `[]`, same as above. `200`.
+- `since` is timezone-naive → normalized to UTC inside the function (do not raise).
+- Retrieval raises (e.g. DB error) → caught in router, logged, chat continues with empty refs. `200` with normal SSE stream.
+- `user.ai_cross_article_search = false` → retrieval block skipped entirely. `200`.
+- Conversation already has ≥1 reference (manual) → `existing_refs_count != 0`, retrieval skipped (respects user's manual curation). `200`.
+
+### 5. Good/Base/Bad Cases
+- Good: new conversation, no refs, question "最近 OpenAI 怎么样" → tokens `[最近, OpenAI]` → 3 articles in the last 7 days match → written as `is_auto=True` refs → multi-article prompt answers with citations.
+- Base: new conversation, question is pure small talk ("你好") → no tokens or no hits → empty refs → chat answers as a plain assistant.
+- Bad (pre-fix): a user changed their summary model twice; the `article_summaries` table has 3 `source='feed'` rows for one article; the raw `outerjoin` returned 3 rows for that article → the same article was scored 3× and inserted 3× → `IntegrityError` on `ConversationReference(conversation_id, article_id)` flushed inside `try/except` → **all auto-refs for that message silently dropped**, not just the duplicate.
+- Bad: retrieval throws an uncaught exception → the whole `POST /conversations/{id}/chat` 500s even though the question itself is answerable.
+
+### 6. Tests Required
+- Unit (`tests/test_retrieval.py`, pure-logic only — matches `test_automation.py` test style, no DB fixtures): `_tokenize` covers empty/English/Chinese-blocks/stopwords/punctuation/single-char-drop/mixed; `_score_and_rank` covers empty tokens/zero-hit drop/hits-desc/recency-tiebreak/limit truncation/summary-text hit/`created_at` fallback/tz-naive normalization/mixed CJK+EN.
+- The DB-backed `retrieve_relevant_articles` function is **not** unit-tested (consistent with this project's "trusted unit tests cover pure logic that has no DB/HTTP coupling" convention). Its `COALESCE` + user-isolation + dedup behavior is verified by static review and end-to-end manual scenarios (PRD acceptance 1/2/3).
+
+### 7. Wrong vs Correct
+
+#### Wrong
+```python
+# Raw candidate rows hide a dedup landmine: article_summaries has a (article_id, source, model)
+# unique constraint, so a user who changed summary models has MULTIPLE source='feed' rows
+# per article. The outerjoin then emits one row per summary, duplicating the article.
+result = await db.execute(stmt)
+candidates = [(a, s or "") for a, s in result.all()]   # same article appears 2-3×
+
+# Bulk-inserting auto-refs without guarding duplicates within the batch hits the
+# conversation_references(conversation_id, article_id) unique constraint on flush.
+for art in retrieved:                                  # retrieved contains the dup
+    db.add(ConversationReference(conversation_id=conv.id, article_id=art.id, is_auto=True))
+await db.flush()                                       # IntegrityError → swallowed by try/except → whole batch lost
+```
+
+#### Correct
+```python
+# Dedupe by Article.id in Python before scoring — also fixes the hidden side effect
+# where duplicate scoring inflated one article's rank and shrank others' top-K chances.
+result = await db.execute(stmt)
+seen: set[UUID] = set()
+candidates: list[tuple[Article, str]] = []
+for article, summary_text in result.all():
+    if article.id in seen:
+        continue
+    seen.add(article.id)
+    candidates.append((article, summary_text or ""))
+
+return _score_and_rank(candidates, tokens, limit)
+```
+
+#### Wrong
+```python
+# Chinese particles must be stripped at char level BEFORE regex tokenization.
+# Putting single-char particles in STOPWORDS does nothing — the regex requires {2,},
+# so a lone particle never becomes a token. But "的动态" matches as ONE block.
+STOPWORDS = frozenset({"的", "了", "是", ...})   # useless for single CJK chars
+raw = re.findall(r"[A-Za-z0-9]{2,}|[\u4e00-\u9fff]{2,}", query)
+tokens = [t for t in raw if t.lower() not in STOPWORDS]
+# "最近 OpenAI 的动态" → ["最近", "OpenAI", "的动态"]  ❌ "的动态" won't match "动态"
+```
+
+#### Correct
+```python
+_CN_PARTICLE_CHARS = "的了是在和与"
+cleaned = query.translate(str.maketrans("", "", _CN_PARTICLE_CHARS))
+raw = re.findall(r"[A-Za-z0-9]{2,}|[\u4e00-\u9fff]{2,}", cleaned)
+tokens = [t for t in raw if t.lower() not in STOPWORDS]
+# "最近 OpenAI 的动态" → ["最近", "OpenAI", "动态"]  ✓
+```
