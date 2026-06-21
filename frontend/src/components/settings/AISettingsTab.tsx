@@ -221,6 +221,18 @@ export function AISettingsTab() {
 
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
+          <Label htmlFor="cross-article-search">{t("crossArticleSearch")}</Label>
+          <p className="text-xs text-muted-foreground">{t("crossArticleSearchDescription")}</p>
+        </div>
+        <Switch
+          id="cross-article-search"
+          checked={config?.cross_article_search ?? true}
+          onCheckedChange={(checked) => updateConfig.mutate({ cross_article_search: checked })}
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
           <Label>{t("defaultTranslateLang")}</Label>
           <p className="text-xs text-muted-foreground">{t("defaultTranslateLangDescription")}</p>
         </div>

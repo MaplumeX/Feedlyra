@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import UUID
 
@@ -56,6 +56,7 @@ from app.services.llm import (
     summarize_chat_history,
     translate_article,
 )
+from app.services.retrieval import retrieve_relevant_articles
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,8 @@ async def update_ai_config(
         user.ai_model = body.model
     if body.translate_default_lang is not None:
         user.translate_default_lang = body.translate_default_lang
+    if body.cross_article_search is not None:
+        user.ai_cross_article_search = body.cross_article_search
 
     _apply_feature_update(user, "translate", body.translate)
     _apply_feature_update(user, "summary", body.summary)
@@ -135,6 +138,7 @@ async def update_ai_config(
         "model": user.ai_model,
         "has_api_key": user.ai_api_key is not None,
         "translate_default_lang": user.translate_default_lang or "zh",
+        "cross_article_search": user.ai_cross_article_search,
         "translate": _build_feature_response(user, "translate"),
         "summary": _build_feature_response(user, "summary"),
         "chat": _build_feature_response(user, "chat"),
@@ -150,6 +154,7 @@ async def get_ai_config(
         "model": user.ai_model,
         "has_api_key": user.ai_api_key is not None,
         "translate_default_lang": user.translate_default_lang or "zh",
+        "cross_article_search": user.ai_cross_article_search,
         "translate": _build_feature_response(user, "translate"),
         "summary": _build_feature_response(user, "summary"),
         "chat": _build_feature_response(user, "chat"),
@@ -1114,6 +1119,34 @@ async def _do_conversation_chat(
 ):
     """Shared chat logic for both conversation and legacy article endpoints."""
     from fastapi.responses import StreamingResponse
+
+    # Auto-retrieve related articles when the conversation has no references yet
+    # and the user has cross-article search enabled. Failures must never break
+    # the chat — degrade to the existing no-reference path (see design.md §module 3).
+    if getattr(user, "ai_cross_article_search", True):
+        existing_refs_count = await db.scalar(
+            select(func.count(ConversationReference.id)).where(
+                ConversationReference.conversation_id == conv.id
+            )
+        )
+        if existing_refs_count == 0:
+            try:
+                since = datetime.now(timezone.utc) - timedelta(days=7)
+                retrieved = await retrieve_relevant_articles(
+                    db, user_id=user.id, query=body.message, since=since, limit=5
+                )
+                for art in retrieved:
+                    db.add(
+                        ConversationReference(
+                            conversation_id=conv.id,
+                            article_id=art.id,
+                            is_auto=True,
+                        )
+                    )
+                if retrieved:
+                    await db.flush()
+            except Exception:
+                logger.exception("Auto-retrieval failed, continuing without references")
 
     # Get all referenced articles
     refs_result = await db.execute(
