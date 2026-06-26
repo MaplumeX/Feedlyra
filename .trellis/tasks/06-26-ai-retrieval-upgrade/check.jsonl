@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "验收检索工具实现遵循代码标准/禁用模式；确认无孤儿代码与未 catch 模式回归"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "验收 migration 017 链路合法（016→017）、LEFT JOIN ReadStatus 无重复行、COALESCE 时区处理一致"}
+{"file": ".trellis/tasks/06-26-ai-retrieval-upgrade/prd.md", "reason": "验收标准逐条核对：设置项残留检查、list_articles 契约、测试更新、spec 沉淀"}
+{"file": ".trellis/tasks/06-26-ai-retrieval-upgrade/design.md", "reason": "对照设计契约验收 list_articles 返回字段/排序/参数边界与 R1 删除面完整性"}

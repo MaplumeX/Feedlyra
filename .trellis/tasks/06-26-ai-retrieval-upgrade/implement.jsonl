@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "no-tools 系统提示分支删除、savepoint 模式参考、未 catch 模式确认（agent_tools 改动遵循既有约定）"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "agent-loop scenario 与 COALESCE(published_at,created_at) time-window 查询模式、unread_only LEFT JOIN ReadStatus 写法参考"}
+{"file": ".trellis/spec/backend/index.md", "reason": "agent-loop 条目需同步更新（删 ai_cross_article_search 门控描述、补 list_articles 契约）"}
+{"file": ".trellis/tasks/06-26-ai-retrieval-upgrade/design.md", "reason": "list_articles SQL 形态、R1 agent_loop/schema/router 改动契约、测试调整清单"}
