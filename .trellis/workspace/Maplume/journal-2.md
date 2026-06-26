@@ -485,3 +485,37 @@ Reshaped cross-article chat into a real tool-calling agent loop. Model now decid
 ### Next Steps
 
 - None - task complete
+
+
+## Session 69: AI检索能力升级与设置项清理
+
+**Date**: 2026-06-26
+**Task**: AI检索能力升级与设置项清理
+**Branch**: `emdash/upset-cars-guess-g3tlx`
+
+### Summary
+
+Branded AI retrieval from a single keyword-ILIKE path into a structured tool family. Added list_articles(days/feed_id/unread_only/limit) for list/count/scan questions like 今天有什么文章, separate from keyword search_articles; returns {id,title,published_at,feed_title,summary_snippet} ordered by COALESCE(published_at,created_at) DESC, scoped by Feed.user_id. unread_only uses LEFT JOIN ReadStatus with article_id IS NULL (PK is user_id+article_id, no dup-row hazard). Dropped the semantically-dead ai_cross_article_search setting: model field, schema, router config read/write, frontend type/hook/switch/i18n, migration 017 drops the column (016->017). Agent loop tools now always enabled; removed the no-tools system prompt variant, collapsed to a single _AGENT_SYSTEM_PROMPT naming all three tools and guiding selection by question type. Tests: 3-tool schema assertion + list_articles invalid feed_id routing; TestSystemPrompt rewritten for single constant. 95 backend tests green, frontend build/lint green. Spec sync: backend index + database-guidelines agent-loop scenario. trellis-check found 1 non-blocking orphan import (Boolean in user.py) and fixed it. Did not touch pgvector/embedding (left as a later layer).
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `105ebf1` | (see git log) |
+| `d2738e8` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

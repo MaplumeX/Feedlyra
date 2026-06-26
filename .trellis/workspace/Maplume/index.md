@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 68
+- **Total Sessions**: 69
 - **Last Active**: 2026-06-26
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~487 | Active |
+| `journal-2.md` | ~521 | Active |
 | `journal-1.md` | ~1990 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 69 | 2026-06-26 | AI检索能力升级与设置项清理 | `105ebf1`, `d2738e8` | `emdash/upset-cars-guess-g3tlx` |
 | 68 | 2026-06-26 | AI chat agent loop | `c230f25`, `caa1951`, `4932181`, `bd47aae` | `emdash/polite-pets-write-dvkoh` |
 | 67 | 2026-06-21 | AI 内容聚合:跨文章问答自动检索 | `45a873c`, `3b361bf`, `50ce77a` | `MaplumeX/salmon` |
 | 66 | 2026-06-21 | 修复登录/注册表单提交失败无错误提示 | `57383ac`, `3bd45e2` | `main` |
