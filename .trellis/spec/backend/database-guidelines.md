@@ -567,39 +567,40 @@ non_delete_rules = [r for r in rules if not _rule_has_delete_action(r)]
 ## Scenario: Cross-Article Auto-Retrieval Service
 
 ### 1. Scope / Trigger
-- Trigger: when a user asks a question in a conversation that has **no** references and has `users.ai_cross_article_search = true`, the chat flow auto-retrieves related recent articles and injects them as `is_auto=True` `ConversationReference` rows before assembling the multi-article prompt.
-- The retrieval function is the shared building block for future candidates ②③④ (daily digest, dedup/clustering, semantic filter). Its **signature** is the stable contract; the **keyword implementation** may be swapped for a vector implementation later.
+- Trigger: the `search_articles` agent tool calls `retrieve_relevant_articles()` when the LLM decides to search the user's subscriptions (see the Agent Loop scenario in `routers/ai.py` flow). The retrieval function is the shared building block for future candidates ②③④ (daily digest, dedup/clustering, semantic filter). Its **signature** is the stable contract; the **keyword implementation** may be swapped for a vector implementation later.
+- Legacy "silently inject auto-refs when a conversation has no references" path was **removed** when chat became an agent loop (task 06-26-ai-chat-agent-loop). Retrieval now only runs when the model explicitly calls `search_articles`; `read_article` writes `is_auto=True` refs for articles the agent actually read.
 
 ### 2. Signatures
-- DB: `users.ai_cross_article_search: Boolean NOT NULL default true` (migration 015).
+- DB: `users.ai_cross_article_search: Boolean NOT NULL default true` (migration 015). Controls whether the agent loop exposes `search_articles`/`read_article` tools to the model (false → empty `tools=[]`, agent loop runs one no-tool round).
 - Schema: `AIConfigUpdate.cross_article_search: bool | None`; `AIConfigResponse.cross_article_search: bool = True`.
 - Service: `app/services/retrieval.py::retrieve_relevant_articles(db, *, user_id, query, since=None, days=7, limit=5) -> list[Article]`.
 - Service (pure helpers, unit-tested without a DB): `_tokenize(query) -> list[str]`, `_score_and_rank(candidates: list[tuple[Article, str]], tokens, limit) -> list[Article]`.
-- Router: `_do_conversation_chat` inserts an auto-retrieval block **before** the existing "Get all referenced articles" query, so auto-refs and manual refs flow through the **same** `build_chat_messages(articles=...)` prompt path — no separate branch.
+- Tool layer: `app/services/agent_tools.py::execute_tool(name, args, *, user_id, conversation_id, db)` wraps retrieval for the agent loop.
 
 ### 3. Contracts
-- **Stable contract**: the function returns `list[Article]` sorted by relevance then recency; the caller is responsible for converting to `ConversationReference`. `since: datetime` is an explicit parameter so future ②digest (past 24h) can reuse the entry without changing the signature.
-- **Tokenization**: `re.findall(r"[A-Za-z0-9]{2,}|[\u4e00-\u9fff]{2,}")` after char-level stripping of Chinese particles (`的了是在和与`). Single Chinese particles never form tokens on their own (regex requires `{2,}`), but they DO glue real tokens (`"的动态"` would be one block without the strip). Whole-token STOPWORDS frozenset alone cannot split glued CJK — char-level strip is mandatory.
+- **Stable contract**: the function returns `list[Article]` sorted by relevance then recency; the caller (agent tool) is responsible for converting to the tool result JSON. `since: datetime` is an explicit parameter so future ②digest (past 24h) can reuse the entry without changing the signature.
+- **Tokenization (jieba)**: `_tokenize` uses `jieba.cut(query, cut_all=False)` (precise mode). A full natural-language sentence like `"简单看看今天有什么文章"` MUST be split into real content words (`简单/看看/今天/什么/文章`), not kept as one CJK block — keeping it whole made `ILIKE '%整句%'` match nothing and was the 2026-06-25 zero-hit incident. Filters: tokens shorter than 2 chars dropped; whole-token STOPWORDS (EN + a narrow CN function-word set) dropped; tokens with no alphanumeric OR Han char dropped (kills jieba's punctuation runs like `"..."`).
 - **Candidate set**: `Article JOIN Feed LEFT JOIN ArticleSummary ON source='feed'`, `WHERE Feed.user_id == user_id AND COALESCE(published_at, created_at) >= since`. User isolation reuses `Feed.user_id` (same convention as `routers/articles.py::_apply_article_filters`), not an article-level user column.
-- **Scoring**: Python-side `sum(1 for t in lower_tokens if t in f"{title} {summary_text}".lower())`; sort `hits DESC, then (published_at or created_at) DESC`; return top-`limit`. Zero-hit articles dropped; empty `tokens` → return `[]` immediately (caller degrades to no-ref chat, not an error).
-- **Failure mode**: auto-retrieval is wrapped in `try/except Exception` with `logger.exception(...)` and falls through to the no-ref path. The chat stream must never break because retrieval failed.
+- **Scoring**: Python-side `sum(1 for t in lower_tokens if t in f"{title} {summary_text}".lower())`; sort `hits DESC, then (published_at or created_at) DESC`; return top-`limit`. Zero-hit articles dropped; empty `tokens` → return `[]` immediately (caller returns an empty result set, not an error).
+- **Failure mode**: tool execution failures are caught in `agent_loop._run_one_tool` and returned to the model as a tool message with an `error` field, so the agent can react (e.g. retry with a different keyword). The chat stream must never break because a tool failed.
 
 ### 4. Validation & Error Matrix
-- Query has no extractable tokens (all stopwords / punctuation / single chars) → return `[]`, no refs inserted, chat proceeds with question-only context. `200`.
+- Query has no extractable tokens (all stopwords / punctuation / single chars) → return `[]`, `search_articles` returns `{count:0, results:[]}`. Model decides next step (retry keyword or answer). `200`.
 - No article matches within the time window → return `[]`, same as above. `200`.
 - `since` is timezone-naive → normalized to UTC inside the function (do not raise).
-- Retrieval raises (e.g. DB error) → caught in router, logged, chat continues with empty refs. `200` with normal SSE stream.
-- `user.ai_cross_article_search = false` → retrieval block skipped entirely. `200`.
-- Conversation already has ≥1 reference (manual) → `existing_refs_count != 0`, retrieval skipped (respects user's manual curation). `200`.
+- Retrieval raises (e.g. DB error) → caught in `_run_one_tool`, returned to model as tool message `{"error": ...}`; agent may retry with a new keyword or answer from prior context. `200` with normal SSE stream.
+- `user.ai_cross_article_search = false` → `run_agent_chat` sets `tools=[]`; the model is never offered `search_articles`, so retrieval is never invoked. `200`.
+- Conversation already has references (legacy `/articles/{id}/chat` pre-seeds one) → no special path; the agent may still call `search_articles` if the model judges the pre-seeded article insufficient.
 
 ### 5. Good/Base/Bad Cases
-- Good: new conversation, no refs, question "最近 OpenAI 怎么样" → tokens `[最近, OpenAI]` → 3 articles in the last 7 days match → written as `is_auto=True` refs → multi-article prompt answers with citations.
-- Base: new conversation, question is pure small talk ("你好") → no tokens or no hits → empty refs → chat answers as a plain assistant.
-- Bad (pre-fix): a user changed their summary model twice; the `article_summaries` table has 3 `source='feed'` rows for one article; the raw `outerjoin` returned 3 rows for that article → the same article was scored 3× and inserted 3× → `IntegrityError` on `ConversationReference(conversation_id, article_id)` flushed inside `try/except` → **all auto-refs for that message silently dropped**, not just the duplicate.
-- Bad: retrieval throws an uncaught exception → the whole `POST /conversations/{id}/chat` 500s even though the question itself is answerable.
+- Good: new conversation, question "订阅源里关于 AI 的文章有哪些" → model calls `search_articles(query="AI")` → tokens `[AI]` → 5 articles in the last 7 days match → model lists real titles, may `read_article(id)` to summarize one in depth.
+- Base: new conversation, question is pure small talk ("你好") → model answers directly, never calls `search_articles`. One agent round, no tool events.
+- Bad (pre-agent, 2026-06-25): `_tokenize` kept `"简单看看今天有什么文章"` as ONE CJK block → `ILIKE '%整句%'%'` matched nothing → 0 refs → model answered "我无法访问互联网". Fixed by jieba segmentation.
+- Bad: `read_article` called twice for the same article in one chat → second insert hits `conversation_references(conversation_id, article_id)` unique constraint. Must use a savepoint so the rollback only undoes the duplicate insert, not the whole transaction (which holds the just-flushed assistant tool_call message). See "Scenario: StreamingResponse & DB Session Lifetime".
 
 ### 6. Tests Required
-- Unit (`tests/test_retrieval.py`, pure-logic only — matches `test_automation.py` test style, no DB fixtures): `_tokenize` covers empty/English/Chinese-blocks/stopwords/punctuation/single-char-drop/mixed; `_score_and_rank` covers empty tokens/zero-hit drop/hits-desc/recency-tiebreak/limit truncation/summary-text hit/`created_at` fallback/tz-naive normalization/mixed CJK+EN.
+- Unit (`tests/test_retrieval.py`, pure-logic only — matches `test_automation.py` test style, no DB fixtures): `_tokenize` covers empty/English/jieba-segmented-sentence/stopwords/punctuation-only-returns-empty/natural-language-sentence-vs-title-word-hit; `_score_and_rank` covers empty tokens/zero-hit drop/hits-desc/recency-tiebreak/limit truncation/summary-text hit/`created_at` fallback/tz-naive normalization/mixed CJK+EN.
+- Regression: `test_natural_language_sentence_matches_title_word` asserts `"简单看看今天有什么文章"` now matches an article whose title contains a content word (e.g. `今天`) — guards the 2026-06-25 zero-hit regression.
 - The DB-backed `retrieve_relevant_articles` function is **not** unit-tested (consistent with this project's "trusted unit tests cover pure logic that has no DB/HTTP coupling" convention). Its `COALESCE` + user-isolation + dedup behavior is verified by static review and end-to-end manual scenarios (PRD acceptance 1/2/3).
 
 ### 7. Wrong vs Correct
@@ -637,20 +638,140 @@ return _score_and_rank(candidates, tokens, limit)
 
 #### Wrong
 ```python
-# Chinese particles must be stripped at char level BEFORE regex tokenization.
-# Putting single-char particles in STOPWORDS does nothing — the regex requires {2,},
-# so a lone particle never becomes a token. But "的动态" matches as ONE block.
-STOPWORDS = frozenset({"的", "了", "是", ...})   # useless for single CJK chars
-raw = re.findall(r"[A-Za-z0-9]{2,}|[\u4e00-\u9fff]{2,}", query)
-tokens = [t for t in raw if t.lower() not in STOPWORDS]
-# "最近 OpenAI 的动态" → ["最近", "OpenAI", "的动态"]  ❌ "的动态" won't match "动态"
+# Keeping a full CJK sentence as one token makes ILIKE substring match nothing.
+# The 2026-06-25 incident: "简单看看今天有什么文章" was tokenized as ONE block,
+# so `%简单看看今天有什么文章%` matched no title.
+_TOKEN_PATTERN = re.compile(r"[A-Za-z0-9]{2,}|[\u4e00-\u9fff]{2,}")
+def _tokenize(query: str) -> list[str]:
+    cleaned = query.translate(str.maketrans("", "", "的了是在和与"))
+    raw = _TOKEN_PATTERN.findall(cleaned)            # ["简单看看今天有什么文章"] — one block
+    return [t for t in raw if t.lower() not in STOPWORDS]
 ```
 
 #### Correct
 ```python
-_CN_PARTICLE_CHARS = "的了是在和与"
-cleaned = query.translate(str.maketrans("", "", _CN_PARTICLE_CHARS))
-raw = re.findall(r"[A-Za-z0-9]{2,}|[\u4e00-\u9fff]{2,}", cleaned)
-tokens = [t for t in raw if t.lower() not in STOPWORDS]
-# "最近 OpenAI 的动态" → ["最近", "OpenAI", "动态"]  ✓
+import jieba
+
+def _tokenize(query: str) -> list[str]:
+    if not query:
+        return []
+    tokens: list[str] = []
+    for raw in jieba.cut(query, cut_all=False):       # precise-mode segmentation
+        t = raw.strip()
+        if len(t) < 2:
+            continue
+        if t.lower() in STOPWORDS or t in _CN_STOPWORDS:
+            continue
+        # jieba sometimes emits punctuation runs (e.g. "...") as tokens;
+        # require at least one alphanumeric or Han char so they are dropped.
+        if not any(c.isalnum() or "\u4e00" <= c <= "\u9fff" for c in t):
+            continue
+        tokens.append(t)
+    return tokens
+# "简单看看今天有什么文章" → ["简单", "看看", "今天", "文章"]  ✓
+```
+
+## Scenario: AI Chat Agent Loop
+
+### 1. Scope / Trigger
+- Trigger: chat endpoints `POST /conversations/{id}/chat` and legacy `POST /articles/{id}/chat` now run an agent loop (task 06-26-ai-chat-agent-loop) instead of a single prompt-and-stream call. The model decides, via tool calling, when to search/read articles before answering.
+- Cross-layer contract change: new SSE event types, new ChatMessage columns, new request-scoped-session hazard. Code-spec depth is mandatory.
+
+### 2. Signatures
+- Router: `_do_conversation_chat(conv, body, db, user)` no longer assembles the prompt or streams directly. It stores the user message (request-scoped `db`, committed before returning) and returns `StreamingResponse(run_agent_chat(...))`.
+- Loop: `services/agent_loop.py::run_agent_chat(conv, user, user_message, user_msg_id, images) -> AsyncIterator[str]`. **Owns its own `async with async_session() as db`** — the generator outlives the request-scoped session. See `quality-guidelines.md` "Don't: request-injected DB sessions inside StreamingResponse generators".
+- LLM streaming helper: `services/llm.py::stream_chat_with_tools(client, model, messages, tools=None, tool_choice="auto") -> AsyncIterator[tuple[str | None, dict | None]]`. `stream_chat` (no tools) is retained as the fallback path.
+- Tools: `services/agent_tools.py::TOOLS` (schema list) + `execute_tool(name, args, *, user_id, conversation_id, db) -> ToolResult`. `ToolResult(content: str, summary: str)` — `content` is JSON fed to the model; `summary` is the human-facing SSE line.
+- Guard rail: `agent_loop.MAX_TOOL_ROUNDS = 8`. At the cap a system message is injected and one final no-tools round runs.
+- DB: `ChatMessage.tool_calls JSON nullable`, `ChatMessage.tool_call_id String nullable`, `ChatMessage.name String nullable` (migration 016). `role` extends to `"user" | "assistant" | "tool"`.
+
+### 3. Contracts
+- **SSE event protocol** (backward-compatible: old clients ignore unknown keys):
+  - `{"content": "<delta>"}` — streamed answer text (unchanged from pre-agent).
+  - `{"type": "tool_call_start", "name": "<tool>", "args": <parsed args dict | raw string>}` — agent is invoking a tool.
+  - `{"type": "tool_call_end", "name": "<tool>", "result_summary": "<short line, e.g. 找到 3 篇>"}` — tool finished. Full result is NOT sent to the client; it stays in the `tool` message fed to the model.
+  - `data: [DONE]` — stream end.
+- **Message persistence contract**: every agent round persists (each via its own `await db.commit()`, **not** `flush()`):
+  - `role="assistant"` carrying `tool_calls=[...]` (content may be `""`/null) — the model's tool-call request frame.
+  - `role="tool"` carrying `tool_call_id` + `name` + `content` (the tool result JSON) — one per tool_call.
+  - `role="assistant"` final answer carrying `content=<full streamed text>`, `tool_calls=None`.
+- **History replay**: `_prepare_messages` loads ALL persisted ChatMessage rows (including `tool`/`tool_calls` frames) in order and rebuilds the OpenAI messages array — no tools are re-executed; their results already sit in `tool` messages. The history endpoint (`/chat/history`) **filters out** `role="tool"` and empty `tool_calls`-bearing assistant frames from the UI payload (see `routers/ai.py::_is_displayed`), but the LLM replay path reads the full set.
+- **Tool toggle (`R7`)**: `user.ai_cross_article_search == false` → `run_agent_chat` sets `tools=[]` AND selects a no-tools system prompt variant (`agent_loop._system_prompt(tools_enabled)`). The model is never told it has search tools. Equivalent to a one-round no-tool LLM call.
+- **Guard rail (`R6`)**: when `rounds >= 8`, inject `{role:system, content:"已达工具调用上限，请基于已获取信息回答本条消息。"}` and run one final no-tools stream round, then converge. Never hard-error.
+- **Graceful degradation (`R8`)**: any exception inside `run_agent_chat` after content was already streamed → end with `[DONE]`. Before any content → fall back to `_plain_fallback` (no-tools `stream_chat`). The chat endpoint must never 500 due to an agent-loop failure.
+
+### 4. Validation & Error Matrix
+- No API key configured (`get_user_llm_client` raises `ValueError`) → yield `{"error": "..."}` + `[DONE]`. `200`.
+- `ai_cross_article_search=false` → `tools=[]`, system prompt omits tool mentions. One no-tool round. `200`.
+- Model emits a tool_call with malformed args JSON → `_safe_json` returns the raw string; `_run_one_tool` treats non-dict as empty args; tool returns its own error `{"error":"missing query"}`-style content. Model retries or answers. `200`.
+- Tool execution raises → caught in `_run_one_tool`, returned to model as `{"error": str(e)}` tool message; agent may continue. `200`.
+- `read_article` duplicate ConversationReference insert → SAVEPOINT rollback only; assistant tool_call message survives. `200`.
+- Tool-call round count reaches 8 → guard rail injects system message; final no-tools round. `200`.
+- Agent loop raises mid-stream after content was yielded → emit `[DONE]`, do NOT attempt fuller fallback (user already saw partial answer). `200`.
+- Agent loop raises before any content → `_plain_fallback` streams a plain no-tools answer. `200`.
+
+### 5. Good/Base/Bad Cases
+- Good: "订阅源里关于 AI 的文章有哪些" → assistant streams prologue → `search_articles(query="AI")` → 5 candidates → assistant lists titles → `read_article(id)` → assistant summarizes full text. 3 rounds, 6 persisted messages, 1 `is_auto=True` ref, SSE shows "正在搜索「AI」… / 找到 5 篇 / 正在阅读《…》".
+- Base: "你好" → model answers directly, no tool calls. One no-tool round, 2 persisted messages (user + assistant), zero tool events.
+- Bad (pre-fix): `run_agent_chat` accepted the request-scoped `db` and used it inside the generator → session closed by the time the first `yield` ran → `db.add()`/`flush()` silently no-op'd or raised → only the user message (committed pre-return) persisted, all assistant/tool frames lost.
+- Bad (pre-fix): `_persist_assistant` used `db.flush()` without `commit()` → on `async with` exit the whole transaction rolled back → empty history on reload.
+- Bad (pre-fix): `read_article` caught `IntegrityError` with `await db.rollback()` → rolled back the just-flushed assistant tool_call message in the same transaction → dangling `tool` message with no preceding `assistant.tool_calls`.
+- Bad (pre-fix): single `AGENT_SYSTEM_PROMPT` told the model to "use search_articles/read_article tools" even when `ai_cross_article_search=false` → model apologised "I can't access your feed" because it was told to use tools it didn't have.
+
+### 6. Tests Required
+- `tests/test_agent_loop.py` (pure logic — no DB/HTTP):
+  - `_accumulate_round` covers: pure content round; arguments accumulated across multiple fragments (the streaming delta pitfall); multiple tool_calls indexed & sorted; content + tool_calls interleaved in one round; empty stream; `to_openai_dict()` shape.
+  - `MAX_TOOL_ROUNDS == 8`; `RAIL_LIMIT_SYSTEM` mentions upper limit + "回答".
+  - `_safe_json` covers: empty → `{}`; valid JSON → parsed; malformed → raw string fallback.
+- `tests/test_agent_tools.py` (pure logic — routing + shape): tool schema shape (2 function-type tools, required params, Chinese action-oriented descriptions); `execute_tool` routing for unknown tool / missing query / empty query / missing article_id / invalid UUID / no-token query (bails before DB). `ToolResult` shape.
+- `tests/test_history_filter.py` (pure logic): `_is_displayed` hides `role="tool"` and `tool_calls`-bearing assistant frames; shows user + final assistant.
+- `tests/test_agent_loop.py::TestSystemPrompt`: with-tools prompt mentions a tool; no-tools prompt mentions neither `tool` nor `search_articles`/`read_article`.
+- The DB-backed `run_agent_chat` end-to-end is **not** unit-tested; verified by manual SSE curl + DB inspection (messages persisted with correct roles/tool_calls/tool_call_id, ConversationReference written with `is_auto=True`).
+
+### 7. Wrong vs Correct
+
+#### Wrong — request-scoped session in the streaming generator
+```python
+async def _do_conversation_chat(conv, body, db, user):
+    async def event_stream():
+        async for sse in run_agent_chat(conv, user, body.message, user_msg_id, body.images, db):
+            yield sse          # db (request-scoped) is already closed here
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+```
+
+#### Correct — loop owns a fresh session
+```python
+async def _do_conversation_chat(conv, body, db, user):
+    # user_msg committed here on the request-scoped db (still alive pre-return)
+    async def event_stream():
+        async for sse in run_agent_chat(conv, user, body.message, user_msg_id, body.images):
+            yield sse          # run_agent_chat opens its own async_session()
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+```
+
+#### Wrong — flush without commit, then rollback on duplicate
+```python
+# 1) flush (not commit) leaves rows in the transaction
+db.add(ChatMessage(role="assistant", tool_calls=[...]))
+await db.flush()
+# 2) a later IntegrityError rollback wipes the assistant frame too
+db.add(ConversationReference(...))
+try:
+    await db.flush()
+except IntegrityError:
+    await db.rollback()        # nukes everything since the last commit
+```
+
+#### Correct — commit each round, use savepoint for duplicates
+```python
+# Each persisted message commits immediately so later failures can't drop it.
+db.add(ChatMessage(role="assistant", content=content, tool_calls=tool_calls, created_at=datetime.now(timezone.utc)))
+await db.commit()
+
+# Duplicate-ref guard uses a SAVEPOINT, not a full rollback.
+try:
+    async with db.begin_nested():
+        db.add(ConversationReference(conversation_id=conv_id, article_id=aid, is_auto=True))
+except IntegrityError:
+    pass
 ```

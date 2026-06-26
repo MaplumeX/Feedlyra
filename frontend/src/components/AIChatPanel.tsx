@@ -306,6 +306,13 @@ function ChatMessageBubble({
         >
           {isAssistant ? (
             <div className="relative">
+              {msg.tool_events && msg.tool_events.length > 0 && (
+                <div className="mb-1.5 flex flex-col gap-0.5 text-xs text-muted-foreground/80">
+                  {msg.tool_events.map((line, i) => (
+                    <span key={i}>{line}</span>
+                  ))}
+                </div>
+              )}
               <MarkdownContent content={msg.content} />
               {isStreaming && <TypingIndicator />}
             </div>
@@ -621,6 +628,7 @@ export function AIChatPanel({
         content: "",
         attachments: null,
         created_at: new Date().toISOString(),
+        tool_events: [],
       };
       setMessages((prev) => [...prev, assistantMsg]);
       const assistantId = assistantMsg.id;
@@ -630,10 +638,36 @@ export function AIChatPanel({
         return next;
       });
 
+      const appendToolLine = (line: string) => {
+        setMessages((prev) => {
+          const last = prev.length > 0 ? prev[prev.length - 1] : undefined;
+          if (last && last.role === "assistant") {
+            const nextEvents = [...(last.tool_events ?? []), line];
+            return [...prev.slice(0, -1), { ...last, tool_events: nextEvents }];
+          }
+          return prev;
+        });
+      };
+
       const controller = await streamChat({
         conversationId,
         message: text,
         images: base64Images,
+        onToolEvent: (ev) => {
+          if (!mountedRef.current) return;
+          if (ev.phase === "start") {
+            if (ev.name === "search_articles") {
+              const q = (ev.args?.query as string | undefined) ?? "";
+              appendToolLine(q ? `正在搜索「${q}」…` : "正在搜索…");
+            } else if (ev.name === "read_article") {
+              appendToolLine("正在阅读文章…");
+            } else {
+              appendToolLine(`正在调用 ${ev.name}…`);
+            }
+          } else {
+            appendToolLine(ev.result_summary ?? "完成");
+          }
+        },
         onChunk: (chunk) => {
           setMessages((prev) => {
             const last = prev.length > 0 ? prev[prev.length - 1] : undefined;

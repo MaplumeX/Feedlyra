@@ -114,6 +114,9 @@ export interface ChatMessage {
   content: string;
   attachments: ImageAttachment[] | null;
   created_at: string;
+  /** Agent tool-call progress lines surfaced over SSE, e.g.
+   * "正在搜索 AI … 找到 3 篇". UI-only; not populated from history API. */
+  tool_events?: string[];
 }
 
 export interface Conversation {
