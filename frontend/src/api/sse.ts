@@ -2,6 +2,18 @@ import { refreshTokenIfNeeded } from "./client";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
+/** A tool-call lifecycle event surfaced from the agent loop over SSE. */
+export interface ToolEvent {
+  /** "start" when the agent begins调用 a tool, "end" when it finishes. */
+  phase: "start" | "end";
+  /** Tool function name, e.g. "search_articles" / "read_article". */
+  name: string;
+  /** On start: the parsed args (e.g. {query: "AI"}). Empty on end. */
+  args?: Record<string, unknown>;
+  /** On end: short human-facing summary, e.g. "找到 3 篇". */
+  result_summary?: string;
+}
+
 export interface StreamChatParams {
   conversationId: string;
   message: string;
@@ -9,6 +21,9 @@ export interface StreamChatParams {
   onChunk: (text: string) => void;
   onDone: () => void;
   onError: (error: Error) => void;
+  /** Optional: surface tool-call progress so the UI can show
+   * "正在搜索 X … 找到 N 篇". Default no-op for backward compat. */
+  onToolEvent?: (event: ToolEvent) => void;
 }
 
 async function createChatFetch(
@@ -104,8 +119,35 @@ export async function streamChat({
   onChunk,
   onDone,
   onError,
+  onToolEvent,
 }: StreamChatParams): Promise<AbortController> {
   const controller = new AbortController();
+
+  // Dispatch one parsed SSE payload. Returns true if the stream should terminate
+  // (on error or [DONE]); false to keep consuming.
+  const handleParsed = (parsed: Record<string, unknown>): boolean => {
+    if (parsed.error) {
+      onError(new Error(String(parsed.error)));
+      return true;
+    }
+    if (typeof parsed.content === "string") {
+      onChunk(parsed.content);
+    } else if (parsed.type === "tool_call_start" && typeof parsed.name === "string") {
+      onToolEvent?.({
+        phase: "start",
+        name: parsed.name,
+        args: (parsed.args as Record<string, unknown> | undefined) ?? {},
+      });
+    } else if (parsed.type === "tool_call_end" && typeof parsed.name === "string") {
+      onToolEvent?.({
+        phase: "end",
+        name: parsed.name,
+        result_summary:
+          typeof parsed.result_summary === "string" ? parsed.result_summary : undefined,
+      });
+    }
+    return false;
+  };
 
   try {
     const res = await createChatFetch(conversationId, message, controller.signal, images);
@@ -144,14 +186,7 @@ export async function streamChat({
         }
 
         try {
-          const parsed = JSON.parse(data);
-          if (parsed.error) {
-            onError(new Error(parsed.error));
-            return controller;
-          }
-          if (parsed.content) {
-            onChunk(parsed.content);
-          }
+          if (handleParsed(JSON.parse(data))) return controller;
         } catch {
           // Ignore malformed JSON lines
         }
@@ -166,14 +201,7 @@ export async function streamChat({
         return controller;
       }
       try {
-        const parsed = JSON.parse(data);
-        if (parsed.error) {
-          onError(new Error(parsed.error));
-          return controller;
-        }
-        if (parsed.content) {
-          onChunk(parsed.content);
-        }
+        if (handleParsed(JSON.parse(data))) return controller;
       } catch {
         // Ignore malformed JSON
       }

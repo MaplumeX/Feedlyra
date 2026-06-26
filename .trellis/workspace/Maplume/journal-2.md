@@ -449,3 +449,39 @@ LoginPage/RegisterPage 的 onSubmit 用 await api.* 但无 try/catch,失败抛�
 ### Next Steps
 
 - None - task complete
+
+
+## Session 68: AI chat agent loop
+
+**Date**: 2026-06-26
+**Task**: AI chat agent loop
+**Branch**: `emdash/polite-pets-write-dvkoh`
+
+### Summary
+
+Reshaped cross-article chat into a real tool-calling agent loop. Model now decides via search_articles/read_article tools when to search/read the user's subscriptions before answering; tool progress is visible over SSE (tool_call_start/end). New services/agent_loop.py (run_agent_chat, owns its own async_session since the generator outlives the request-scoped session, MAX_TOOL_ROUNDS=8 guard rail, degrades to plain stream on any failure), services/agent_tools.py (TOOLS schema + execute_tool), services/llm.py::stream_chat_with_tools (streaming tool_call delta accumulation by index). retrieval._tokenize switched from whole-CJK-block regex to jieba — fixes the 2026-06-25 zero-hit incident where a full Chinese sentence was tokenized as one block. migration 016 adds ChatMessage.tool_calls/tool_call_id/name so tool exchanges persist and history replays to the model without re-executing tools; both history endpoints filter tool frames from the UI payload. Frontend SSE parser dispatches tool events to AIChatPanel bubbles. Bugs found and fixed in check: request-scoped session in generator (owned session), flush-without-commit (commit each round), IntegrityError rollback polluting the same transaction (savepoint via begin_nested), missing created_at on persisted tool messages, R7 violation where the no-tools system prompt still told the model to use tools. Specs updated: database-guidelines agent-loop scenario + quality-guidelines savepoint don't.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c230f25` | (see git log) |
+| `caa1951` | (see git log) |
+| `4932181` | (see git log) |
+| `bd47aae` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

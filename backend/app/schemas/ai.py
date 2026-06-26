@@ -32,9 +32,12 @@ class ChatRequest(BaseModel):
 class ChatMessageResponse(BaseModel):
     id: UUID
     role: str
-    content: str
+    content: str | None = None
     attachments: list[dict] | None = None
     created_at: datetime
+    tool_calls: list[dict] | None = None
+    tool_call_id: str | None = None
+    name: str | None = None
 
 
 class ChatHistoryResponse(BaseModel):

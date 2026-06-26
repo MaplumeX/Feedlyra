@@ -79,6 +79,35 @@ delta = chunk.choices[0].delta.content
 
 ---
 
+### Don't: `await db.rollback()` inside a multi-write transaction to handle a unique-constraint duplicate
+
+```python
+# Bad — rollback nukes the whole transaction, not just the duplicate insert
+db.add(ConversationReference(conversation_id=conv.id, article_id=art.id, is_auto=True))
+try:
+    await db.flush()
+except IntegrityError:
+    await db.rollback()      # also discards the assistant tool_call message
+                             # flushed moments earlier — not yet committed!
+```
+
+**Why**: Within an agent loop (or anymulti-write flow), several rows are added to the same session before a single `commit()`. A `db.rollback()` on an `IntegrityError` does not selectively undo the failing insert — it rolls the **entire transaction** back, silently dropping every uncommitted row (e.g. the assistant message the model just produced as part of the same tool-call round). The history replay then has a dangling `tool` message with no preceding `assistant.tool_calls` frame.
+
+**Instead**: use a SAVEPOINT (nested transaction) so the conflict only rolls back to the savepoint, leaving sibling writes intact:
+```python
+try:
+    async with db.begin_nested():   # SAVEPOINT ... RELEASE / ROLLBACK TO
+        db.add(ConversationReference(
+            conversation_id=conv.id, article_id=art.id, is_auto=True,
+        ))
+except IntegrityError:
+    pass   # duplicate ref is fine — agent may legitimately read an article twice
+```
+
+Do **not** forget to `await db.commit()` at the end of each persisted round (flush alone keeps rows in the transaction; if the session closes without commit, everything rolls back). See the "Scenario: AI Chat Agent Loop" in `database-guidelines.md` for the full write-path contract.
+
+---
+
 ## Required Patterns
 
 ### Fernet Key Derivation via SHA256

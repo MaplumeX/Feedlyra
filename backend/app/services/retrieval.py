@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import re
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
+import jieba
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,30 +27,53 @@ STOPWORDS: frozenset[str] = frozenset(
     }
 )
 
-# Single Chinese particles never become tokens on their own (regex requires
-# {2,}), but they DO glue real tokens together — "的动态" would match as one
-# block. Strip them at the character level BEFORE tokenizing so "的动态" →
-# "动态". Without this, the whole-token STOPWORDS set above cannot split them.
-_CN_PARTICLE_CHARS = "的了是在和与"
+# Single Chinese particles / function words that jieba commonly emits as
+# standalone tokens — drop them so only content words become search terms.
+# Deliberately narrow: do NOT list content-adjacent words like “文章/今天/看看”
+# here, because stripping them would zero out queries where they are the
+# only usable term (e.g. "简单看看今天有什么文章" must keep a term to match on).
+_CN_STOPWORDS: frozenset[str] = frozenset(
+    {
+        "的", "了", "是", "在", "和", "与", "也", "都", "就", "还", "又",
+        "把", "被", "让", "使", "对", "向", "为", "着", "过", "吗", "呢",
+        "吧", "啊", "呀", "哦", "嗯", "什么", "怎么", "哪些", "哪个",
+        "这个", "那个", "这些", "那些",
+    }
+)
 
-_TOKEN_PATTERN = re.compile(r"[A-Za-z0-9]{2,}|[\u4e00-\u9fff]{2,}")
+_MIN_TOKEN_LEN = 2
 
 
 def _tokenize(query: str) -> list[str]:
-    """Split a natural-language query into searchable tokens.
+    """Split a natural-language query into searchable content-word tokens.
+
+    Uses jieba precise-mode segmentation so a full natural-language sentence
+    like "简单看看今天有什么文章" is broken into real terms ("简单/看看/今天/
+    有/什么/文章") rather than being kept as one giant CJK block — which
+    previously caused `(target) |"%整句%"` substring searches to never match.
 
     - Latin/digit tokens must be >= 2 chars (drops "a", "1").
-    - CJK tokens are maximal runs of Han characters (length >= 2), kept as one
-      block — ILIKE `%block%` is substring-friendly for Chinese.
-    - Chinese particles (的/了/是/…) are stripped at the character level first
-      so they don't glue real tokens together ("的动态" → "动态").
-    - A small stopword list filters the most common whole tokens.
+    - CJK tokens are filtered by a function-word stoplist so particles like
+      "的/了/是" and generic问句词 like "什么/今天/文章" don't dilute hits.
+    - Result: content words used as ILIKE `%word%` substrings, which
+      substring-match titles/summaries containing those words.
     """
     if not query:
         return []
-    cleaned = query.translate(str.maketrans("", "", _CN_PARTICLE_CHARS))
-    raw = _TOKEN_PATTERN.findall(cleaned)
-    return [t for t in raw if t.lower() not in STOPWORDS]
+    tokens: list[str] = []
+    for raw in jieba.cut(query, cut_all=False):
+        t = raw.strip()
+        if len(t) < _MIN_TOKEN_LEN:
+            continue
+        if t.lower() in STOPWORDS or t in _CN_STOPWORDS:
+            continue
+        # Drop tokens that are only punctuation/symbols (jieba sometimes emits
+        # runs like "..." or "——" as standalone tokens). A token must contain
+        # at least one alphanumeric or Han character to be usable for ILIKE.
+        if not any(c.isalnum() or "\u4e00" <= c <= "\u9fff" for c in t):
+            continue
+        tokens.append(t)
+    return tokens
 
 
 def _score_and_rank(

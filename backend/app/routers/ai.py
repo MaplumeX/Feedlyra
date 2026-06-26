@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from uuid import UUID
 
@@ -12,7 +12,6 @@ from sqlalchemy import delete as sql_delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.database import async_session
 from app.dependencies import get_current_user, get_db
 from app.models.ai import ArticleAIData, ArticleSummary, ChatMessage, Conversation, ConversationReference
 from app.models.article import Article
@@ -47,16 +46,12 @@ from app.schemas.ai import (
 )
 from app.services.llm import (
     Feature,
-    build_chat_messages,
     encrypt_api_key,
     generate_summary,
     get_user_llm_client,
     get_user_model,
-    stream_chat,
-    summarize_chat_history,
     translate_article,
 )
-from app.services.retrieval import retrieve_relevant_articles
 
 logger = logging.getLogger(__name__)
 
@@ -768,16 +763,7 @@ async def get_conversation_chat_history(
 
     return {
         "chat_id": str(conv.id),
-        "messages": [
-            {
-                "id": m.id,
-                "role": m.role,
-                "content": m.content,
-                "attachments": m.attachments,
-                "created_at": m.created_at,
-            }
-            for m in messages
-        ],
+        "messages": [_history_message_payload(m) for m in messages if _is_displayed(m)],
     }
 
 
@@ -1014,16 +1000,7 @@ async def get_chat_history(
 
     return {
         "chat_id": str(conv_id),
-        "messages": [
-            {
-                "id": m.id,
-                "role": m.role,
-                "content": m.content,
-                "attachments": m.attachments,
-                "created_at": m.created_at,
-            }
-            for m in messages
-        ],
+        "messages": [_history_message_payload(m) for m in messages if _is_displayed(m)],
     }
 
 
@@ -1095,6 +1072,37 @@ async def truncate_chat_messages(
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+def _is_displayed(m: ChatMessage) -> bool:
+    """Whether a persisted message should appear in the UI history.
+
+    Tool messages (role='tool') and assistant tool-call intermediates (an
+    assistant turn that issued tool_calls rather than a final answer) are
+    persisted for LLM history replay (design option beta) but are not renderable as
+    chat bubbles - the tool process was already shown live via SSE events.
+    Dropping them from the history endpoint keeps reloaded conversations clean
+    (user -> assistant answer only) and prevents raw tool JSON / empty
+    assistant bubbles from showing up as user-style bubbles.
+    """
+    if m.role == "tool":
+        return False
+    if m.role == "assistant" and m.tool_calls is not None:
+        return False
+    return True
+
+
+def _history_message_payload(m: ChatMessage) -> dict:
+    return {
+        "id": m.id,
+        "role": m.role,
+        "content": m.content,
+        "attachments": m.attachments,
+        "created_at": m.created_at,
+        "tool_calls": m.tool_calls,
+        "tool_call_id": m.tool_call_id,
+        "name": m.name,
+    }
+
+
 async def _get_owned_conversation(
     db: AsyncSession, conversation_id: UUID, user_id: UUID
 ) -> Conversation:
@@ -1117,72 +1125,29 @@ async def _do_conversation_chat(
     db: AsyncSession,
     user: User,
 ):
-    """Shared chat logic for both conversation and legacy article endpoints."""
+    """Shared chat logic for both conversation and legacy article endpoints.
+
+    Delegates the chat to the agent loop (services/agent_loop.py), which owns
+    streaming, tool-call execution, SSE event production, and message
+    persistence. The router only stores the incoming user message and wraps
+    the loop's event stream in a StreamingResponse.
+    """
     from fastapi.responses import StreamingResponse
 
-    # Auto-retrieve related articles when the conversation has no references yet
-    # and the user has cross-article search enabled. Failures must never break
-    # the chat — degrade to the existing no-reference path (see design.md §module 3).
-    if getattr(user, "ai_cross_article_search", True):
-        existing_refs_count = await db.scalar(
-            select(func.count(ConversationReference.id)).where(
-                ConversationReference.conversation_id == conv.id
-            )
-        )
-        if existing_refs_count == 0:
-            try:
-                since = datetime.now(timezone.utc) - timedelta(days=7)
-                retrieved = await retrieve_relevant_articles(
-                    db, user_id=user.id, query=body.message, since=since, limit=5
-                )
-                for art in retrieved:
-                    db.add(
-                        ConversationReference(
-                            conversation_id=conv.id,
-                            article_id=art.id,
-                            is_auto=True,
-                        )
-                    )
-                if retrieved:
-                    await db.flush()
-            except Exception:
-                logger.exception("Auto-retrieval failed, continuing without references")
+    from app.services.agent_loop import run_agent_chat
 
-    # Get all referenced articles
-    refs_result = await db.execute(
-        select(ConversationReference)
-        .where(ConversationReference.conversation_id == conv.id)
-    )
-    refs = refs_result.scalars().all()
-
-    articles_data: list[dict] = []
-    for ref in refs:
-        article_result = await db.execute(
-            select(Article).join(Feed, Feed.id == Article.feed_id).where(
-                Feed.user_id == user.id, Article.id == ref.article_id
-            )
-        )
-        article = article_result.scalar_one_or_none()
-        if article:
-            articles_data.append({
-                "title": article.title,
-                "content": article.readable_content,
-            })
-
-    # Store user message with attachment metadata
+    # Normalize image attachments into stored metadata. The agent loop still
+    # receives the raw image strings (body.images) for vision-capable models.
     attachments_data: list[dict] | None = None
     if body.images:
         attachments_data = []
         for img in body.images:
             if img.startswith("/api/ai/images/"):
-                # Uploaded image reference
                 filename = img.rsplit("/", 1)[-1]
                 attachments_data.append({"type": "image", "source": "upload", "filename": filename, "url": img})
             elif img.startswith("data:"):
-                # Inline base64 image
                 attachments_data.append({"type": "image", "source": "inline"})
             else:
-                # URL-based image
                 attachments_data.append({"type": "image", "source": "url", "url": img})
 
     user_msg = ChatMessage(
@@ -1201,84 +1166,17 @@ async def _do_conversation_chat(
         conv.title = body.message[:100] + ("..." if len(body.message) > 100 else "")
         await db.commit()
 
-    # Get chat history
-    history_result = await db.execute(
-        select(ChatMessage)
-        .where(ChatMessage.conversation_id == conv.id)
-        .order_by(ChatMessage.created_at)
-    )
-    history_msgs = history_result.scalars().all()
-    if history_msgs and history_msgs[-1].id == user_msg.id:
-        history_msgs = history_msgs[:-1]
-    chat_history_dicts = [{"role": m.role, "content": m.content} for m in history_msgs]
-
-    # Determine history summary and trimmed history
-    HISTORY_FULL_TURNS = 6
-    SUMMARY_THRESHOLD = 8
-    history_summary = conv.history_summary
-    if len(chat_history_dicts) > SUMMARY_THRESHOLD * 2:
-        older = chat_history_dicts[:-HISTORY_FULL_TURNS * 2]
-        recent = chat_history_dicts[-HISTORY_FULL_TURNS * 2:]
-        if not history_summary and older:
-            try:
-                client_for_summary = get_user_llm_client(user, "chat")
-                model_for_summary = get_user_model(user, "chat")
-                history_summary = await summarize_chat_history(client_for_summary, model_for_summary, older)
-                conv.history_summary = history_summary
-                await db.commit()
-            except ValueError:
-                logger.warning("Failed to summarize chat history (missing API config), proceeding without summary")
-            except Exception:
-                logger.exception("Failed to summarize chat history, proceeding without summary")
-        chat_history_dicts = recent
-
-    # Build messages for LLM
-    messages = build_chat_messages(
-        chat_history=chat_history_dicts,
-        new_message=body.message,
-        history_summary=history_summary,
-        articles=articles_data if articles_data else None,
-        images=body.images,
-    )
-
-    # Create LLM client
-    try:
-        client = get_user_llm_client(user, "chat")
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    model = get_user_model(user, "chat")
-
-    # Collect full response for storage
-    full_response_parts: list[str] = []
     conv_id = conv.id
+    user_msg_id = user_msg.id
 
     async def event_stream():
-        try:
-            async for chunk in stream_chat(client, model, messages):
-                full_response_parts.append(chunk)
-                data = json.dumps({"content": chunk})
-                yield f"data: {data}\n\n"
-            yield "data: [DONE]\n\n"
-        except Exception as e:
-            logger.exception("Error during chat streaming")
-            error_data = json.dumps({"error": str(e)})
-            yield f"data: {error_data}\n\n"
-            yield "data: [DONE]\n\n"
-
-        # Store assistant message after streaming completes
-        full_response = "".join(full_response_parts)
-        if full_response:
-            async with async_session() as store_db:
-                assistant_msg = ChatMessage(
-                    id=uuid.uuid4(),
-                    conversation_id=conv_id,
-                    role="assistant",
-                    content=full_response,
-                    created_at=datetime.now(timezone.utc),
-                )
-                store_db.add(assistant_msg)
-                await store_db.commit()
+        # The agent loop now owns message persistence (tool messages + final
+        # assistant message). Any exception inside is caught there and degrades
+        # to a plain no-tools stream (design R8).
+        async for sse in run_agent_chat(
+            conv, user, body.message, user_msg_id, body.images
+        ):
+            yield sse
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
