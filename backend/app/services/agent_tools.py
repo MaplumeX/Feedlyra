@@ -15,12 +15,12 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.ai import ConversationReference
-from app.models.article import Article
+from app.models.article import Article, ReadStatus
 from app.models.feed import Feed
 from app.services.retrieval import retrieve_relevant_articles, _tokenize
 
@@ -35,6 +35,12 @@ _MAX_READ_CONTENT_CHARS = 8000
 # search Articles over the user's subscription feeds within a recent window.
 _SEARCH_WINDOW_DAYS = 7
 _SEARCH_LIMIT = 5
+
+# list_articles: structured filter (time/feed/unread/limit) for list/count/scan
+# questions where keyword retrieval is semantically wrong ("今天有什么文章").
+_LIST_DEFAULT_DAYS = 1
+_LIST_DEFAULT_LIMIT = 10
+_LIST_MAX_LIMIT = 30
 
 # Tool schema exposed to the LLM. Keep descriptions action-oriented so the model
 # knows when to call each tool — these descriptions drive tool selection.
@@ -63,9 +69,42 @@ TOOLS: list[dict] = [
     {
         "type": "function",
         "function": {
+            "name": "list_articles",
+            "description": (
+                "按时间/订阅源/读未读条件列出文章，用于“今天有什么文章”“最近3天未读的”"
+                "“XX 订阅源的文章”这类列表/筛选型问题。不要用关键词检索。"
+                "返回 {id,title,published_at,feed_title,summary_snippet}，按发布时间倒序。"
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "days": {
+                        "type": "integer",
+                        "description": "最近 N 天的文章，默认 1（今天）。",
+                    },
+                    "feed_id": {
+                        "type": "string",
+                        "description": "限定某个订阅源的文章（UUID）。不传则涵盖所有订阅源。",
+                    },
+                    "unread_only": {
+                        "type": "boolean",
+                        "description": "仅返回未读文章，默认 false。",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "返回条数上限，默认 10、最大 30。",
+                    },
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "read_article",
             "description": (
-                "拉取某篇文章的全文用于精读回答。需先 search_articles 拿到 article_id。"
+                "拉取某篇文章的全文用于精读回答。需先 search_articles/list_articles 拿到 article_id。"
                 "返回 {id,title,content}。"
             ),
             "parameters": {
@@ -73,7 +112,7 @@ TOOLS: list[dict] = [
                 "properties": {
                     "article_id": {
                         "type": "string",
-                        "description": "search_articles 返回的候选 id",
+                        "description": "search_articles/list_articles 返回的文章 id",
                     }
                 },
                 "required": ["article_id"],
@@ -193,6 +232,94 @@ async def _read_article(
     return ToolResult(content=payload, summary=summary)
 
 
+async def _list_articles(
+    args: dict, *, user_id: UUID, db: AsyncSession
+) -> ToolResult:
+    # Structured filter for list/count/scan questions ("今天有什么文章").
+    # No keyword scoring — predicate filter + recency order, capped by limit.
+    raw_days = args.get("days")
+    try:
+        days = int(raw_days) if raw_days is not None else _LIST_DEFAULT_DAYS
+    except (TypeError, ValueError):
+        days = _LIST_DEFAULT_DAYS
+    if days < 1:
+        days = _LIST_DEFAULT_DAYS
+
+    raw_limit = args.get("limit")
+    try:
+        limit = int(raw_limit) if raw_limit is not None else _LIST_DEFAULT_LIMIT
+    except (TypeError, ValueError):
+        limit = _LIST_DEFAULT_LIMIT
+    if limit < 1:
+        limit = _LIST_DEFAULT_LIMIT
+    if limit > _LIST_MAX_LIMIT:
+        limit = _LIST_MAX_LIMIT
+
+    feed_id_str = str(args.get("feed_id", "")).strip()
+    feed_uuid: UUID | None = None
+    if feed_id_str:
+        try:
+            feed_uuid = UUID(feed_id_str)
+        except ValueError:
+            err = json.dumps(
+                {"error": "invalid feed_id", "feed_id": feed_id_str},
+                ensure_ascii=False,
+            )
+            return ToolResult(content=err, summary="feed_id 无效")
+
+    unread_only = bool(args.get("unread_only", False))
+
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    # COALESCE(published_at, created_at) mirrors retrieval.py: published_at may
+    # be None for feeds that don't publish dates; fall back to created_at so the
+    # time window and ordering don't drop or mis-rank those rows.
+    time_key = func.coalesce(Article.published_at, Article.created_at)
+
+    # Scope by Feed.user_id — never trust the model-provided feed_id bare value.
+    # For unread_only we LEFT JOIN ReadStatus (PK is user_id+article_id, at most
+    # one row per user/article, so no dedup hazard like article_summaries).
+    # Unread = no matching ReadStatus row → article_id IS NULL on the outer side.
+    stmt = (
+        select(Article, Feed.title.label("feed_title"))
+        .join(Feed, Feed.id == Article.feed_id)
+        .outerjoin(
+            ReadStatus,
+            (ReadStatus.article_id == Article.id)
+            & (ReadStatus.user_id == user_id),
+        )
+        .where(Feed.user_id == user_id)
+        .where(time_key >= since)
+    )
+    if feed_uuid is not None:
+        stmt = stmt.where(Feed.id == feed_uuid)
+    if unread_only:
+        stmt = stmt.where(ReadStatus.article_id.is_(None))
+
+    stmt = stmt.order_by(time_key.desc()).limit(limit)
+    result = await db.execute(stmt)
+
+    items: list[dict] = []
+    for article, feed_title in result.all():
+        snippet = (article.content_snippet or "")[:_SUMMARY_SNIPPET_LEN]
+        items.append(
+            {
+                "id": str(article.id),
+                "title": article.title,
+                "published_at": article.published_at.isoformat()
+                if article.published_at
+                else None,
+                "feed_title": feed_title,
+                "summary_snippet": snippet,
+            }
+        )
+    payload = json.dumps(
+        {"days": days, "count": len(items), "results": items},
+        ensure_ascii=False,
+    )
+    summary = f"列出 {len(items)} 篇"
+    return ToolResult(content=payload, summary=summary)
+
+
 async def execute_tool(
     name: str,
     args: dict,
@@ -212,6 +339,9 @@ async def execute_tool(
             err = json.dumps({"error": "missing query"}, ensure_ascii=False)
             return ToolResult(content=err, summary="缺少搜索词")
         return await _search_articles(query, user_id=user_id, db=db)
+
+    if name == "list_articles":
+        return await _list_articles(args, user_id=user_id, db=db)
 
     if name == "read_article":
         article_id = str(args.get("article_id", "")).strip()

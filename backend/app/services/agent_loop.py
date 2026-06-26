@@ -44,29 +44,28 @@ MAX_TOOL_ROUNDS = 8
 HISTORY_FULL_TURNS = 6
 SUMMARY_THRESHOLD = 8
 
-# When tools are exposed (R7 on), instruct the model to actually search the
-# subscription feed rather than claiming it can't access the internet — the
-# whole point of the agent loop. When tools are NOT exposed (R7 off), we must
-# NOT mention the tools: the model has no way to call them, and prompting it
-# to do so produces apologetic "I would search but I can't" answers (R7:
-# "模型不会尝试搜索文章").
-_AGENT_SYSTEM_PROMPT_WITH_TOOLS = (
+# The agent loop always exposes tools now (the old ai_cross_article_search
+# toggle was removed — search/list/read tools are a default AI capability).
+# The prompt tells the model to actually use them rather than claiming it
+# cannot access the internet, and to pick the right one by question type.
+_AGENT_SYSTEM_PROMPT = (
     "You are an AI assistant helping a user with their RSS article subscriptions. "
+    "Answer in the user's language and be concise. "
     "When the user asks about articles, topics, or their feed contents, use the "
-    "search_articles and read_article tools to look up real articles in their "
-    "subscriptions before answering — never claim you cannot access their feed. "
-    "If a search returns nothing useful, try a different keyword before giving up. "
-    "Answer in the user's language. When you reference an article, quote or "
-    "summarize real content from it."
+    "available tools to look up real articles in their subscriptions before "
+    "answering — never claim you cannot access their feed. Pick the tool by "
+    "question type: "
+    "- search_articles(query): when the user gives a topic/keyword to find "
+    "matching articles (top 5 over the last 7 days). "
+    "- list_articles(days/feed_id/unread_only/limit): for list/count/filter "
+    "questions like \"今天有什么文章\" / \"最近3天未读的\" / \"XX 订阅源的文章\". "
+    "Do NOT use keyword search for these — use structured filtering instead. "
+    "- read_article(article_id): pull full text for an article you found via "
+    "search/list before answering in depth. "
+    "If a search returns nothing useful, try a different keyword or switch tools "
+    "before giving up. When you reference an article, quote or summarize real "
+    "content from it."
 )
-_AGENT_SYSTEM_PROMPT_NO_TOOLS = (
-    "You are an AI assistant helping a user with their RSS article subscriptions. "
-    "Answer in the user's language. Be concise and helpful."
-)
-
-
-def _system_prompt(tools_enabled: bool) -> str:
-    return _AGENT_SYSTEM_PROMPT_WITH_TOOLS if tools_enabled else _AGENT_SYSTEM_PROMPT_NO_TOOLS
 
 # System nudge injected when the tool-call guard rail trips.
 RAIL_LIMIT_SYSTEM = "已达工具调用上限，请基于已获取信息回答本条消息。"
@@ -149,10 +148,10 @@ async def _prepare_messages(
                 logger.warning("Failed to summarize chat history, proceeding without summary")
         history_dicts = recent
 
-    # Mirror the router's tool-exposure gate: only mention tools when they're
-    # actually available to the model this turn (R7).
-    tools_enabled = bool(getattr(conv_user, "ai_cross_article_search", True))
-    messages: list[dict] = [{"role": "system", "content": _system_prompt(tools_enabled)}]
+    # Tools are always exposed now (the ai_cross_article_search toggle was
+    # removed — search/list/read are a default AI capability), so the system
+    # prompt is a single constant.
+    messages: list[dict] = [{"role": "system", "content": _AGENT_SYSTEM_PROMPT}]
     if history_summary:
         messages.append(
             {"role": "system", "content": f"Previous conversation summary:\n{history_summary}"}
@@ -339,7 +338,7 @@ async def run_agent_chat(
         return
 
     model = get_user_model(user, "chat")
-    tools = TOOLS if getattr(user, "ai_cross_article_search", True) else []
+    tools = TOOLS
 
     async with async_session() as db:
         try:

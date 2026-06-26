@@ -50,8 +50,6 @@
   "opmlImporting": "正在导入...",
   "autoSummarize": "自动生成AI摘要",
   "autoSummarizeDescription": "打开文章时自动生成AI摘要。",
-  "crossArticleSearch": "自动检索相关文章",
-  "crossArticleSearchDescription": "在没有引用任何文章的对话中提问时，自动从最近文章中检索相关内容加入上下文。",
   "translateConfig": "翻译配置",
   "summaryConfig": "摘要配置",
   "chatConfig": "对话配置",

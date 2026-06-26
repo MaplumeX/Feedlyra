@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, String, Text
+from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDMixin
@@ -30,7 +30,3 @@ class User(UUIDMixin, TimestampMixin, Base):
     chat_model: Mapped[str | None] = mapped_column(String(100))
     # Translation default language
     translate_default_lang: Mapped[str] = mapped_column(String(10), default="zh", server_default="zh", nullable=False)
-    # Cross-article auto-retrieval toggle (default on; see services/retrieval.py)
-    ai_cross_article_search: Mapped[bool] = mapped_column(
-        Boolean, default=True, server_default="true", nullable=False
-    )

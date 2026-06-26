@@ -8,9 +8,9 @@ import pytest
 from app.services.agent_loop import (
     MAX_TOOL_ROUNDS,
     RAIL_LIMIT_SYSTEM,
+    _AGENT_SYSTEM_PROMPT,
     _accumulate_round,
     _safe_json,
-    _system_prompt,
 )
 from app.services.llm import ToolCallAccumulated
 
@@ -113,22 +113,20 @@ class TestGuardRail:
 
 
 class TestSystemPrompt:
-    def test_tools_enabled_mentions_search_tool(self) -> None:
-        # R7 on: the model must be told to actually use search_articles/read_article
-        # so it doesn't fall back to "I can't access the internet" denials.
-        prompt = _system_prompt(tools_enabled=True)
-        assert "search_articles" in prompt
-        assert "read_article" in prompt
+    def test_prompt_mentions_all_three_tools(self) -> None:
+        # Tools are always exposed now (the ai_cross_article_search toggle was
+        # removed). The system prompt must name all three tools so the model
+        # actually uses them instead of claiming it cannot access the feed,
+        # and picks the right one by question type.
+        assert "search_articles" in _AGENT_SYSTEM_PROMPT
+        assert "list_articles" in _AGENT_SYSTEM_PROMPT
+        assert "read_article" in _AGENT_SYSTEM_PROMPT
 
-    def test_tools_disabled_does_not_mention_tools(self) -> None:
-        # R7 off: with no tools exposed, the system prompt must NOT tell the
-        # model to use tools it doesn't have - that produces apologetic
-        # "I would search but I can't" answers (PRD R7: model must not attempt
-        # to search articles when the toggle is off).
-        prompt = _system_prompt(tools_enabled=False)
-        assert "search_articles" not in prompt
-        assert "read_article" not in prompt
-        assert "tool" not in prompt.lower()
+    def test_prompt_guides_tool_selection_by_question_type(self) -> None:
+        # list_articles is for list/filter questions; keyword search is not.
+        # The prompt must steer the model away from keyword search for those.
+        assert "list_articles" in _AGENT_SYSTEM_PROMPT
+        assert "今天有什么文章" in _AGENT_SYSTEM_PROMPT or "filter" in _AGENT_SYSTEM_PROMPT.lower()
 
 
 # ---------------------------------------------------------------------------

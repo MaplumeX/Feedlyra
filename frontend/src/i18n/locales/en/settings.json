@@ -50,8 +50,6 @@
   "opmlImporting": "Importing...",
   "autoSummarize": "Auto-generate AI summary",
   "autoSummarizeDescription": "Automatically generate an AI summary when opening an article.",
-  "crossArticleSearch": "Auto-retrieve related articles",
-  "crossArticleSearchDescription": "When chatting in a conversation with no referenced articles, automatically search your recent articles for relevant context.",
   "translateConfig": "Translation Configuration",
   "summaryConfig": "Summary Configuration",
   "chatConfig": "Chat Configuration",

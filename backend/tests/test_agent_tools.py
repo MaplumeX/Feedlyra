@@ -14,9 +14,9 @@ from app.services.agent_tools import TOOLS, execute_tool, _TOOL_NAMES
 
 
 class TestToolSchema:
-    def test_two_tools_exposed(self) -> None:
+    def test_three_tools_exposed(self) -> None:
         names = {t["function"]["name"] for t in TOOLS}
-        assert names == {"search_articles", "read_article"}
+        assert names == {"search_articles", "list_articles", "read_article"}
 
     def test_each_tool_is_function_type(self) -> None:
         for t in TOOLS:
@@ -32,6 +32,19 @@ class TestToolSchema:
         assert "query" in params["properties"]
         assert params["required"] == ["query"]
 
+    def test_list_articles_has_filter_params_none_required(self) -> None:
+        fn = next(t["function"] for t in TOOLS if t["function"]["name"] == "list_articles")
+        params = fn["parameters"]
+        assert params["type"] == "object"
+        assert set(params["properties"].keys()) == {"days", "feed_id", "unread_only", "limit"}
+        # All list_articles params are optional — defaults are sensible for a
+        # bare "今天有什么文章" call.
+        assert params["required"] == []
+        assert params["properties"]["days"]["type"] == "integer"
+        assert params["properties"]["feed_id"]["type"] == "string"
+        assert params["properties"]["unread_only"]["type"] == "boolean"
+        assert params["properties"]["limit"]["type"] == "integer"
+
     def test_read_article_requires_article_id(self) -> None:
         fn = next(t["function"] for t in TOOLS if t["function"]["name"] == "read_article")
         params = fn["parameters"]
@@ -44,8 +57,8 @@ class TestToolSchema:
         for t in TOOLS:
             desc = t["function"]["description"]
             assert len(desc) > 10
-            # Must mention what it does (search / read full text)
-            assert any(k in desc for k in ("搜索", "拉取"))
+            # Must mention what it does (search / list / read full text)
+            assert any(k in desc for k in ("搜索", "列出", "拉取"))
 
 
 # ---------------------------------------------------------------------------
@@ -132,6 +145,21 @@ class TestExecuteToolRouting:
         parsed = json.loads(result.content)
         assert parsed["count"] == 0
         assert parsed["results"] == []
+
+    @pytest.mark.asyncio
+    async def test_list_articles_invalid_feed_id_returns_error_without_db(self) -> None:
+        # Invalid feed_id UUID bails before any query — db=None must not raise.
+        result = await execute_tool(
+            "list_articles",
+            {"feed_id": "not-a-uuid"},
+            user_id=uuid4(),
+            conversation_id=uuid4(),
+            db=None,  # type: ignore[arg-type]  # UUID parse bails first
+        )
+        parsed = json.loads(result.content)
+        assert parsed["error"] == "invalid feed_id"
+        assert parsed["feed_id"] == "not-a-uuid"
+        assert "无效" in result.summary
 
 
 class TestToolResultShape:
