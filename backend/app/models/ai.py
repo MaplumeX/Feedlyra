@@ -104,5 +104,13 @@ class ChatMessage(Base):
     attachments: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
+    # Agent tool-calling fields (migration 016). nullable: only present when the
+    # message participates in a tool exchange.
+    # - role='assistant' may carry tool_calls (the deltas it asked to run).
+    # - role='tool' carries tool_call_id + name linking back to the call.
+    tool_calls: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+    tool_call_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    name: Mapped[str | None] = mapped_column(String, nullable=True)
+
     chat: Mapped["ArticleChat | None"] = relationship(back_populates="messages")
     conversation: Mapped["Conversation | None"] = relationship(back_populates="messages")

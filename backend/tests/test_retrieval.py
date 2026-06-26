@@ -43,7 +43,7 @@ class TestTokenize:
         assert _tokenize("a 1 go") == ["go"]
 
     def test_chinese_blocks_as_single_tokens(self) -> None:
-        # Consecutive Han chars stay as one block; single Han char dropped (len < 2)
+        # jieba segments Chinese into content words; particles like 的 are filtered.
         tokens = _tokenize("最近 OpenAI 的动态")
         assert tokens == ["最近", "OpenAI", "动态"]
 
@@ -55,7 +55,23 @@ class TestTokenize:
         assert tokens == ["OpenAI", "news"]
 
     def test_punctuation_only(self) -> None:
+        # Pure punctuation yields no usable search term — must be empty so a
+        # punctuation-only query bails before touching the DB.
         assert _tokenize("!!! ??? ...") == []
+
+    def test_natural_language_sentence_yields_content_words(self) -> None:
+        # Regression for the 2026-06-25 "简单看看今天有什么文章" case: the old
+        # whole-block CJK tokenizer kept the entire sentence as one token, so
+        # ILIKE `%整句%` matched nothing. jieba must split it into real terms.
+        tokens = _tokenize("简单看看今天有什么文章")
+        # Must contain at least one searchable content word (not be empty),
+        # and must NOT keep the whole sentence as a single block.
+        assert tokens
+        assert len(tokens) > 1
+        assert "简单看看今天有什么文章" not in tokens
+        # 常见 content words from this sentence that should survive filtering
+        for term in ("文章", "今天"):
+            assert term in tokens
 
     def test_case_preserved_for_matching(self) -> None:
         # Matching is case-insensitive at score time, but token keeps original case
@@ -168,6 +184,15 @@ class TestScoreAndRank:
     def test_chinese_query_matches_chinese_title(self) -> None:
         article = _make_article(title="OpenAI 最新动态发布")
         result = _score_and_rank([(article, "")], ["OpenAI", "最新", "动态"], limit=5)
+        assert result == [article]
+
+    def test_natural_language_sentence_matches_title_word(self) -> None:
+        # End-to-end regression for the zero-hit bug: a full Chinese question
+        # ("简单看看今天有什么文章") must now find an article whose title contains
+        # a content word extracted from that question (e.g. "今天").
+        article = _make_article(title="今天的科技新闻合集")
+        tokens = _tokenize("简单看看今天有什么文章")
+        result = _score_and_rank([(article, "")], tokens, limit=5)
         assert result == [article]
 
     def test_empty_candidates_returns_empty(self) -> None:
