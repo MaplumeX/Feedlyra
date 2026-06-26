@@ -94,7 +94,6 @@ export interface AIConfig {
   model: string | null;
   has_api_key: boolean;
   translate_default_lang: string;
-  cross_article_search: boolean;
   translate: FeatureAIConfig;
   summary: FeatureAIConfig;
   chat: FeatureAIConfig;

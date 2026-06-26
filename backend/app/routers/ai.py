@@ -118,8 +118,6 @@ async def update_ai_config(
         user.ai_model = body.model
     if body.translate_default_lang is not None:
         user.translate_default_lang = body.translate_default_lang
-    if body.cross_article_search is not None:
-        user.ai_cross_article_search = body.cross_article_search
 
     _apply_feature_update(user, "translate", body.translate)
     _apply_feature_update(user, "summary", body.summary)
@@ -133,7 +131,6 @@ async def update_ai_config(
         "model": user.ai_model,
         "has_api_key": user.ai_api_key is not None,
         "translate_default_lang": user.translate_default_lang or "zh",
-        "cross_article_search": user.ai_cross_article_search,
         "translate": _build_feature_response(user, "translate"),
         "summary": _build_feature_response(user, "summary"),
         "chat": _build_feature_response(user, "chat"),
@@ -149,7 +146,6 @@ async def get_ai_config(
         "model": user.ai_model,
         "has_api_key": user.ai_api_key is not None,
         "translate_default_lang": user.translate_default_lang or "zh",
-        "cross_article_search": user.ai_cross_article_search,
         "translate": _build_feature_response(user, "translate"),
         "summary": _build_feature_response(user, "summary"),
         "chat": _build_feature_response(user, "chat"),

@@ -595,7 +595,6 @@ export interface UpdateAIConfigPayload {
   api_key?: string | null;
   model?: string | null;
   translate_default_lang?: string;
-  cross_article_search?: boolean;
   translate?: {
     enabled?: boolean;
     base_url?: string | null;

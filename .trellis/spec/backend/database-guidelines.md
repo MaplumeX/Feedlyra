@@ -571,8 +571,7 @@ non_delete_rules = [r for r in rules if not _rule_has_delete_action(r)]
 - Legacy "silently inject auto-refs when a conversation has no references" path was **removed** when chat became an agent loop (task 06-26-ai-chat-agent-loop). Retrieval now only runs when the model explicitly calls `search_articles`; `read_article` writes `is_auto=True` refs for articles the agent actually read.
 
 ### 2. Signatures
-- DB: `users.ai_cross_article_search: Boolean NOT NULL default true` (migration 015). Controls whether the agent loop exposes `search_articles`/`read_article` tools to the model (false → empty `tools=[]`, agent loop runs one no-tool round).
-- Schema: `AIConfigUpdate.cross_article_search: bool | None`; `AIConfigResponse.cross_article_search: bool = True`.
+- Tools (`agent_tools.TOOLS`) are always exposed (`tools = TOOLS`); the old `users.ai_cross_article_search` toggle (migration 015) was removed in migration 017 — AI retrieval is a default capability, not a user switch.
 - Service: `app/services/retrieval.py::retrieve_relevant_articles(db, *, user_id, query, since=None, days=7, limit=5) -> list[Article]`.
 - Service (pure helpers, unit-tested without a DB): `_tokenize(query) -> list[str]`, `_score_and_rank(candidates: list[tuple[Article, str]], tokens, limit) -> list[Article]`.
 - Tool layer: `app/services/agent_tools.py::execute_tool(name, args, *, user_id, conversation_id, db)` wraps retrieval for the agent loop.
@@ -589,7 +588,6 @@ non_delete_rules = [r for r in rules if not _rule_has_delete_action(r)]
 - No article matches within the time window → return `[]`, same as above. `200`.
 - `since` is timezone-naive → normalized to UTC inside the function (do not raise).
 - Retrieval raises (e.g. DB error) → caught in `_run_one_tool`, returned to model as tool message `{"error": ...}`; agent may retry with a new keyword or answer from prior context. `200` with normal SSE stream.
-- `user.ai_cross_article_search = false` → `run_agent_chat` sets `tools=[]`; the model is never offered `search_articles`, so retrieval is never invoked. `200`.
 - Conversation already has references (legacy `/articles/{id}/chat` pre-seeds one) → no special path; the agent may still call `search_articles` if the model judges the pre-seeded article insufficient.
 
 ### 5. Good/Base/Bad Cases
@@ -681,7 +679,7 @@ def _tokenize(query: str) -> list[str]:
 - Router: `_do_conversation_chat(conv, body, db, user)` no longer assembles the prompt or streams directly. It stores the user message (request-scoped `db`, committed before returning) and returns `StreamingResponse(run_agent_chat(...))`.
 - Loop: `services/agent_loop.py::run_agent_chat(conv, user, user_message, user_msg_id, images) -> AsyncIterator[str]`. **Owns its own `async with async_session() as db`** — the generator outlives the request-scoped session. See `quality-guidelines.md` "Don't: request-injected DB sessions inside StreamingResponse generators".
 - LLM streaming helper: `services/llm.py::stream_chat_with_tools(client, model, messages, tools=None, tool_choice="auto") -> AsyncIterator[tuple[str | None, dict | None]]`. `stream_chat` (no tools) is retained as the fallback path.
-- Tools: `services/agent_tools.py::TOOLS` (schema list) + `execute_tool(name, args, *, user_id, conversation_id, db) -> ToolResult`. `ToolResult(content: str, summary: str)` — `content` is JSON fed to the model; `summary` is the human-facing SSE line.
+- Tools: `services/agent_tools.py::TOOLS` (schema list) + `execute_tool(name, args, *, user_id, conversation_id, db) -> ToolResult`. Three tools (always exposed): `search_articles(query)` keyword lookup (top 5 over last 7 days), `list_articles(days/feed_id/unread_only/limit)` structured filter for list/count questions (returns `{id,title,published_at,feed_title,summary_snippet}`, ordered by `COALESCE(published_at,created_at) DESC`, scoped by `Feed.user_id`), `read_article(article_id)` full text. `ToolResult(content: str, summary: str)` — `content` is JSON fed to the model; `summary` is the human-facing SSE line.
 - Guard rail: `agent_loop.MAX_TOOL_ROUNDS = 8`. At the cap a system message is injected and one final no-tools round runs.
 - DB: `ChatMessage.tool_calls JSON nullable`, `ChatMessage.tool_call_id String nullable`, `ChatMessage.name String nullable` (migration 016). `role` extends to `"user" | "assistant" | "tool"`.
 
@@ -696,13 +694,12 @@ def _tokenize(query: str) -> list[str]:
   - `role="tool"` carrying `tool_call_id` + `name` + `content` (the tool result JSON) — one per tool_call.
   - `role="assistant"` final answer carrying `content=<full streamed text>`, `tool_calls=None`.
 - **History replay**: `_prepare_messages` loads ALL persisted ChatMessage rows (including `tool`/`tool_calls` frames) in order and rebuilds the OpenAI messages array — no tools are re-executed; their results already sit in `tool` messages. The history endpoint (`/chat/history`) **filters out** `role="tool"` and empty `tool_calls`-bearing assistant frames from the UI payload (see `routers/ai.py::_is_displayed`), but the LLM replay path reads the full set.
-- **Tool toggle (`R7`)**: `user.ai_cross_article_search == false` → `run_agent_chat` sets `tools=[]` AND selects a no-tools system prompt variant (`agent_loop._system_prompt(tools_enabled)`). The model is never told it has search tools. Equivalent to a one-round no-tool LLM call.
+- **Tools always exposed**: `run_agent_chat` sets `tools = TOOLS` unconditionally — search/list/read are a default AI capability (the old `user.ai_cross_article_search` toggle and no-tools system-prompt variant were removed in migration 017). The single `_AGENT_SYSTEM_PROMPT` constant names all three tools and guides the model to pick the right one by question type (keyword search vs structured list vs read).
 - **Guard rail (`R6`)**: when `rounds >= 8`, inject `{role:system, content:"已达工具调用上限，请基于已获取信息回答本条消息。"}` and run one final no-tools stream round, then converge. Never hard-error.
 - **Graceful degradation (`R8`)**: any exception inside `run_agent_chat` after content was already streamed → end with `[DONE]`. Before any content → fall back to `_plain_fallback` (no-tools `stream_chat`). The chat endpoint must never 500 due to an agent-loop failure.
 
 ### 4. Validation & Error Matrix
 - No API key configured (`get_user_llm_client` raises `ValueError`) → yield `{"error": "..."}` + `[DONE]`. `200`.
-- `ai_cross_article_search=false` → `tools=[]`, system prompt omits tool mentions. One no-tool round. `200`.
 - Model emits a tool_call with malformed args JSON → `_safe_json` returns the raw string; `_run_one_tool` treats non-dict as empty args; tool returns its own error `{"error":"missing query"}`-style content. Model retries or answers. `200`.
 - Tool execution raises → caught in `_run_one_tool`, returned to model as `{"error": str(e)}` tool message; agent may continue. `200`.
 - `read_article` duplicate ConversationReference insert → SAVEPOINT rollback only; assistant tool_call message survives. `200`.
@@ -716,16 +713,16 @@ def _tokenize(query: str) -> list[str]:
 - Bad (pre-fix): `run_agent_chat` accepted the request-scoped `db` and used it inside the generator → session closed by the time the first `yield` ran → `db.add()`/`flush()` silently no-op'd or raised → only the user message (committed pre-return) persisted, all assistant/tool frames lost.
 - Bad (pre-fix): `_persist_assistant` used `db.flush()` without `commit()` → on `async with` exit the whole transaction rolled back → empty history on reload.
 - Bad (pre-fix): `read_article` caught `IntegrityError` with `await db.rollback()` → rolled back the just-flushed assistant tool_call message in the same transaction → dangling `tool` message with no preceding `assistant.tool_calls`.
-- Bad (pre-fix): single `AGENT_SYSTEM_PROMPT` told the model to "use search_articles/read_article tools" even when `ai_cross_article_search=false` → model apologised "I can't access your feed" because it was told to use tools it didn't have.
+- Bad (pre-fix): single `AGENT_SYSTEM_PROMPT` told the model to "use search_articles/read_article tools" even when the toggle was off → model apologised "I can't access your feed" because it was told to use tools it didn't have. (The toggle itself was later removed as semantically dead — see migration 017.)
 
 ### 6. Tests Required
 - `tests/test_agent_loop.py` (pure logic — no DB/HTTP):
   - `_accumulate_round` covers: pure content round; arguments accumulated across multiple fragments (the streaming delta pitfall); multiple tool_calls indexed & sorted; content + tool_calls interleaved in one round; empty stream; `to_openai_dict()` shape.
   - `MAX_TOOL_ROUNDS == 8`; `RAIL_LIMIT_SYSTEM` mentions upper limit + "回答".
   - `_safe_json` covers: empty → `{}`; valid JSON → parsed; malformed → raw string fallback.
-- `tests/test_agent_tools.py` (pure logic — routing + shape): tool schema shape (2 function-type tools, required params, Chinese action-oriented descriptions); `execute_tool` routing for unknown tool / missing query / empty query / missing article_id / invalid UUID / no-token query (bails before DB). `ToolResult` shape.
+- `tests/test_agent_tools.py` (pure logic — routing + shape): tool schema shape (3 function-type tools: search/list/read, required params, Chinese action-oriented descriptions); `execute_tool` routing for unknown tool / missing query / empty query / list_articles invalid feed_id UUID / missing article_id / invalid UUID / no-token query (bails before DB). `ToolResult` shape.
 - `tests/test_history_filter.py` (pure logic): `_is_displayed` hides `role="tool"` and `tool_calls`-bearing assistant frames; shows user + final assistant.
-- `tests/test_agent_loop.py::TestSystemPrompt`: with-tools prompt mentions a tool; no-tools prompt mentions neither `tool` nor `search_articles`/`read_article`.
+- `tests/test_agent_loop.py::TestSystemPrompt`: single `_AGENT_SYSTEM_PROMPT` constant mentions all three tools (search/list/read).
 - The DB-backed `run_agent_chat` end-to-end is **not** unit-tested; verified by manual SSE curl + DB inspection (messages persisted with correct roles/tool_calls/tool_call_id, ConversationReference written with `is_auto=True`).
 
 ### 7. Wrong vs Correct
