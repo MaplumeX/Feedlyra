@@ -6,6 +6,7 @@ import json
 import logging
 import re
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
 from typing import Literal
 
 from cryptography.fernet import Fernet
@@ -41,24 +42,6 @@ TRANSLATION_SYSTEM_PROMPT = (
     "Output ONLY the translated text in this exact format:\n"
     "<translated_title>translated title here</translated_title>\n\n<translated_content>translated content here</translated_content>\n"
     "Do NOT add any extra text, labels, or explanations."
-)
-
-CHAT_SYSTEM_PROMPT = (
-    "You are an AI assistant helping a user understand an article. "
-    "Answer questions based on the article content below. "
-    "If the answer is not in the article, say so clearly. "
-    "Use the same language as the user's question.\n"
-    "Be concise but thorough. When referencing the article, quote relevant parts.\n\n"
-    "ARTICLE:\n{article_content}"
-)
-
-CHAT_MULTI_ARTICLE_SYSTEM_PROMPT = (
-    "You are an AI assistant helping a user understand article(s). "
-    "Answer questions based on the article content below. "
-    "If the answer is not in the articles, say so clearly. "
-    "Use the same language as the user's question.\n"
-    "Be concise but thorough. When referencing the articles, quote relevant parts.\n\n"
-    "{article_sections}"
 )
 
 
@@ -216,68 +199,75 @@ async def stream_chat(
             yield delta.content
 
 
-def build_chat_messages(
-    article_title: str | None = None,
-    article_content: str | None = None,
-    chat_history: list[dict] | None = None,
-    new_message: str = "",
-    history_summary: str | None = None,
-    articles: list[dict] | None = None,
-    images: list[str] | None = None,
-) -> list[dict]:
-    """Build messages list for chat API call.
+@dataclass
+class ToolCallAccumulated:
+    """One tool_call reconstructed from streaming deltas.
 
-    Supports two modes:
-    1. Single article (legacy): pass article_title + article_content
-    2. Multi-article (conversations): pass articles list of {"title": str, "content": str}
+    OpenAI streams tool_calls as fragments: the first chunk carries id +
+    function.name, subsequent chunks append to function.arguments. We
+    accumulate by `index` and yield a complete tool_call when the stream ends.
     """
-    chat_history = chat_history or []
 
-    if articles:
-        # Build multi-article system prompt
-        SEPARATOR_LEN = len("\n\n---\n\n")  # 8
-        budget = MAX_CONTENT_CHARS
-        sections: list[str] = []
-        for article_data in articles:
-            extracted = extract_content_for_summary(article_data["content"], MAX_CONTENT_CHARS)
-            section = f"ARTICLE: {article_data['title']}\n\n{extracted}"
-            cost = len(section) + (SEPARATOR_LEN if sections else 0)
-            if cost <= budget:
-                sections.append(section)
-                budget -= cost
-            elif budget > SEPARATOR_LEN:
-                available = budget - SEPARATOR_LEN
-                sections.append(section[:available])
-                budget = 0
-                break
-            else:
-                break
-        article_sections = "\n\n---\n\n".join(sections)
-        system_prompt = CHAT_MULTI_ARTICLE_SYSTEM_PROMPT.format(article_sections=article_sections)
-    elif article_title and article_content:
-        extracted = extract_content_for_summary(article_content, MAX_CONTENT_CHARS)
-        system_prompt = CHAT_SYSTEM_PROMPT.format(article_content=extracted)
-    else:
-        system_prompt = "You are a helpful AI assistant. Use the same language as the user's question."
+    index: int
+    id: str = ""
+    name: str = ""
+    arguments: str = ""
 
-    messages: list[dict] = [{"role": "system", "content": system_prompt}]
+    def to_openai_dict(self) -> dict:
+        """Format as the assistant message's tool_calls entry."""
+        return {
+            "id": self.id,
+            "type": "function",
+            "function": {"name": self.name, "arguments": self.arguments},
+        }
 
-    if history_summary:
-        messages.append({"role": "system", "content": f"Previous conversation summary:\n{history_summary}"})
 
-    # Add recent chat history (last 6 turns / 12 messages)
-    for msg in chat_history[-12:]:
-        messages.append({"role": msg["role"], "content": msg["content"]})
+async def stream_chat_with_tools(
+    client: AsyncOpenAI,
+    model: str,
+    messages: list[dict],
+    tools: list[dict] | None = None,
+    tool_choice: str = "auto",
+) -> AsyncIterator[tuple[str | None, dict | None]]:
+    """Stream a completion that may emit content and/or tool_call deltas.
 
-    # Build user message — may include image attachments for vision
-    if images:
-        content_parts: list[dict] = [{"type": "text", "text": new_message}]
-        for img_data in images:
-            content_parts.append({
-                "type": "image_url",
-                "image_url": {"url": img_data},
-            })
-        messages.append({"role": "user", "content": content_parts})
-    else:
-        messages.append({"role": "user", "content": new_message})
-    return messages
+    Yields `(content_delta, tool_call_delta)` tuples. `content_delta` is the
+    next text chunk (or None). `tool_call_delta` is a dict describing one
+    fragment of a tool_call with keys {index, id?, name?, arguments_delta?},
+    or None. The caller is responsible for accumulating fragments by `index`.
+    Keeping this a thin parser lets the agent loop own accumulation policy.
+    """
+    kwargs: dict = {
+        "model": model,
+        "messages": messages,
+        "stream": True,
+        "temperature": 0.7,
+    }
+    if tools:
+        kwargs["tools"] = tools
+        kwargs["tool_choice"] = tool_choice
+
+    stream = await client.chat.completions.create(**kwargs)
+    async for chunk in stream:
+        if not chunk.choices:
+            continue
+        delta = chunk.choices[0].delta
+        content = delta.content if hasattr(delta, "content") else None
+        tool_calls_frag = None
+        raw_tcs = getattr(delta, "tool_calls", None)
+        if raw_tcs:
+            # Take the first fragment per chunk; multi-index deltas in one
+            # chunk are rare and the loop handles one index at a time.
+            frag = raw_tcs[0]
+            tool_calls_frag = {
+                "index": frag.index if frag.index is not None else 0,
+            }
+            if getattr(frag, "id", None):
+                tool_calls_frag["id"] = frag.id
+            fn = getattr(frag, "function", None)
+            if fn is not None:
+                if getattr(fn, "name", None):
+                    tool_calls_frag["name"] = fn.name
+                if getattr(fn, "arguments", None):
+                    tool_calls_frag["arguments_delta"] = fn.arguments
+        yield content, tool_calls_frag
