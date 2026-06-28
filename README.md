@@ -54,7 +54,22 @@ A self-hosted RSS feed reader with integrated AI capabilities — summarize, tra
 | Database | PostgreSQL |
 | Auth | JWT (access + refresh tokens), bcrypt |
 
-## Getting Started
+## Quick Deployment (Docker Compose)
+
+The fastest way to self-host Feedlyra — pulls prebuilt multi-arch images
+(`linux/amd64`, `linux/arm64`) from GHCR, no build step needed:
+
+```bash
+cp .env.example .env          # then edit SECRET_KEY / POSTGRES_PASSWORD / AI_DEFAULT_API_KEY
+docker compose up -d
+```
+
+The app will be available at `http://localhost:${FRONTEND_PORT:-7756}`.
+
+Full guide (configuration, architecture, backups, troubleshooting, building
+from source): see [`docs/deploy.md`](./docs/deploy.md).
+
+## Getting Started (Local Development)
 
 ### Prerequisites
 - Python 3.12+

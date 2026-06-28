@@ -1,0 +1,13 @@
+# Override that builds images from source instead of pulling from ghcr.io.
+# Use for local development or when you want to modify the Dockerfiles:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#
+services:
+  backend:
+    image: feedlyra-backend:dev
+    build: ./backend
+
+  frontend:
+    image: feedlyra-frontend:dev
+    build: ./frontend

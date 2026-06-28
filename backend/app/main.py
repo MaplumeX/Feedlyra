@@ -57,3 +57,9 @@ app.include_router(categories_router)
 app.include_router(articles_router)
 app.include_router(ai_router)
 app.include_router(automation_router)
+
+
+@app.get("/health")
+async def health() -> dict[str, str]:
+    """Liveness probe used by the Docker Compose healthcheck."""
+    return {"status": "ok"}

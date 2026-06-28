@@ -8,15 +8,28 @@ self-hosting on a VPS.
 
 - Docker Engine (with the `docker compose` plugin). Install via the official
   instructions for your platform: <https://docs.docker.com/get-docker/>.
-- A working directory containing this repository (it has `docker-compose.yml`,
-  `backend/Dockerfile`, `frontend/Dockerfile`, and the root `.env.example`).
+- The two files in this repository: `docker-compose.yml` and `.env.example`.
+  If you just want to run the app (not build from source), you only need these
+  two files — prebuilt images are pulled from GHCR automatically.
 - An OpenAI-compatible API key for the AI features (summarize / translate /
   chat). The app still runs without it, but AI features will return config
   errors when invoked.
 
-## Quick start
+## Quick start (prebuilt images)
+
+Prebuilt multi-arch images (`linux/amd64`, `linux/arm64`) are published to the
+GitHub Container Registry on every push to `main` and on version tags:
+
+- `ghcr.io/maplumex/feedlyra-backend:latest`
+- `ghcr.io/maplumex/feedlyra-frontend:latest`
+
+`docker-compose.yml` references these by default, so the simplest deployment
+needs no clone of this repo — just the two files:
 
 ```bash
+# Download the two files (or copy them from the repo):
+#   docker-compose.yml  and  .env.example
+
 # 1. Create your config from the template
 cp .env.example .env
 
@@ -25,19 +38,33 @@ cp .env.example .env
 #    - POSTGRES_PASSWORD
 #    - AI_DEFAULT_API_KEY
 
-# 3. Build and start everything
-docker compose up -d --build
+# 3. Pull the images and start everything (no build step)
+docker compose up -d
 
 # 4. Watch the backend start (migrations run first)
 docker compose logs -f backend
 #    When you see "Uvicorn running on http://0.0.0.0:8000" the stack is ready.
 
 # 5. Open the app
-#    http://localhost:${FRONTEND_PORT}   (default 8080)
+#    http://localhost:${FRONTEND_PORT}   (default 7756)
 ```
 
 Register a new account, add an RSS subscription, refresh, and start an AI
 conversation to verify the stack end-to-end.
+
+## Build from source (alternative)
+
+If you want to modify the Dockerfiles or run unreleased local changes, build
+from source with the `docker-compose.build.yml` override:
+
+```bash
+cp .env.example .env
+# edit .env as above
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
+
+The two services are otherwise identical (same networks, volumes, env, ports);
+the override only swaps the `image:` reference for a local `build:` context.
 
 ## Configuration
 
@@ -74,7 +101,7 @@ Other variables (defaults in `.env.example`):
 ## Architecture
 
 ```
-host :8080 -> frontend (nginx:alpine)
+host :7756 -> frontend (nginx:alpine)
                 serve SPA, proxy /api/* -> backend:8000 (no buffering for SSE)
                                   |
                             backend (uv + python:3.12)
@@ -122,9 +149,9 @@ Uploads backup: `docker run --rm -v feedlyra_uploads:/u -v "$PWD:/b" alpine tar 
 
 ## Troubleshooting
 
-### Port conflict on 8080
+### Port conflict on 7756
 
-Another process holds `${FRONTEND_PORT}` (default 8080). Set a different port
+Another process holds `${FRONTEND_PORT}` (default 7756). Set a different port
 in `.env`:
 
 ```bash

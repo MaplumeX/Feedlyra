@@ -54,7 +54,22 @@
 | 数据库 | PostgreSQL |
 | 认证 | JWT（access + refresh token），bcrypt |
 
-## 快速开始
+## 一键部署（Docker Compose）
+
+自托管 Feedlyra 最快的方式——从 GHCR 拉取预构建多架构镜像
+（`linux/amd64`、`linux/arm64`），无需本地构建：
+
+```bash
+cp .env.example .env          # 然后修改 SECRET_KEY / POSTGRES_PASSWORD / AI_DEFAULT_API_KEY
+docker compose up -d
+```
+
+应用将在 `http://localhost:${FRONTEND_PORT:-7756}` 可用。
+
+完整指南（配置说明、架构、备份、故障排查、从源码构建）见
+[`docs/deploy.zh-CN.md`](./docs/deploy.zh-CN.md)。
+
+## 快速开始（本地开发）
 
 ### 前置要求
 - Python 3.12+
