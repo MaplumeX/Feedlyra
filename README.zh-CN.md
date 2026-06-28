@@ -4,6 +4,9 @@
 
 [English](./README.md)
 
+## 界面预览
+![Feedlyra 界面截图](./docs/photos/1.png)
+
 ## 功能特性
 
 ### 订阅源管理

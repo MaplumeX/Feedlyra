@@ -4,6 +4,9 @@ A self-hosted RSS feed reader with integrated AI capabilities — summarize, tra
 
 [简体中文](./README.zh-CN.md)
 
+## Screenshot
+![Feedlyra Screenshot](./docs/photos/1.png)
+
 ## Features
 
 ### Feed Management
