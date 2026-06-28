@@ -1,0 +1,24 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+feedlyra_backend.egg-info/
+
+# Environment / secrets
+.env
+.env.local
+
+# Tests & caches
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local runtime data
+uploads/
+
+# Tooling
+.git
+.gitignore
