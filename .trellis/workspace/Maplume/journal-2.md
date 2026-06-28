@@ -519,3 +519,36 @@ Branded AI retrieval from a single keyword-ILIKE path into a structured tool fam
 ### Next Steps
 
 - None - task complete
+
+
+## Session 70: Support docker compose deployment
+
+**Date**: 2026-06-28
+**Task**: Support docker compose deployment
+**Branch**: `main`
+
+### Summary
+
+单套自托管形态 docker compose 部署：postgres+backend+frontend 三容器 + 两命名卷 + feedlyra-net 内网；nginx 反代 /api/（proxy_buffering off + 3600s 防 SSE 被切断），前端构建期注入 VITE_API_URL="" 走同源；backend 用 uv 多阶段镜像 + entrypoint.sh 重试跑 alembic 升级；根级 .env 注入 secrets，db 容器只收 POSTGRES_* 不泄漏 AI key/SECRET_KEY；零代码侵入，仅新增 9 个部署文件。静态验证全通过，端到端需启动 Docker 后跑 docs/deploy.md。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `590f7a8` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
