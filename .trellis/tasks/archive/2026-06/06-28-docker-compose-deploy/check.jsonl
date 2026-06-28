@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "校验迁移执行方式与项目 alembic 约定一致"}
+{"file": ".trellis/spec/backend/index.md", "reason": "校验后端配置/env 注入符合项目约定"}
