@@ -5,7 +5,7 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_current_user, get_db
@@ -15,6 +15,10 @@ from app.models.category import Category
 from app.models.feed import Feed
 from app.models.user import User
 from app.schemas.feed import (
+    BulkDeleteResult,
+    BulkFeedDeleteRequest,
+    BulkFeedMoveRequest,
+    BulkMoveResult,
     DiscoveredFeed,
     FeedCreate,
     FeedDiscoveryRequest,
@@ -134,6 +138,59 @@ async def get_feed(
     if feed is None:
         raise HTTPException(status_code=404, detail="Feed not found")
     return feed
+
+
+@router.post("/bulk/move", response_model=BulkMoveResult)
+async def bulk_move_feeds(
+    body: BulkFeedMoveRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> BulkMoveResult:
+    if body.category_id is not None:
+        cat_result = await db.execute(
+            select(Category).where(Category.id == body.category_id, Category.user_id == user.id)
+        )
+        if cat_result.scalar_one_or_none() is None:
+            raise HTTPException(status_code=404, detail="Category not found")
+
+    feed_id_set = set(body.feed_ids)
+    found_result = await db.execute(
+        select(Feed.id).where(Feed.id.in_(feed_id_set), Feed.user_id == user.id)
+    )
+    found_ids = [row[0] for row in found_result.all()]
+    not_found = list(feed_id_set - set(found_ids))
+
+    if found_ids:
+        await db.execute(
+            update(Feed)
+            .where(Feed.id.in_(found_ids), Feed.user_id == user.id)
+            .values(category_id=body.category_id)
+        )
+        await db.commit()
+
+    return BulkMoveResult(updated=found_ids, not_found=not_found)
+
+
+@router.post("/bulk/delete", response_model=BulkDeleteResult)
+async def bulk_delete_feeds(
+    body: BulkFeedDeleteRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> BulkDeleteResult:
+    feed_id_set = set(body.feed_ids)
+    found_result = await db.execute(
+        select(Feed.id).where(Feed.id.in_(feed_id_set), Feed.user_id == user.id)
+    )
+    found_ids = [row[0] for row in found_result.all()]
+    not_found = list(feed_id_set - set(found_ids))
+
+    if found_ids:
+        await db.execute(
+            delete(Feed).where(Feed.id.in_(found_ids), Feed.user_id == user.id)
+        )
+        await db.commit()
+
+    return BulkDeleteResult(deleted=found_ids, not_found=not_found)
 
 
 @router.put("/{feed_id}", response_model=FeedResponse)

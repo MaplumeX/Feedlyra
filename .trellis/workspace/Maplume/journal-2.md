@@ -552,3 +552,39 @@ Branded AI retrieval from a single keyword-ILIKE path into a structured tool fam
 ### Next Steps
 
 - None - task complete
+
+
+## Session 71: 订阅源批量编辑（bulk move/delete）
+
+**Date**: 2026-06-29
+**Task**: 订阅源批量编辑（bulk move/delete）
+**Branch**: `emdash/cold-mangos-cross-jueke`
+
+### Summary
+
+实现订阅源批量编辑：后端新增 POST /api/feeds/bulk/move 和 /bulk/delete 单事务批量端点（user_id 归属过滤 + not_found 部分成功结果）；前端新增 ui/checkbox 和 ui/alert-dialog 组件、useBulkMoveFeeds/useBulkDeleteFeeds hooks、SubscriptionsTab 选择模式（ListChecks 切换、全选/取消、移动到分类 DropdownMenu 即选即触发、删除 AlertDialog 带数量文案）。路由顺序风险点（/bulk/* 必须在 /{feed_id} 之前注册以避免 UUID 422）固化在代码与 spec。check 子代理修复了 AlertDialogCancel 误用 Action primitive 的 bug。lint 0 errors、build 通过、pytest 95 passed。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c70efabf` | (see git log) |
+| `ad7b7447` | (see git log) |
+| `334d7408` | (see git log) |
+| `220679e7` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

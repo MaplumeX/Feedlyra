@@ -75,6 +75,7 @@ yield f"data: {json.dumps({'error': str(e)})}\n\n"
 - **Bare `except Exception: pass`** — Several places (notably `_extract_full_text`, `_html_to_text`) silently swallow errors. This hides real bugs. See [[quality-guidelines]] for the forbidden pattern and correct alternative. The `add_feed` endpoint was fixed to use 202 + `parsing_error_message` instead of silent pass (see Design Decision below).
 - **Returning plaintext API keys in error responses** — Even error responses can leak secrets in logs/middleware. Use `has_api_key: bool` instead.
 - **Batch endpoints without ownership validation** — When an endpoint accepts a list of resource IDs (e.g., `article_ids: UUID[]`), always verify the resources belong to the current user. Without this, any user can operate on other users' data.
+- **Path-parameter routes shadowing literal sibling paths** — When a router has both `/{feed_id}` (with `feed_id: UUID`) and a literal sibling like `/bulk/move`, registering `/{feed_id}` first causes `/bulk/move` to be parsed as a UUID and return `422` instead of routing to the bulk endpoint. Always register literal `/bulk/*` (and any other literal sibling) **before** the `/{id}` route in the same router. See "Scenario: Bulk Feed Endpoints" for the working ordering.
 
 ### Batch Endpoint Ownership Validation
 
@@ -91,6 +92,103 @@ owned_ids = set(owned_ids_result.scalars().all())
 ```
 
 **Why**: Client-provided IDs can reference resources owned by other users. Without filtering, batch operations silently cross user boundaries — a security vulnerability.
+
+### Bulk Endpoint Result Contract
+
+Batch endpoints return **partial-success** results, not all-or-nothing errors. The response schema carries both the operated IDs and the IDs that were not found / not owned:
+
+```python
+class BulkMoveResult(BaseModel):
+    updated: list[UUID]
+    not_found: list[UUID]
+
+class BulkDeleteResult(BaseModel):
+    deleted: list[UUID]
+    not_found: list[UUID]
+```
+
+- The handler first SELECTs the IDs the current user actually owns (`WHERE id IN(feed_ids) AND user_id=user.id`) → `found_ids`.
+- The UPDATE/DELETE is scoped to `found_ids` (and still carries `user_id` as a safety belt).
+- `not_found = set(feed_ids) - set(found_ids)`. Duplicate input IDs collapse via the `IN` set semantics.
+- The frontend toasts only the success count (`len(updated)` / `len(deleted)`); `not_found` is `console.warn`-only, because it only happens under concurrent cross-tab edits and surfacing it to the user adds confusion without value.
+- Empty `feed_ids` is rejected by the request schema (`Field(min_length=1)`) → `422`; do not return an empty result instead, which would mask a buggy caller.
+
+---
+
+## Scenario: Bulk Feed Endpoints
+
+### 1. Scope / Trigger
+- Trigger: users need to apply the same mutation (move to category, delete) to many feeds at once via `POST /api/feeds/bulk/move` and `POST /api/feeds/bulk/delete`.
+- Cross-layer contract: backend schema defines the request/response, the SubscriptionsTab select mode dispatches the mutation, and partial failure (`not_found`) is surfaced only in the console.
+
+### 2. Signatures
+- API: `POST /api/feeds/bulk/move` body `{ feed_ids: UUID[] (min 1), category_id: UUID | null }` → `BulkMoveResult`.
+- API: `POST /api/feeds/bulk/delete` body `{ feed_ids: UUID[] (min 1) }` → `BulkDeleteResult`.
+- Schema: `BulkMoveResult { updated: list[UUID], not_found: list[UUID] }`.
+- Schema: `BulkDeleteResult { deleted: list[UUID], not_found: list[UUID] }`.
+
+### 3. Contracts
+- Both endpoints require `get_current_user`; every SELECT/UPDATE/DELETE carries `Feed.user_id == user.id`.
+- `category_id == null` is valid and means "move to uncategorized".
+- `category_id` referencing a category not owned by the user → `404 Category not found` (reuses the single-update validation).
+- Both handlers run inside the request-scoped `AsyncSession`: single SELECT for ownership → single UPDATE/DELETE → single `commit`. No background task.
+- Feed→Article cascade delete is handled by the existing FK `ondelete="CASCADE"`; bulk delete reuses `delete(Feed).where(Feed.id.in_(found_ids), Feed.user_id == user.id)`, same shape as the single `delete_feed`.
+- Route registration order: `POST /bulk/move` and `POST /bulk/delete` MUST be registered before `PUT /{feed_id}` / `DELETE /{feed_id}` in `routers/feeds.py`. See the path-parameter shadowing common mistake above.
+- Frontend `api` client does NOT auto-convert snake_case; hook `mutationFn` body fields must be spelled `feed_ids` / `category_id` (same convention as `useAddFeed` / `useUpdateFeed`).
+
+### 4. Validation & Error Matrix
+- Missing/invalid access token -> `401`.
+- Empty `feed_ids` (`[]`) -> Pydantic `422`.
+- `category_id` not owned by current user -> `404 Category not found`.
+- Some `feed_ids` not owned by the user -> `200` with those IDs in `not_found`; owned IDs succeed normally.
+- All `feed_ids` not owned -> `200` with `updated=[]` / `deleted=[]` and all IDs in `not_found`.
+
+### 5. Good/Base/Bad Cases
+- Good: user selects 10 feeds, moves to a category; backend UPDATEs all 10 in one transaction, returns `updated=[...10]`, `not_found=[]`; frontend toasts "已移动 10 个订阅源到 <category>".
+- Base: `category_id=null` moves the selected feeds to uncategorized without any special path.
+- Bad: register `PUT /{feed_id}` before `POST /bulk/move`; the `bulk` literal is parsed as a UUID, `bulk` is not a valid UUID, the request returns `422` and the bulk endpoint is unreachable.
+- Bad: scope the UPDATE/DELETE only by `id IN (feed_ids)` without `user_id`; a caller passing another user's feed IDs would mutate or delete them — a cross-user security hole.
+
+### 6. Tests Required
+- No automated backend test (project convention: trusted unit tests cover pure logic only, and feed router has no existing integration coverage).
+- Manual verification: `POST /api/feeds/bulk/move` with a valid `feed_ids` + `category_id=null` returns `200` and the feeds' `category_id` becomes null; empty `feed_ids` -> `422`; a `category_id` owned by another user -> `404`.
+- Frontend regression: `npm run lint`, `npm run build` pass; selecting feeds and triggering move/delete refetches the feed list and exits select mode.
+
+### 7. Wrong vs Correct
+#### Wrong — path-parameter registered first
+```python
+@router.put("/{feed_id}", ...)
+async def update_feed(...): ...
+
+@router.post("/bulk/move", ...)
+async def bulk_move_feeds(...): ...
+# /bulk/move is parsed as feed_id="bulk" -> UUID parse fails -> 422, endpoint unreachable
+```
+
+#### Correct — literal bulk routes registered first
+```python
+@router.post("/bulk/move", response_model=BulkMoveResult)
+async def bulk_move_feeds(...): ...
+
+@router.post("/bulk/delete", response_model=BulkDeleteResult)
+async def bulk_delete_feeds(...): ...
+
+@router.put("/{feed_id}", ...)
+async def update_feed(...): ...
+```
+
+#### Wrong — DELETE scoped only by `id IN` without `user_id`
+```python
+await db.execute(delete(Feed).where(Feed.id.in_(found_ids)))
+```
+
+#### Correct — `found_ids` already filtered by user, but DELETE still carries user_id as a safety belt
+```python
+found_ids = {row[0] for row in (await db.execute(
+    select(Feed.id).where(Feed.id.in_(body.feed_ids), Feed.user_id == user.id)
+)).all()}
+await db.execute(delete(Feed).where(Feed.id.in_(found_ids), Feed.user_id == user.id))
+```
 
 ---
 
