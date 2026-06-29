@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Verify worker pool / scheduler background code has no bare except:pass, no request-scoped DB session misuse"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify status codes: refresh-all→202, refresh_feed→502, and HTTPException-only error pattern"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify Alembic 018 migration + batch builder query follow SQLAlchemy 2.0 async conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Verify new modules follow async-first / no-repository-layer / pydantic-settings conventions; type annotation style"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Verify scheduler/worker log levels and patterns match conventions"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Verify frontend Feed badges / job-status polling hooks follow frontend spec conventions"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer data flow audit: progress tracker ↔ jobs/status endpoint ↔ frontend polling ↔ feed list badges"}

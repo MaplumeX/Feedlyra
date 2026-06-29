@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 71
-- **Last Active**: 2026-06-29
+- **Total Sessions**: 72
+- **Last Active**: 2026-06-30
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~590 | Active |
+| `journal-2.md` | ~624 | Active |
 | `journal-1.md` | ~1990 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -31,6 +31,7 @@
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
 | 71 | 2026-06-29 | 订阅源批量编辑（bulk move/delete） | `c70efabf`, `ad7b7447`, `334d7408`, `220679e7` | `emdash/cold-mangos-cross-jueke` |
+| 72 | 2026-06-30 | 对齐 Miniflux 批量导入模型 | `7a37aeb6` | `emdash/mighty-moons-give-m7cc4` |
 | 70 | 2026-06-28 | Support docker compose deployment | `590f7a8` | `main` |
 | 69 | 2026-06-26 | AI检索能力升级与设置项清理 | `105ebf1`, `d2738e8` | `emdash/upset-cars-guess-g3tlx` |
 | 68 | 2026-06-26 | AI chat agent loop | `c230f25`, `caa1951`, `4932181`, `bd47aae` | `emdash/polite-pets-write-dvkoh` |

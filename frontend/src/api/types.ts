@@ -21,6 +21,16 @@ export interface Feed {
   auto_full_text: boolean;
   auto_translate: boolean;
   translate_target_lang: string | null;
+  disabled: boolean;
+}
+
+export interface JobStatus {
+  total: number;
+  pending: number;
+  running: number;
+  done: number;
+  failed: number;
+  last_updated_at: string | null;
 }
 
 export interface Category {

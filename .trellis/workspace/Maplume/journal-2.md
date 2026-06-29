@@ -588,3 +588,37 @@ Branded AI retrieval from a single keyword-ILIKE path into a structured tool fam
 ### Next Steps
 
 - None - task complete
+
+
+## Session 72: 对齐 Miniflux 批量导入模型
+
+**Date**: 2026-06-30
+**Task**: 对齐 Miniflux 批量导入模型
+**Branch**: `emdash/mighty-moons-give-m7cc4`
+
+### Summary
+
+解耦订阅源创建与抓取：导入/refresh-all 只写库+enqueue manual job，新增有界并发 WorkerPool(8) + FeedScheduler(60s tick) + per-host 限流 + error-limit disabled + 429 Retry-After + 共享 httpx client + in-flight 去重（防 manual/tick 重叠重复抓取）。新增 GET /api/feeds/jobs/status 进度端点 + 前端 pending/error/disabled 徽标与进度轮询。35 个新单元测试。trellis-check 走过，修了 0-batch 无限轮询/refresh_feed 软失败状态残留/discover 未迁移共享 client 三处 warning，spec 更新 error-handling 202 决策。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7a37aeb6` | feat(feeds): align batch import with Miniflux decoupled model |
+
+### Testing
+
+- [OK] uv run pytest 147 passed（原 112 + 新增 35）
+- [OK] npm run build + tsc --noEmit 通过；lint 0 errors
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

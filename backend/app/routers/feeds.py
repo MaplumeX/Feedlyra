@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-import asyncio
 import logging
+from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_current_user, get_db
-from app.database import async_session
 from app.models.article import Article, ReadStatus
 from app.models.category import Category
 from app.models.feed import Feed
@@ -25,15 +24,17 @@ from app.schemas.feed import (
     FeedResponse,
     FeedUpdate,
     FeedWithUnread,
+    JobStatusResponse,
     OPMLExportResponse,
 )
 from app.services.feed_fetcher import (
+    DEFAULT_CHECK_INTERVAL,
     discover_feed_urls,
-    fetch_and_store_feed,
     generate_opml,
     parse_opml,
     refresh_all_feeds,
 )
+from app.services.feed_worker import Job, get_tracker, get_worker_pool
 
 logger = logging.getLogger(__name__)
 
@@ -57,35 +58,23 @@ async def add_feed(
         if cat_result.scalar_one_or_none() is None:
             raise HTTPException(status_code=404, detail="Category not found")
 
-    feed = Feed(user_id=user.id, title="", url=body.url, category_id=body.category_id, auto_full_text=body.auto_full_text, auto_translate=body.auto_translate, translate_target_lang=body.translate_target_lang)
+    feed = Feed(
+        user_id=user.id,
+        title="",
+        url=body.url,
+        category_id=body.category_id,
+        auto_full_text=body.auto_full_text,
+        auto_translate=body.auto_translate,
+        translate_target_lang=body.translate_target_lang,
+        next_check_at=datetime.now(timezone.utc),
+    )
     db.add(feed)
     await db.commit()
     await db.refresh(feed)
 
-    # Background fetch for the new feed
-    async def _bg_fetch(feed_id=feed.id):  # type: ignore[misc]
-        async with async_session() as bg_db:
-            try:
-                result = await bg_db.execute(select(Feed).where(Feed.id == feed_id))
-                bg_feed = result.scalar_one_or_none()
-                if bg_feed:
-                    await fetch_and_store_feed(bg_feed, bg_db)
-                    if not bg_feed.title:
-                        bg_feed.title = bg_feed.url
-                    await bg_db.commit()
-                    logger.info("Background fetch completed for feed %s", feed_id)
-            except Exception as e:
-                # Reload feed to mark error
-                result = await bg_db.execute(select(Feed).where(Feed.id == feed_id))
-                bg_feed = result.scalar_one_or_none()
-                if bg_feed:
-                    bg_feed.parsing_error_count += 1
-                    bg_feed.parsing_error_message = str(e)[:500]
-                    await bg_db.commit()
-                logger.warning("Background fetch failed for feed %s: %s", feed_id, e)
-
-    asyncio.create_task(_bg_fetch())
-
+    # Decoupled from fetch: the feed is created as a pending shell marked due
+    # (next_check_at = now). The background worker pool / scheduler picks it up
+    # on the next tick; no asyncio.create_task here. See design.md "导入解耦".
     return feed
 
 
@@ -244,12 +233,26 @@ async def delete_feed(
     await db.commit()
 
 
-@router.post("/refresh-all")
+@router.post("/refresh-all", status_code=status.HTTP_202_ACCEPTED)
 async def refresh_all(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict[str, int]:
+    # Marks the user's due feeds next_check_at = now(), commits, resets the
+    # progress tracker, and enqueues manual (track=True) jobs onto the worker
+    # pool. Fetching happens asynchronously in the pool's own sessions; this
+    # handler returns immediately with 202 + {total}. See design.md "接口语义".
     return await refresh_all_feeds(db, user.id)
+
+
+@router.get("/jobs/status", response_model=JobStatusResponse)
+async def get_jobs_status() -> dict[str, object]:
+    # In-memory snapshot of the currently-tracked batch. The periodic due-tick
+    # does NOT drive the tracker (track=False), so this reads all-zero when no
+    # import / refresh-all / single-refresh batch is active. A process restart
+    # zeroes the counters; due feeds are recovered idempotently by the next
+    # scheduler tick. See prd.md "进度可见性实现".
+    return get_tracker().snapshot()
 
 
 @router.post("/{feed_id}/refresh", response_model=FeedResponse)
@@ -263,18 +266,37 @@ async def refresh_feed(
     if feed is None:
         raise HTTPException(status_code=404, detail="Feed not found")
 
+    # Synchronous manual refresh: enqueue one manual job carrying a Future and
+    # block until the worker finishes. The worker opens its own session and
+    # commits; we then refresh this request-scoped feed to read the newly
+    # committed title/site_url/icon and reset the disabled/error state so auto
+    # scheduling resumes (see prd.md "disabled feed 在手动 refresh 成功后重置").
     try:
-        await fetch_and_store_feed(feed, db)
-        await db.refresh(feed)
+        await get_worker_pool().run_single(feed_id, user.id)
     except Exception as e:
+        logger.warning("Manual refresh failed for feed %s: %s", feed_id, e)
         raise HTTPException(status_code=502, detail=f"Failed to refresh feed: {e}")
 
+    await db.refresh(feed)
+    # Only reset disabled / error_count on a genuinely successful refresh.
+    # fetch_and_store_feed handles 429 / 4xx / parse errors internally and
+    # returns normally, leaving parsing_error_message set — that is a soft
+    # failure, NOT a success, so we must not clear the error state here
+    # (prd.md: "disabled feed 在手动 refresh 成功后重置").
+    if not feed.parsing_error_message:
+        feed.disabled = False
+        feed.parsing_error_count = 0
+        await db.commit()
+        await db.refresh(feed)
     return feed
 
 
 @router.post("/import/opml", response_model=list[FeedResponse], status_code=status.HTTP_201_CREATED)
 async def import_opml(
     file: UploadFile,
+    auto_full_text: bool = Form(False),
+    auto_translate: bool = Form(False),
+    translate_target_lang: str | None = Form(None),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[Feed]:
@@ -304,9 +326,13 @@ async def import_opml(
                 db.add(cat)
                 title_to_category[title] = cat
 
-        # Flush so server-generated UUIDs populate before we read .id below.
+        # Flush so freshly-created categories are assigned ids BEFORE we read
+        # them below; otherwise accessing ``.id`` would trigger an implicit
+        # autoflush of the pending feeds (prd.md AC "OPML 导入不再因 category.id
+        # 触发隐式 autoflush").
         await db.flush()
 
+    now = datetime.now(timezone.utc)
     created: list[Feed] = []
     for pf in parsed_feeds:
         url = pf.get("url", "")
@@ -324,6 +350,13 @@ async def import_opml(
             url=url,
             site_url=pf.get("site_url"),
             category_id=category_id,
+            auto_full_text=auto_full_text,
+            auto_translate=auto_translate,
+            translate_target_lang=translate_target_lang,
+            # Future due time keeps the periodic tick from selecting these
+            # feeds while the manual batch is in flight; the worker's fetch
+            # overwrites next_check_at on completion.
+            next_check_at=now + DEFAULT_CHECK_INTERVAL,
         )
         db.add(feed)
         created.append(feed)
@@ -333,29 +366,22 @@ async def import_opml(
     for feed in created:
         await db.refresh(feed)
 
-    # Background fetch for newly imported feeds
-    feed_ids = [feed.id for feed in created]
-    for fid in feed_ids:
-
-        async def _bg_fetch(feed_id=fid):  # type: ignore[misc]
-            async with async_session() as bg_db:
-                try:
-                    result = await bg_db.execute(select(Feed).where(Feed.id == feed_id))
-                    feed = result.scalar_one_or_none()
-                    if feed:
-                        await fetch_and_store_feed(feed, bg_db)
-                        await bg_db.commit()
-                        logger.info("Background fetch completed for feed %s", feed_id)
-                except Exception as e:
-                    result = await bg_db.execute(select(Feed).where(Feed.id == feed_id))
-                    failed_feed = result.scalar_one_or_none()
-                    if failed_feed:
-                        failed_feed.parsing_error_count += 1
-                        failed_feed.parsing_error_message = str(e)[:500]
-                        await bg_db.commit()
-                    logger.warning("Background fetch failed for feed %s: %s", feed_id, e)
-
-        asyncio.create_task(_bg_fetch())
+    # Decoupled: import only wrote shells marked due (next_check_at = now). To
+    # make progress visible without waiting for the 60s scheduler tick, enqueue
+    # manual (track=True) jobs directly onto the worker pool and reset the
+    # tracker for this batch. The scheduler's due-tick also reads due feeds
+    # (track=False) so a process restart between import and fetch still recovers
+    # idempotently. fetch_and_store_feed is idempotent (etag/304 + guid dedup),
+    # so a possible overlap is harmless. See design.md "跨层数据流".
+    if created:
+        tracker = get_tracker()
+        tracker.reset(total=len(created))
+        pool = get_worker_pool()
+        for feed in created:
+            pool.push(
+                Job(feed_id=feed.id, user_id=user.id, kind="manual"),
+                track=True,
+            )
 
     return created
 

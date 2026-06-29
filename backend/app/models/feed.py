@@ -32,6 +32,7 @@ class Feed(TimestampMixin, Base):
     auto_full_text: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     auto_translate: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     translate_target_lang: Mapped[str | None] = mapped_column(String(10))
+    disabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
 
     articles: Mapped[list["Article"]] = relationship("Article", back_populates="feed")
     category: Mapped["Category | None"] = relationship("Category", back_populates="feeds")
