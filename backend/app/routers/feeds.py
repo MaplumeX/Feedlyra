@@ -247,6 +247,9 @@ async def import_opml(
                 db.add(cat)
                 title_to_category[title] = cat
 
+        # Flush so server-generated UUIDs populate before we read .id below.
+        await db.flush()
+
     created: list[Feed] = []
     for pf in parsed_feeds:
         url = pf.get("url", "")
