@@ -130,6 +130,7 @@
     "save": "Save",
     "create": "Create",
     "deleteConfirm": "Delete rule \"{{name}}\"?",
+    "deleteRuleTitle": "Delete Rule",
     "noConditions": "No conditions",
     "fieldTitle": "Title",
     "fieldAuthor": "Author",

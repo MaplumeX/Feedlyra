@@ -259,7 +259,7 @@ Every component ships with default / hover / focus-visible / active / disabled /
 ### AI Chat Panel (signature component)
 - **Assistant avatar:** 28px circle, `bg-primary/10`, Bot icon at `text-primary`. Deliberately understated — the assistant is a quiet presence, not a glowing orb.
 - **User bubble:** `bg-chat-bubble-user` (primary at 12% alpha). Same hue family as the reader's prose links, so the user's voice is visibly part of the article's color world.
-- **AI bubble:** `bg-chat-bubble-ai` (muted). Slightly recessed vs. the user bubble, so the reader's eye stays with their own input and the article.
+- **AI content (no bubble):** the assistant's markdown renders directly (no `bg-chat-bubble-ai` background), deliberately quieter than the user bubble's accent-alpha pill. The reader's eye stays with their own input and the article; the assistant is a voice, not a surface. The `--chat-bubble-ai` token is retained for future use but is intentionally not applied as a background.
 - **Typing indicator:** three 6px dots, `bg-foreground/50`, staggered bounce (150ms offsets). No colored halo, no blinking cursor. State feedback only.
 - **Input:** same field vocabulary as the rest of the app — one input language across reading and chat.
 
@@ -287,7 +287,7 @@ Every component ships with default / hover / focus-visible / active / disabled /
 - **Don't** apply `border-left`/`border-right` greater than 1px as a colored accent on cards, list items, or alerts. (The blockquote's 3px left border is the sole, named exception.)
 - **Don't** put a small all-caps tracked eyebrow ("ABOUT" / "FEEDS" / "FEEDS") above every section heading — it is the AI-grammar reflex this product refuses.
 - **Don't** lay out identical icon+heading+text cards in a grid. The article list is rows with typography + unread dot, not a card grid.
-- **Don't** make the AI chat panel louder than the article: no colored typing halos, no blinking cursors, no full-saturation bubble backgrounds. AI bubbles use muted; user bubbles use accent alpha.
+- **Don't** make the AI chat panel louder than the article: no colored typing halos, no blinking cursors, no full-saturation bubble backgrounds. The assistant renders as plain markdown (no bubble); the user bubble uses accent alpha. The assistant's visual weight must never exceed the article's.
 - **Don't** drift the neutral background toward cream / sand / parchment / warm paper. The neutral ramp is cool, blue-undertoned, low-chroma — that is the reading room's identity, not the 2026 AI-cream default.
 - **Don't** use fluid `clamp()` scales for chrome (sidebar, buttons, labels). Fixed rem values; the reader's own font setting is the only fluid type.
 - **Don't** introduce a fourth accent hue. Three (Indigo, Amber, Forest) is the complete vocabulary, mutually exclusive per session.

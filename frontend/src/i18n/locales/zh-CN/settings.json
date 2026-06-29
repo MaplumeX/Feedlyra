@@ -130,6 +130,7 @@
     "save": "保存",
     "create": "创建",
     "deleteConfirm": "删除规则 \"{{name}}\"？",
+    "deleteRuleTitle": "删除规则",
     "noConditions": "无条件",
     "fieldTitle": "标题",
     "fieldAuthor": "作者",

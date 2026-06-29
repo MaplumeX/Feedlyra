@@ -523,7 +523,7 @@ export function Sidebar() {
             placeholder={t("categoryName")}
           />
           {createCategory.isError && (
-            <p className="text-sm text-destructive">{createCategory.error.message}</p>
+            <p className="text-sm text-destructive">{t("createCategoryFailed")}</p>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>

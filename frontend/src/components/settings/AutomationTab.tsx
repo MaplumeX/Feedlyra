@@ -6,6 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   useAutomationRules,
   useDeleteAutomationRule,
   useToggleAutomationRule,
@@ -41,12 +49,17 @@ const OPERATOR_LABEL_KEYS: Record<string, string> = {
   matches_regex: "automation.opMatchesRegex",
 };
 
-const ACTION_COLORS: Record<string, string> = {
-  mark_read: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  star: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
-  delete: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-  auto_translate: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-  auto_extract: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+// Action type badge styling. Per DESIGN.md's One Accent / Three Hues rule,
+// we avoid tinted color tags (blue/yellow/red/purple/green-100) and use a
+// single outline badge for all action types, with `text-destructive` only
+// for the delete action (which is genuinely destructive). This keeps the
+// AutomationTab consistent with the reading-room palette.
+const ACTION_BADGE_CLASS: Record<string, string> = {
+  mark_read: "",
+  star: "",
+  delete: "text-destructive border-destructive/40",
+  auto_translate: "",
+  auto_extract: "",
 };
 
 function conditionSummary(conditions: AutomationRule["conditions"], t: (key: string, opts?: Record<string, unknown>) => string): string {
@@ -71,6 +84,7 @@ export function AutomationTab() {
   const deleteRule = useDeleteAutomationRule();
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AutomationRule | null>(null);
 
   const rules = data ?? [];
 
@@ -89,8 +103,14 @@ export function AutomationTab() {
   }
 
   function handleDelete(rule: AutomationRule) {
-    if (!window.confirm(t("automation.deleteConfirm", { name: rule.name }))) return;
-    deleteRule.mutate(rule.id);
+    setDeleteTarget(rule);
+  }
+
+  function confirmDelete() {
+    if (!deleteTarget) return;
+    deleteRule.mutate(deleteTarget.id, {
+      onSuccess: () => setDeleteTarget(null),
+    });
   }
 
   if (isLoading) {
@@ -141,7 +161,7 @@ export function AutomationTab() {
                 {rule.actions.map((action, i) => (
                   <span
                     key={`${action.type}-${i}`}
-                    className={cn("inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium", ACTION_COLORS[action.type])}
+                    className={cn("inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium text-foreground", ACTION_BADGE_CLASS[action.type])}
                   >
                     {t(ACTION_LABEL_KEYS[action.type] ?? "automation.actionDeleteShort")}
                     {action.type === "auto_translate" && action.params?.translate_target_lang
@@ -211,6 +231,28 @@ export function AutomationTab() {
         open={editorOpen}
         onOpenChange={setEditorOpen}
       />
+
+      {/* Delete Rule Confirm Dialog */}
+      <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("automation.deleteRuleTitle")}</DialogTitle>
+            <DialogDescription>{t("automation.deleteConfirm", { name: deleteTarget?.name ?? "" })}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              {t("cancel", { ns: "common" })}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleteRule.isPending}
+            >
+              {t("delete", { ns: "common" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

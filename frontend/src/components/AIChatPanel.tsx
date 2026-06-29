@@ -658,14 +658,14 @@ export function AIChatPanel({
           if (ev.phase === "start") {
             if (ev.name === "search_articles") {
               const q = (ev.args?.query as string | undefined) ?? "";
-              appendToolLine(q ? `正在搜索「${q}」…` : "正在搜索…");
+              appendToolLine(q ? t("toolSearchingQuery", { query: q }) : t("toolSearching"));
             } else if (ev.name === "read_article") {
-              appendToolLine("正在阅读文章…");
+              appendToolLine(t("toolReadingArticle"));
             } else {
-              appendToolLine(`正在调用 ${ev.name}…`);
+              appendToolLine(t("toolCalling", { name: ev.name }));
             }
           } else {
-            appendToolLine(ev.result_summary ?? "完成");
+            appendToolLine(ev.result_summary ?? t("toolDone"));
           }
         },
         onChunk: (chunk) => {

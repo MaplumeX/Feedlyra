@@ -126,9 +126,9 @@
       "name": "AI Chat — Assistant message bubble",
       "kind": "custom",
       "refersTo": "chat-bubble-ai",
-      "description": "AI assistant bubble. Muted background, recessed vs. user bubble so the reader's eye stays with their input and the article. Assistant avatar is an understated Bot icon in primary/10.",
+      "description": "AI assistant content. Renders as plain markdown with no bubble background (deliberately quieter than the user bubble). Assistant avatar is an understated Bot icon in primary/10.",
       "html": "<div class=\"ds-chat-row ds-chat-ai\"><div class=\"ds-avatar\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"10\" rx=\"2\"/><circle cx=\"12\" cy=\"5\" r=\"2\"/><path d=\"M12 7v4\"/><line x1=\"8\" y1=\"16\" x2=\"8\" y2=\"16\"/><line x1=\"16\" y1=\"16\" x2=\"16\" y2=\"16\"/></svg></div><div class=\"ds-bubble ds-bubble-ai\">Here is a concise summary of the article.</div></div>",
-      "css": ".ds-chat-row { display: flex; align-items: flex-start; gap: 8px; font-family: var(--font-ui); } .ds-avatar { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 9999px; background: hsl(var(--primary) / 0.1); color: hsl(var(--primary)); } .ds-avatar svg { width: 16px; height: 16px; } .ds-bubble { padding: 10px 14px; border-radius: 6px; font-size: 0.875rem; line-height: 1.5; max-width: 75%; } .ds-bubble-ai { background: hsl(var(--chat-bubble-ai)); color: hsl(var(--foreground)); }"
+      "css": ".ds-chat-row { display: flex; align-items: flex-start; gap: 8px; font-family: var(--font-ui); } .ds-avatar { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 9999px; background: hsl(var(--primary) / 0.1); color: hsl(var(--primary)); } .ds-avatar svg { width: 16px; height: 16px; } .ds-bubble { padding: 10px 14px; border-radius: 6px; font-size: 0.875rem; line-height: 1.5; max-width: 75%; } .ds-bubble-ai { background: transparent; color: hsl(var(--foreground)); padding: 0; max-width: 100%; }"
     },
     {
       "name": "AI Chat — User message bubble",
@@ -183,7 +183,7 @@
       "Don't apply border-left/border-right greater than 1px as a colored accent on cards, list items, or alerts. (The blockquote's 3px left border is the sole, named exception.)",
       "Don't put a small all-caps tracked eyebrow ('ABOUT' / 'FEEDS' / 'FEEDS') above every section heading — it is the AI-grammar reflex this product refuses.",
       "Don't lay out identical icon+heading+text cards in a grid. The article list is rows with typography + unread dot, not a card grid.",
-      "Don't make the AI chat panel louder than the article: no colored typing halos, no blinking cursors, no full-saturation bubble backgrounds. AI bubbles use muted; user bubbles use accent alpha.",
+      "Don't make the AI chat panel louder than the article: no colored typing halos, no blinking cursors, no full-saturation bubble backgrounds. The assistant renders as plain markdown (no bubble); the user bubble uses accent alpha. The assistant's visual weight must never exceed the article's.",
       "Don't drift the neutral background toward cream / sand / parchment / warm paper. The neutral ramp is cool, blue-undertoned, low-chroma — that is the reading room's identity, not the 2026 AI-cream default.",
       "Don't use fluid clamp() scales for chrome (sidebar, buttons, labels). Fixed rem values; the reader's own font setting is the only fluid type.",
       "Don't introduce a fourth accent hue. Three (Indigo, Amber, Forest) is the complete vocabulary, mutually exclusive per session.",
