@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-29T00:00:00Z",
+  "title": "Design System: Feedlyra",
+  "extensions": {
+    "colorMeta": {
+      "primary-indigo": {
+        "role": "primary",
+        "displayName": "Reading-Room Indigo",
+        "canonical": "hsl(239 84% 58%)",
+        "tonalRamp": ["#060737", "#0b0d65", "#0d0f96", "#1215ce", "#3134ed", "#6c6eef", "#a7a9f1", "#dedff7"]
+      },
+      "primary-amber": {
+        "role": "primary",
+        "displayName": "Evening Amber",
+        "canonical": "hsl(28 90% 51%)",
+        "tonalRamp": ["#492604", "#7a4005", "#aa5909", "#da730b", "#f48c25", "#f6a655", "#f8c796", "#fae6d1"]
+      },
+      "primary-forest": {
+        "role": "primary",
+        "displayName": "Calming Forest",
+        "canonical": "hsl(152 56% 36%)",
+        "tonalRamp": ["#0d3020", "#155135", "#1e714a", "#288f5f", "#31af74", "#51c890", "#8cd9b5", "#d2eee1"]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Reading-Room Paper",
+        "canonical": "hsl(220 20% 98%)",
+        "tonalRamp": ["#141415", "#28282a", "#404244", "#5e6064", "#818388", "#abacb0", "#d0d1d2", "#f4f5f5"]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "hsl(222 47% 11%)"
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "hsl(220 13% 91%)"
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Quiet Metadata",
+        "canonical": "hsl(220 9% 46%)"
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Auth/login hero only. Never inside the reading app shell." },
+      "heading": { "displayName": "Heading", "purpose": "Settings section titles, dialog titles." },
+      "body-ui": { "displayName": "Body UI", "purpose": "Every label, list item, button caption, metadata line — the workhorse." },
+      "body-reader": { "displayName": "Reader Body", "purpose": "Article prose inside .prose only. Capped 65–75ch." },
+      "label": { "displayName": "Label", "purpose": "Unread counts, tab triggers, small captions. Sentence case." }
+    },
+    "shadows": [
+      { "name": "resting-card", "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)", "purpose": "The only resting shadow, used by Card. Most surfaces below this use tint+border instead." }
+    ],
+    "motion": [
+      { "name": "color-state", "value": "150ms ease", "purpose": "Default color/background/border transition on all interactive elements." },
+      { "name": "duration-fast", "value": "100ms", "purpose": "Hover/focus color shifts on list rows and buttons." },
+      { "name": "chat-typing-bounce", "value": "1.4s ease-in-out infinite", "purpose": "Three-dot typing indicator; staggered 150ms offsets. Disable under prefers-reduced-motion." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default action button — Subscribe, Send, Save. Saturated accent, ≤10% of screen.",
+      "html": "<button class=\"ds-btn-primary\">Subscribe</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 8px 16px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border: none; border-radius: 6px; font-family: var(--font-ui); font-size: 0.875rem; font-weight: 500; line-height: 1.5; transition: background-color 100ms ease; cursor: pointer; } .ds-btn-primary:hover { background: hsl(var(--primary) / 0.9); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px hsl(var(--ring)), 0 0 0 4px hsl(var(--background)); } .ds-btn-primary:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Ghost Button (toolbar)",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Sidebar tool buttons and icon-only toolbar actions. Transparent at rest, accent-tint background on hover.",
+      "html": "<button class=\"ds-btn-ghost\" aria-label=\"Refresh\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 12a9 9 0 0 1 15-6.7L21 8\"/><path d=\"M21 3v5h-5\"/><path d=\"M21 12a9 9 0 0 1-15 6.7L3 16\"/><path d=\"M3 21v-5h5\"/></svg></button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; height: 40px; width: 40px; padding: 8px; background: transparent; color: hsl(var(--foreground)); border: none; border-radius: 6px; transition: background-color 100ms ease, color 100ms ease; cursor: pointer; } .ds-btn-ghost:hover { background: hsl(var(--accent)); color: hsl(var(--accent-foreground)); } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 2px hsl(var(--ring)), 0 0 0 4px hsl(var(--background)); } .ds-btn-ghost:disabled { opacity: 0.5; pointer-events: none; } .ds-btn-ghost svg { width: 16px; height: 16px; }"
+    },
+    {
+      "name": "Text Input (with focus ring)",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Search, feed URL, settings fields. One input language across reading and AI chat.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Search articles…\" />",
+      "css": ".ds-input { display: flex; width: 100%; height: 40px; padding: 8px 12px; background: hsl(var(--background)); color: hsl(var(--foreground)); border: 1px solid hsl(var(--input)); border-radius: 6px; font-family: var(--font-ui); font-size: 0.875rem; line-height: 1.5; transition: border-color 100ms ease, box-shadow 100ms ease; } .ds-input::placeholder { color: hsl(var(--muted-foreground)); } .ds-input:focus-visible { outline: none; border-color: transparent; box-shadow: 0 0 0 2px hsl(var(--ring)), 0 0 0 4px hsl(var(--background)); } .ds-input:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Sidebar Feed Item (resting / hovered / selected)",
+      "kind": "nav",
+      "refersTo": "sidebar-feed-item",
+      "description": "A feed row in the sidebar. Transparent at rest, denser tint on hover and selected. Unread count right-aligned. No side-stripe.",
+      "html": "<div class=\"ds-feed-list\"><div class=\"ds-feed-item\"><span class=\"ds-feed-title\">Hacker News</span><span class=\"ds-feed-count\">12</span></div><div class=\"ds-feed-item ds-is-hovered\"><span class=\"ds-feed-title\">The Verge</span><span class=\"ds-feed-count\">3</span></div><div class=\"ds-feed-item ds-is-selected\"><span class=\"ds-feed-title\">Stratechery</span><span class=\"ds-feed-count\">5</span></div></div>",
+      "css": ".ds-feed-list { display: flex; flex-direction: column; gap: 2px; font-family: var(--font-ui); } .ds-feed-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: transparent; color: hsl(var(--foreground)); border: none; border-radius: 6px; font-size: 0.875rem; line-height: 1.5; cursor: pointer; transition: background-color 100ms ease; } .ds-feed-item.ds-is-hovered, .ds-feed-item:hover { background: hsl(var(--sidebar-hover)); } .ds-feed-item.ds-is-selected { background: hsl(var(--sidebar-selected)); } .ds-feed-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-feed-count { color: hsl(var(--muted-foreground)); font-size: 0.75rem; font-weight: 600; } .ds-feed-item:focus-visible { outline: none; box-shadow: 0 0 0 2px hsl(var(--ring)); }"
+    },
+    {
+      "name": "Article List Row (unread, with unread dot)",
+      "kind": "custom",
+      "refersTo": "article-list-item",
+      "description": "A row in the article list. Unread = 8px primary dot; selected row uses denser article-hover tint, not a side-stripe.",
+      "html": "<div class=\"ds-article-list\"><div class=\"ds-article-row ds-is-unread ds-is-selected\"><span class=\"ds-unread-dot\" aria-hidden=\"true\"></span><span class=\"ds-article-title\">Deep into the new React compiler: what actually changed</span></div><div class=\"ds-article-row ds-is-unread\"><span class=\"ds-unread-dot\" aria-hidden=\"true\"></span><span class=\"ds-article-title\">A quiet theory of typography and the reading room</span></div><div class=\"ds-article-row\"><span class=\"ds-unread-dot ds-is-hidden\" aria-hidden=\"true\"></span><span class=\"ds-article-title\">Reeder 5 review: chrome that recedes</span></div></div>",
+      "css": ".ds-article-list { display: flex; flex-direction: column; font-family: var(--font-ui); } .ds-article-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: transparent; border-bottom: 1px solid hsl(var(--border)); transition: background-color 100ms ease; cursor: pointer; } .ds-article-row:hover { background: hsl(var(--article-hover) / 0.7); } .ds-article-row.ds-is-selected { background: hsl(var(--article-hover)); } .ds-article-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.875rem; font-weight: 500; color: hsl(var(--foreground)); } .ds-unread-dot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 9999px; background: hsl(var(--primary)); } .ds-unread-dot.ds-is-hidden { background: transparent; } .ds-article-row:focus-visible { outline: none; box-shadow: inset 0 0 0 2px hsl(var(--ring)); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "button-primary",
+      "description": "Used sparingly — the app's surfaces are lists and reader prose, not card grids. Nested cards are forbidden. shadow-sm is the resting ceiling.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-head\"><div class=\"ds-card-title\">Source settings</div><div class=\"ds-card-desc\">Configure refresh and full-text extraction.</div></div><div class=\"ds-card-body\">Card content lives here.</div></div>",
+      "css": ".ds-card { background: hsl(var(--card)); color: hsl(var(--card-foreground)); border: 1px solid hsl(var(--border)); border-radius: 6px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); font-family: var(--font-ui); } .ds-card-head { display: flex; flex-direction: column; gap: 6px; padding: 24px; } .ds-card-title { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 600; line-height: 1.25; } .ds-card-desc { font-size: 0.875rem; color: hsl(var(--muted-foreground)); } .ds-card-body { padding: 0 24px 24px; font-size: 0.875rem; line-height: 1.5; }"
+    },
+    {
+      "name": "Unread Count Badge",
+      "kind": "chip",
+      "refersTo": "chip-unread-dot",
+      "description": "Sidebar unread counts. Primary background, pill radius, 12px font-semibold.",
+      "html": "<span class=\"ds-badge\">12</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; padding: 2px 10px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border-radius: 9999px; font-family: var(--font-ui); font-size: 0.75rem; font-weight: 600; line-height: 1.4; }"
+    },
+    {
+      "name": "AI Chat — Assistant message bubble",
+      "kind": "custom",
+      "refersTo": "chat-bubble-ai",
+      "description": "AI assistant bubble. Muted background, recessed vs. user bubble so the reader's eye stays with their input and the article. Assistant avatar is an understated Bot icon in primary/10.",
+      "html": "<div class=\"ds-chat-row ds-chat-ai\"><div class=\"ds-avatar\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"10\" rx=\"2\"/><circle cx=\"12\" cy=\"5\" r=\"2\"/><path d=\"M12 7v4\"/><line x1=\"8\" y1=\"16\" x2=\"8\" y2=\"16\"/><line x1=\"16\" y1=\"16\" x2=\"16\" y2=\"16\"/></svg></div><div class=\"ds-bubble ds-bubble-ai\">Here is a concise summary of the article.</div></div>",
+      "css": ".ds-chat-row { display: flex; align-items: flex-start; gap: 8px; font-family: var(--font-ui); } .ds-avatar { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 9999px; background: hsl(var(--primary) / 0.1); color: hsl(var(--primary)); } .ds-avatar svg { width: 16px; height: 16px; } .ds-bubble { padding: 10px 14px; border-radius: 6px; font-size: 0.875rem; line-height: 1.5; max-width: 75%; } .ds-bubble-ai { background: hsl(var(--chat-bubble-ai)); color: hsl(var(--foreground)); }"
+    },
+    {
+      "name": "AI Chat — User message bubble",
+      "kind": "custom",
+      "refersTo": "chat-bubble-user",
+      "description": "User's own message. Primary at 12% alpha — same hue family as prose links, so the user's voice is visibly part of the article's color world.",
+      "html": "<div class=\"ds-chat-row ds-chat-user\"><div class=\"ds-bubble ds-bubble-user\">Summarize this in under 100 words.</div></div>",
+      "css": ".ds-chat-row.ds-chat-user { justify-content: flex-end; } .ds-bubble-user { background: hsl(var(--chat-bubble-user)); color: hsl(var(--foreground)); }"
+    },
+    {
+      "name": "Typing Indicator (AI generating)",
+      "kind": "custom",
+      "refersTo": "button-primary",
+      "description": "Three 6px dots, foreground/50, staggered 150ms bounce. No colored halo, no blinking cursor. State feedback only; disables to a crossfade under prefers-reduced-motion.",
+      "html": "<div class=\"ds-typing\" aria-label=\"Assistant is typing\"><span class=\"ds-dot\"></span><span class=\"ds-dot\"></span><span class=\"ds-dot\"></span></div>",
+      "css": ".ds-typing { display: inline-flex; align-items: center; gap: 4px; padding: 10px 14px; } .ds-dot { width: 6px; height: 6px; border-radius: 9999px; background: hsl(var(--foreground) / 0.5); animation: ds-bounce 1.4s ease-in-out infinite; } .ds-dot:nth-child(2) { animation-delay: 150ms; } .ds-dot:nth-child(3) { animation-delay: 300ms; } @keyframes ds-bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-4px); } } @media (prefers-reduced-motion: reduce) { .ds-dot { animation: none; opacity: 0.6; } .ds-dot:nth-child(2) { animation-delay: 0; } .ds-dot:nth-child(3) { animation-delay: 0; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Reading Room",
+    "overview": "Feedlyra's interface is a private reading room: walls lined with subscriptions you chose, a quiet desk with a single open article, an assistant who waits in the corner and speaks only when addressed. The chrome withdraws; the text takes the chair. Every surface is calibrated so that typography, line length, and reading rhythm carry the experience, not ornament.\n\nThe system runs Restrained by default — one accent carries primary actions and current state, everything else is tinted neutral. Depth comes from subtle tonal layering (sidebar cooler than content, selected states denser than hover), not from shadow or blur. Motion is 100–150ms and only conveys state (hover, active, generating, error); nothing choreographs on load. AI is visually co-author with the reader's prose: same color family, same density, never a louder surface than the article it serves.",
+    "keyCharacteristics": [
+      "Reading rhythm over information density; whitespace is structural, not absence.",
+      "One accent, three switchable hues (Indigo / Amber / Forest) for accessibility and mood.",
+      "Tonal layering carries depth; shadow is reserved for floating layers (dialog, popover, toast).",
+      "Chrome stays neutral until touched; interaction is the only thing that lights up.",
+      "Dark mode is a first-class citizen, tuned for long evening reading sessions, not an inverted afterthought."
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "The primary hue appears on no more than ~10% of any given screen — primary buttons, the unread dot, current selection, prose links, blockquote border. If the accent starts filling backgrounds or large surfaces, the reading room has become a dashboard.", "section": "colors" },
+      { "name": "The Three Hues Rule", "body": "Indigo, Amber, and Forest are the only accents that exist. They are mutually exclusive per session, set once via the theme toggle. Never combine two hues on one screen, and never introduce a fourth.", "section": "colors" },
+      { "name": "The Blue-Undertone Rule", "body": "All neutrals carry a faint blue undertone (hue ≈ 220–225°, chroma < 0.06) to keep the surface cohesive with the cool reading-room identity. Do not drift toward cream, sand, or warm parchment — that is the saturated AI default this product refuses.", "section": "colors" },
+      { "name": "The Chrome Serif-Free Rule", "body": "Merriweather appears only inside the article reader .prose. Buttons, sidebars, chat bubbles, and settings chrome run Onest. Mixing the serif into chrome makes the reading room feel like a marketing site.", "section": "typography" },
+      { "name": "The Fixed-Scale Rule", "body": "UI type uses fixed rem values, not fluid clamp scales. A user resizes their reader font; they do not resize the chrome. Fluid headings belong on landing pages, not in a tool used for hours.", "section": "typography" },
+      { "name": "The No-Eyebrow Rule", "body": "Section headings stand on their own typographic weight. No small all-caps tracked kicker ('ABOUT' / 'FEEDS' / 'SETTINGS') above them.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "A surface at rest has no shadow. Shadow appears only when a layer is floating above the page (dialog, popover, toast) or in response to interaction that genuinely lifts the element. Adding shadow-md to a resting card to 'give it depth' is the SaaS-dashboard reflex this system refuses.", "section": "elevation" },
+      { "name": "The Tonal-Layering Rule", "body": "When two regions need to feel different, change the background tint (sidebar vs. content, hover vs. selected vs. resting), not the shadow. Two tones do the work that a drop shadow would do worse.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep the primary accent under ~10% of any screen — buttons, unread dot, selection, links, blockquote border. Its rarity is the signal.",
+      "Do use tonal layering (sidebar cooler/deeper than content, selected denser than hover) instead of shadow to separate regions.",
+      "Do ship every interactive component with default / hover / focus-visible / active / disabled / loading — the reading room is a tool used for hours; half-states erode trust.",
+      "Do use Merriweather only inside .prose (article reader). Everything else runs Onest.",
+      "Do keep the focus ring vocabulary identical across buttons and inputs (focus-visible:ring-2 ring-ring ring-offset-2 ring-offset-background).",
+      "Do respect prefers-reduced-motion: the 150ms color transition and the chat typing dots must fall back to instant/crossfade.",
+      "Do let the user switch hues (Indigo / Amber / Forest) and themes (light / dark / system) — accessibility is a first-class feature, not a patch.",
+      "Do cap reader prose at 65–75ch and honor the user's font/size/line-height/width settings from the reading popover."
+    ],
+    "donts": [
+      "Don't use gradients — gradient backgrounds, gradient text (background-clip: text), colored glows. This is the SaaS-dashboard reflex PRODUCT.md explicitly bans.",
+      "Don't use glassmorphism / backdrop-blur decoratively. Blur is allowed only inside genuinely floating layers (dialogs, popovers) where it earned its place.",
+      "Don't apply border-left/border-right greater than 1px as a colored accent on cards, list items, or alerts. (The blockquote's 3px left border is the sole, named exception.)",
+      "Don't put a small all-caps tracked eyebrow ('ABOUT' / 'FEEDS' / 'FEEDS') above every section heading — it is the AI-grammar reflex this product refuses.",
+      "Don't lay out identical icon+heading+text cards in a grid. The article list is rows with typography + unread dot, not a card grid.",
+      "Don't make the AI chat panel louder than the article: no colored typing halos, no blinking cursors, no full-saturation bubble backgrounds. AI bubbles use muted; user bubbles use accent alpha.",
+      "Don't drift the neutral background toward cream / sand / parchment / warm paper. The neutral ramp is cool, blue-undertoned, low-chroma — that is the reading room's identity, not the 2026 AI-cream default.",
+      "Don't use fluid clamp() scales for chrome (sidebar, buttons, labels). Fixed rem values; the reader's own font setting is the only fluid type.",
+      "Don't introduce a fourth accent hue. Three (Indigo, Amber, Forest) is the complete vocabulary, mutually exclusive per session.",
+      "Don't ship a resting surface with shadow-md or heavier. shadow-sm is the resting ceiling; heavier shadows belong only to floating layers."
+    ]
+  }
+}
