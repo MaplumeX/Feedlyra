@@ -57,3 +57,22 @@ class DiscoveredFeed(BaseModel):
 
 class FeedDiscoveryRequest(BaseModel):
     url: str = Field(max_length=2048)
+
+
+class BulkFeedMoveRequest(BaseModel):
+    feed_ids: list[UUID] = Field(min_length=1)
+    category_id: UUID | None = None
+
+
+class BulkFeedDeleteRequest(BaseModel):
+    feed_ids: list[UUID] = Field(min_length=1)
+
+
+class BulkMoveResult(BaseModel):
+    updated: list[UUID]
+    not_found: list[UUID]
+
+
+class BulkDeleteResult(BaseModel):
+    deleted: list[UUID]
+    not_found: list[UUID]
