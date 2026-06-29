@@ -462,7 +462,7 @@ def parse_opml(xml_content: str) -> list[dict[str, str | None]]:
     Inner outlines with xmlUrl are feeds assigned to the parent category.
     Top-level outlines with xmlUrl are uncategorized feeds.
     """
-    soup = BeautifulSoup(xml_content, "lxml")
+    soup = BeautifulSoup(xml_content, "xml")
     feeds: list[dict[str, str | None]] = []
 
     body = soup.find("body")
