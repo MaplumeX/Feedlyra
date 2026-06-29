@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
@@ -256,7 +255,7 @@ export function SubscriptionsTab() {
         ) : feeds.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">{t("noFeeds")}</p>
         ) : (
-          <ScrollArea className="max-h-[280px]">
+          <div className="max-h-[280px] overflow-y-auto rounded-md">
             <div className="space-y-1">
               {sortedFeeds.map((feed) => (
                 <div
@@ -296,7 +295,7 @@ export function SubscriptionsTab() {
                 </div>
               ))}
             </div>
-          </ScrollArea>
+          </div>
         )}
       </div>
 
