@@ -60,10 +60,15 @@ A self-hosted RSS feed reader with integrated AI capabilities — summarize, tra
 ## Quick Deployment (Docker Compose)
 
 The fastest way to self-host Feedlyra — pulls prebuilt multi-arch images
-(`linux/amd64`, `linux/arm64`) from GHCR, no build step needed:
+(`linux/amd64`, `linux/arm64`) from GHCR, no build step needed. You only need
+the two files `docker-compose.yml` and `.env.example`; download them into a
+fresh directory and start:
 
 ```bash
-cp .env.example .env          # then edit SECRET_KEY / POSTGRES_PASSWORD / AI_DEFAULT_API_KEY
+mkdir feedlyra && cd feedlyra
+curl -fsSL https://raw.githubusercontent.com/MaplumeX/Feedlyra/main/docker-compose.yml -o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/MaplumeX/Feedlyra/main/.env.example -o .env.example
+cp .env.example .env          # then edit SECRET_KEY / POSTGRES_PASSWORD (AI key can be set in-app later)
 docker compose up -d
 ```
 
@@ -133,7 +138,7 @@ npm run preview  # Preview production build
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Refresh token lifetime |
 | `CORS_ORIGINS` | `http://localhost:5173` | Comma-separated allowed origins |
 | `AI_DEFAULT_BASE_URL` | `https://api.openai.com/v1` | Default OpenAI-compatible API base URL |
-| `AI_DEFAULT_API_KEY` | *(empty)* | Server-wide fallback API key |
+| `AI_DEFAULT_API_KEY` | *(empty)* | Optional server-wide fallback key; per-user AI keys (base URL / key / model) are configured in-app and encrypted at rest |
 | `AI_DEFAULT_MODEL` | `gpt-4o-mini` | Default LLM model |
 
 ### Frontend — Environment Variables

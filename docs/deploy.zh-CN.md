@@ -7,7 +7,7 @@ frontend + PostgreSQL），适用于本地试用与 VPS 自托管。
 
 - Docker Engine（含 `docker compose` 插件）。按官方指引安装：<https://docs.docker.com/get-docker/>。
 - 仓库中的两个文件：`docker-compose.yml` 和 `.env.example`。如果只想运行、不
-  从源码构建，仅需这两个文件——预构建镜像会自动从 GHCR 拉取。
+  从源码构建，仅需这两个文件——预构建镜像会自动从 GHCR 拉取。在下方[快速开始](#快速开始预构建镜像)的命令里会把这两个文件下载到一个新目录中（当然也可以直接 `git clone` 整个仓库）。
 - 一个 OpenAI 兼容的 API Key，用于 AI 功能（摘要 / 翻译 / 对话）。没有也能启动，
   但调用 AI 功能时会返回配置错误。
 
@@ -19,28 +19,32 @@ frontend + PostgreSQL），适用于本地试用与 VPS 自托管。
 - `ghcr.io/maplumex/feedlyra-backend:latest`
 - `ghcr.io/maplumex/feedlyra-frontend:latest`
 
-`docker-compose.yml` 默认引用这些镜像，所以最简部署无需 clone 仓库——只要这两个文件：
+`docker-compose.yml` 默认引用这些镜像，所以最简部署无需 clone 仓库——只要这两个文件。新建一个目录并下载它们：
 
 ```bash
-# 下载这两个文件（或从仓库复制）：
-#   docker-compose.yml  和  .env.example
+# 1. 为本次部署创建一个目录
+mkdir feedlyra && cd feedlyra
 
-# 1. 从模板生成配置
+# 2. 下载这两个文件（或者：clone 本仓库后进入目录也可以）
+curl -fsSL https://raw.githubusercontent.com/MaplumeX/Feedlyra/main/docker-compose.yml -o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/MaplumeX/Feedlyra/main/.env.example -o .env.example
+
+# 3. 从模板生成配置
 cp .env.example .env
 
-# 2. 编辑 .env —— 至少修改以下几项（见下方「配置」）：
+# 4. 编辑 .env —— 至少修改以下几项（见下方「配置」）：
 #    - SECRET_KEY
 #    - POSTGRES_PASSWORD
-#    - AI_DEFAULT_API_KEY
+#    (AI_DEFAULT_API_KEY 可选——AI key 可稍后在应用内按用户配置)
 
-# 3. 拉取镜像并启动（无构建步骤）
+# 5. 拉取镜像并启动（无构建步骤）
 docker compose up -d
 
-# 4. 查看后端启动日志（会先跑迁移）
+# 6. 查看后端启动日志（会先跑迁移）
 docker compose logs -f backend
 #    看到 "Uvicorn running on http://0.0.0.0:8000" 即代表就绪。
 
-# 5. 打开应用
+# 7. 打开应用
 #    http://localhost:${FRONTEND_PORT}   （默认 7756）
 ```
 
@@ -72,7 +76,6 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 |------|------|
 | `SECRET_KEY` | 用于签发 JWT token，**同时**派生 Fernet 密钥加密用户 AI API Key。用强随机串，例如 `python3 -c "import secrets; print(secrets.token_urlsafe(48))"`。 |
 | `POSTGRES_PASSWORD` | 数据库密码，设一个强值。 |
-| `AI_DEFAULT_API_KEY` | OpenAI 兼容 API Key，否则 AI 功能返回配置错误。 |
 
 其他变量（默认值见 `.env.example`）：
 
@@ -83,6 +86,7 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 | `ACCESS_TOKEN_EXPIRE_MINUTES` / `REFRESH_TOKEN_EXPIRE_DAYS` | JWT token 有效期。 |
 | `CORS_ORIGINS` | 逗号分隔的允许来源。通过 nginx 同源，保留用于本地开发。 |
 | `UPLOAD_DIR` | 上传聊天图片的容器路径，挂载在 `feedlyra_uploads` 数据卷上。如修改需同步 `docker-compose.yml`。 |
+| `AI_DEFAULT_API_KEY` | 可选的服务器级默认 key。留空则在应用内按用户配置 AI key（静态加密存储）。 |
 | `AI_DEFAULT_BASE_URL` / `AI_DEFAULT_MODEL` | OpenAI 兼容端点与默认模型。 |
 | `FRONTEND_PORT` | 映射到 nginx 的主机端口。 |
 

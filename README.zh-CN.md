@@ -60,10 +60,14 @@
 ## 一键部署（Docker Compose）
 
 自托管 Feedlyra 最快的方式——从 GHCR 拉取预构建多架构镜像
-（`linux/amd64`、`linux/arm64`），无需本地构建：
+（`linux/amd64`、`linux/arm64`），无需本地构建。只需两个文件
+`docker-compose.yml` 与 `.env.example`，下载到新目录后启动即可：
 
 ```bash
-cp .env.example .env          # 然后修改 SECRET_KEY / POSTGRES_PASSWORD / AI_DEFAULT_API_KEY
+mkdir feedlyra && cd feedlyra
+curl -fsSL https://raw.githubusercontent.com/MaplumeX/Feedlyra/main/docker-compose.yml -o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/MaplumeX/Feedlyra/main/.env.example -o .env.example
+cp .env.example .env          # 然后修改 SECRET_KEY / POSTGRES_PASSWORD（AI key 可稍后在应用内配置）
 docker compose up -d
 ```
 
@@ -133,7 +137,7 @@ npm run preview  # 预览生产构建
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Refresh token 有效期（天） |
 | `CORS_ORIGINS` | `http://localhost:5173` | 逗号分隔的允许来源 |
 | `AI_DEFAULT_BASE_URL` | `https://api.openai.com/v1` | 默认 OpenAI 兼容 API 基础 URL |
-| `AI_DEFAULT_API_KEY` | *（空）* | 服务器级默认 API Key |
+| `AI_DEFAULT_API_KEY` | *（空）* | 可选的服务器级默认 key；按用户/按功能的 AI 配置在应用内完成，静态加密存储 |
 | `AI_DEFAULT_MODEL` | `gpt-4o-mini` | 默认 LLM 模型 |
 
 ### 前端 — 环境变量

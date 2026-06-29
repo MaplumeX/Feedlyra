@@ -8,9 +8,10 @@ self-hosting on a VPS.
 
 - Docker Engine (with the `docker compose` plugin). Install via the official
   instructions for your platform: <https://docs.docker.com/get-docker/>.
-- The two files in this repository: `docker-compose.yml` and `.env.example`.
+- Two files from this repository: `docker-compose.yml` and `.env.example`.
   If you just want to run the app (not build from source), you only need these
-  two files — prebuilt images are pulled from GHCR automatically.
+  two files — prebuilt images are pulled from GHCR automatically. Download
+  them into a fresh directory with the commands shown in [Quick start](#quick-start-prebuilt-images) below (a full `git clone` of this repo works too).
 - An OpenAI-compatible API key for the AI features (summarize / translate /
   chat). The app still runs without it, but AI features will return config
   errors when invoked.
@@ -24,28 +25,33 @@ GitHub Container Registry on every push to `main` and on version tags:
 - `ghcr.io/maplumex/feedlyra-frontend:latest`
 
 `docker-compose.yml` references these by default, so the simplest deployment
-needs no clone of this repo — just the two files:
+needs no clone of this repo — just the two files. Create a fresh directory and
+download them:
 
 ```bash
-# Download the two files (or copy them from the repo):
-#   docker-compose.yml  and  .env.example
+# 1. Create a directory for the deployment
+mkdir feedlyra && cd feedlyra
 
-# 1. Create your config from the template
+# 2. Download the two files (or: clone this repo and cd into it instead)
+curl -fsSL https://raw.githubusercontent.com/MaplumeX/Feedlyra/main/docker-compose.yml -o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/MaplumeX/Feedlyra/main/.env.example -o .env.example
+
+# 3. Create your config from the template
 cp .env.example .env
 
-# 2. Edit .env — at minimum change these (see "Configuration" below):
+# 4. Edit .env — at minimum change these (see "Configuration" below):
 #    - SECRET_KEY
 #    - POSTGRES_PASSWORD
-#    - AI_DEFAULT_API_KEY
+#    (AI_DEFAULT_API_KEY is optional — AI keys can be set per-user in-app later)
 
-# 3. Pull the images and start everything (no build step)
+# 5. Pull the images and start everything (no build step)
 docker compose up -d
 
-# 4. Watch the backend start (migrations run first)
+# 6. Watch the backend start (migrations run first)
 docker compose logs -f backend
 #    When you see "Uvicorn running on http://0.0.0.0:8000" the stack is ready.
 
-# 5. Open the app
+# 7. Open the app
 #    http://localhost:${FRONTEND_PORT}   (default 7756)
 ```
 
@@ -79,7 +85,6 @@ Must-change before production:
 |----------|-----|
 | `SECRET_KEY` | Used to sign JWT tokens **and** to derive the Fernet key that encrypts user AI API keys at rest. Use a strong random string, e.g. `python3 -c "import secrets; print(secrets.token_urlsafe(48))"`. |
 | `POSTGRES_PASSWORD` | Database password. Pick a strong value. |
-| `AI_DEFAULT_API_KEY` | Your OpenAI-compatible API key, otherwise AI features return a configuration error. |
 
 Other variables (defaults in `.env.example`):
 
@@ -90,6 +95,7 @@ Other variables (defaults in `.env.example`):
 | `ACCESS_TOKEN_EXPIRE_MINUTES` / `REFRESH_TOKEN_EXPIRE_DAYS` | JWT token lifetimes. |
 | `CORS_ORIGINS` | Comma-separated allowed origins. Same-origin via nginx, kept for local dev. |
 | `UPLOAD_DIR` | Container path for uploaded chat images; mounted on the `feedlyra_uploads` volume. Override it in `docker-compose.yml` if changed. |
+| `AI_DEFAULT_API_KEY` | Optional server-wide fallback key. Leave empty to configure AI keys per-user in-app (encrypted at rest). |
 | `AI_DEFAULT_BASE_URL` / `AI_DEFAULT_MODEL` | OpenAI-compatible endpoint and default model. |
 | `FRONTEND_PORT` | Host port mapped to nginx. |
 
