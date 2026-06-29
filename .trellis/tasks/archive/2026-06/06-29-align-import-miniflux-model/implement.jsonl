@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend conventions overview: async-first, no repository layer, pydantic-settings, no linting/CI靠 uv run pytest + 手验 — governs new feed_worker/feed_batch/http_client modules"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Forbidden patterns (no bare except pass, no request-injected DB sessions in background tasks) — directly applies to worker pool / scheduler background code using async_session()"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "HTTPException conventions + 202/502 status code usage; refresh-all→202, refresh_feed→502 must follow these"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "SQLAlchemy 2.0 async + Alembic patterns; new 018_feed_disabled migration + batch builder query must follow"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Log level/pattern conventions for scheduler tick / worker success/fail / per-host skip logs"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Four-layer routers→services→models+schemas layout; new services/http_client.py, services/feed_batch.py, services/feed_worker.py placement"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Feature spans API+service+DB+frontend (progress status, feed badges) — cross-layer data flow checklist"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "fetch_and_store_feed shared between due-tick / manual-refresh / refresh-all paths; shared httpx client — reuse audit"}
