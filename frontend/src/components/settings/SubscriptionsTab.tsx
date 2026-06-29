@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Download, ListChecks, Loader2, MoreHorizontal, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import { Download, ListChecks, Loader2, MoreHorizontal, Pencil, Plus, RefreshCw, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,7 +36,11 @@ import {
   useBulkDeleteFeeds,
   useImportOPML,
   useExportOPML,
+  useRefreshAllFeeds,
+  useFeedJobStatus,
+  queryKeys,
 } from "@/api/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 import { FeedIcon } from "@/components/FeedIcon";
 import { FeedSortMenu } from "@/components/FeedSortMenu";
 import { FeedSettingsDialog } from "@/components/FeedSettingsDialog";
@@ -54,6 +58,7 @@ export function SubscriptionsTab() {
   const deleteCategory = useDeleteCategory();
   const importOPML = useImportOPML();
   const exportOPML = useExportOPML();
+  const qc = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const sortedFeeds = useMemo(() => sortFeeds(feeds, feedSort), [feeds, feedSort]);
@@ -127,6 +132,29 @@ export function SubscriptionsTab() {
     }
   }
 
+  // Job-progress polling: starts after OPML import or refresh-all, stops once
+  // the worker pool batch finishes (done + failed == total && total > 0).
+  const [isPollingJobs, setIsPollingJobs] = useState(false);
+  const refreshAll = useRefreshAllFeeds();
+  const jobStatus = useFeedJobStatus(isPollingJobs);
+  const jobData = jobStatus.data;
+  const jobTotal = jobData?.total ?? 0;
+  const jobDone = jobData?.done ?? 0;
+  const jobFailed = jobData?.failed ?? 0;
+
+  useEffect(() => {
+    if (!isPollingJobs) return;
+    if (jobTotal > 0 && jobDone + jobFailed >= jobTotal) {
+      setIsPollingJobs(false);
+      if (jobFailed > 0) {
+        toast.success(t("importDoneWithErrors", { failed: jobFailed }));
+      } else {
+        toast.success(t("importDone"));
+      }
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+    }
+  }, [isPollingJobs, jobTotal, jobDone, jobFailed, qc, t]);
+
   const handleExport = async () => {
     try {
       const result = await exportOPML.mutateAsync();
@@ -153,6 +181,12 @@ export function SubscriptionsTab() {
     try {
       const result = await importOPML.mutateAsync(file);
       toast.success(t("opmlImportSuccess", { count: result.length }));
+      // New feeds are enqueued into the worker pool; start polling for
+      // progress — unless nothing new was created (all duplicates), in which
+      // case the batch is empty and polling would never reach completion.
+      if (result.length > 0) {
+        setIsPollingJobs(true);
+      }
     } catch {
       toast.error(t("opmlImportFailed"));
     }
@@ -227,6 +261,51 @@ export function SubscriptionsTab() {
     deleteFeed.mutate(feed.id, {
       onSuccess: () => toast.success(t("feedDeleted")),
     });
+  }
+
+  function handleRefreshAll() {
+    refreshAll.mutate(undefined, {
+      onSuccess: (data) => {
+        // Backend returns 202 { total: N }; only start polling if a batch
+        // was actually enqueued (total > 0). With zero feeds the tracker
+        // stays all-zero, and polling would never satisfy the completion
+        // condition.
+        if (data.total > 0) {
+          setIsPollingJobs(true);
+        }
+        toast.success(t("refreshAllStarted"));
+      },
+      onError: () => {
+        toast.error(t("refreshAllFailed"));
+      },
+    });
+  }
+
+  function feedStatusBadge(feed: Feed) {
+    // Priority: disabled > error > pending. Mutually exclusive — one badge at a time.
+    if (feed.disabled) {
+      return (
+        <Badge variant="secondary" className="shrink-0 text-xs text-muted-foreground">
+          {t("feedStatusDisabled")}
+        </Badge>
+      );
+    }
+    if (feed.parsing_error_message) {
+      return (
+        <Badge variant="destructive" className="shrink-0 text-xs">
+          {t("feedStatusError")}
+        </Badge>
+      );
+    }
+    if (feed.checked_at == null) {
+      return (
+        <Badge variant="outline" className="shrink-0 gap-1 text-xs text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          {t("feedStatusPending")}
+        </Badge>
+      );
+    }
+    return null;
   }
 
   return (
@@ -378,6 +457,17 @@ export function SubscriptionsTab() {
                   <ListChecks className="h-3.5 w-3.5" />
                   {t("bulkEdit")}
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 text-xs text-muted-foreground"
+                  onClick={handleRefreshAll}
+                  disabled={refreshAll.isPending}
+                  title={t("refreshAll")}
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${refreshAll.isPending ? "animate-spin" : ""}`} />
+                  {t("refreshAll")}
+                </Button>
                 <FeedSortMenu
                   value={feedSort}
                   onChange={(nextSort) => setReader({ feedSort: nextSort })}
@@ -388,6 +478,15 @@ export function SubscriptionsTab() {
             )}
           </div>
         </div>
+        {isPollingJobs && jobTotal > 0 && (
+          <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <span className="min-w-0 flex-1 truncate">
+              {t("importProgress", { done: jobDone + jobFailed, total: jobTotal })}
+              {jobFailed > 0 ? ` · ${t("importProgressFailed", { failed: jobFailed })}` : ""}
+            </span>
+          </div>
+        )}
         {feedsLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -411,6 +510,7 @@ export function SubscriptionsTab() {
                   )}
                   <FeedIcon iconUrl={feed.icon_url} className="h-4 w-4" />
                   <span className="min-w-0 flex-1 truncate text-sm">{feed.title}</span>
+                  {feedStatusBadge(feed)}
                   <Badge variant="outline" className="shrink-0 truncate text-xs">
                     {feed.category_name ?? t("uncategorized")}
                   </Badge>

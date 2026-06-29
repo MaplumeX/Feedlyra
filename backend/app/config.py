@@ -13,6 +13,12 @@ class Settings(BaseSettings):
     AI_DEFAULT_API_KEY: str = ""
     AI_DEFAULT_MODEL: str = "gpt-4o-mini"
     UPLOAD_DIR: str = "./uploads/chat_images"
+    # Feed scheduler / worker pool (aligned with Miniflux model)
+    WORKER_POOL_SIZE: int = 8
+    FEED_REFRESH_INTERVAL: int = 60
+    BATCH_SIZE: int = 100
+    POLLING_LIMIT_PER_HOST: int = 3
+    POLLING_PARSING_ERROR_LIMIT: int = 3
 
     @property
     def cors_origin_list(self) -> list[str]:

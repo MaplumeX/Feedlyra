@@ -36,6 +36,7 @@ class FeedResponse(BaseModel):
     auto_full_text: bool = False
     auto_translate: bool = False
     translate_target_lang: str | None = None
+    disabled: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -44,6 +45,21 @@ class FeedWithUnread(FeedResponse):
     unread_count: int = 0
     category_id: UUID | None = None
     category_name: str | None = None
+
+
+class JobStatusResponse(BaseModel):
+    """In-memory snapshot of the currently-tracked feed job batch.
+
+    Returned by ``GET /api/feeds/jobs/status``. Fields are zero (and
+    ``last_updated_at`` is the tracker init time) when no batch is active.
+    """
+
+    total: int = 0
+    pending: int = 0
+    running: int = 0
+    done: int = 0
+    failed: int = 0
+    last_updated_at: datetime | None = None
 
 
 class OPMLExportResponse(BaseModel):

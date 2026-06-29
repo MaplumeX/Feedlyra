@@ -26,9 +26,10 @@ import type {
   Conversation,
   ConversationListResponse,
   ConversationReference,
-  ImageUploadResult,
   DiscoveredFeed,
   Feed,
+  ImageUploadResult,
+  JobStatus,
   OPMLExportResponse,
   User,
 } from "./types";
@@ -37,6 +38,9 @@ const queryKeys = {
   feeds: {
     all: ["feeds"] as const,
     list: () => [...queryKeys.feeds.all, "list"] as const,
+    jobs: {
+      status: ["feeds", "jobs", "status"] as const,
+    },
   },
   categories: {
     all: ["categories"] as const,
@@ -184,16 +188,18 @@ export function useBulkDeleteFeeds() {
   });
 }
 
-interface RefreshAllResponse {
-  refreshed: number;
-  failed: number;
+interface RefreshAllFeedsResponse {
+  total: number;
 }
 
 export function useRefreshAllFeeds() {
   const qc = useQueryClient();
   return useMutation({
     mutationKey: mutationKeys.feeds.refresh,
-    mutationFn: () => api.post<RefreshAllResponse>("/api/feeds/refresh-all", {}),
+    // Backend returns 202 Accepted { total: N } after enqueuing the user's
+    // feeds into the worker pool. The actual fetch happens asynchronously;
+    // poll `useFeedJobStatus` for progress.
+    mutationFn: () => api.post<RefreshAllFeedsResponse>("/api/feeds/refresh-all", {}),
     onMutate: () =>
       qc.cancelQueries({ queryKey: queryKeys.articles.newCounts() }),
     onSuccess: async () => {
@@ -202,6 +208,18 @@ export function useRefreshAllFeeds() {
         qc.invalidateQueries({ queryKey: queryKeys.articles.newCounts() }),
       ]);
     },
+  });
+}
+
+export function useFeedJobStatus(enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.feeds.jobs.status,
+    queryFn: () => api.get<JobStatus>("/api/feeds/jobs/status"),
+    enabled,
+    refetchInterval: enabled ? 2_000 : false,
+    // Keep the snapshot fresh while polling; never refetch on focus/mount when idle.
+    refetchOnWindowFocus: false,
+    staleTime: 0,
   });
 }
 

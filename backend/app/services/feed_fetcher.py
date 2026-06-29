@@ -14,19 +14,20 @@ from uuid import UUID
 import feedparser
 import httpx
 from bs4 import BeautifulSoup
+from email.utils import parsedate_to_datetime
 from readability import Document
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.article import Article
 from app.models.feed import Feed
+from app.services.http_client import USER_AGENT, get_http_client
 
 logger = logging.getLogger(__name__)
 
-HTTP_TIMEOUT = 30
 DEFAULT_CHECK_INTERVAL = timedelta(minutes=15)
 MAX_BACKOFF = timedelta(hours=24)
-USER_AGENT = "Feedlyra/0.1 (RSS Reader)"
 
 
 class _TextExtractor(HTMLParser):
@@ -56,28 +57,89 @@ def _extract_feed_urls_from_html(html: str, base_url: str) -> list[dict[str, str
 
 
 async def discover_feed_urls(url: str) -> list[dict[str, str]]:
-    async with httpx.AsyncClient(
-        timeout=HTTP_TIMEOUT, follow_redirects=True, headers={"User-Agent": USER_AGENT}
-    ) as client:
-        resp = await client.get(url)
-        resp.raise_for_status()
-        return _extract_feed_urls_from_html(resp.text, url)
+    resp = await get_http_client().get(url)
+    resp.raise_for_status()
+    return _extract_feed_urls_from_html(resp.text, url)
 
 
 async def _fetch_feed_content(
     url: str, etag: str | None = None, last_modified: str | None = None
-) -> tuple[int, bytes, str | None, str | None]:
+) -> tuple[int, bytes, str | None, str | None, httpx.Headers]:
     headers = {"User-Agent": USER_AGENT}
     if etag:
         headers["If-None-Match"] = etag
     if last_modified:
         headers["If-Modified-Since"] = last_modified
 
-    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, follow_redirects=True) as client:
-        resp = await client.get(url, headers=headers)
-        resp_etag = resp.headers.get("etag")
-        resp_lm = resp.headers.get("last-modified")
-        return resp.status_code, resp.content, resp_etag, resp_lm
+    client = get_http_client()
+    resp = await client.get(url, headers=headers)
+    resp_etag = resp.headers.get("etag")
+    resp_lm = resp.headers.get("last-modified")
+    return resp.status_code, resp.content, resp_etag, resp_lm, resp.headers
+
+
+def _parse_retry_after(header_value: str | None) -> timedelta | None:
+    """Parse a ``Retry-After`` response header into a timedelta.
+
+    Supports the two HTTP forms: a non-negative integer number of seconds, or
+    an HTTP-date (RFC 7231). Returns ``None`` if the header is missing or
+    cannot be parsed — callers should then fall back to normal backoff.
+    """
+    if not header_value:
+        return None
+    value = header_value.strip()
+    if not value:
+        return None
+    # Integer seconds form.
+    try:
+        seconds = int(value)
+    except ValueError:
+        pass
+    else:
+        if seconds < 0:
+            return None
+        return timedelta(seconds=seconds)
+    # HTTP-date form.
+    try:
+        retry_at = parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        return None
+    if retry_at is None:
+        return None
+    now = datetime.now(timezone.utc)
+    if retry_at.tzinfo is None:
+        retry_at = retry_at.replace(tzinfo=timezone.utc)
+    delta = retry_at - now
+    if delta.total_seconds() <= 0:
+        return timedelta(seconds=0)
+    return delta
+
+
+def _compute_next_check(
+    feed: Feed, retry_after: timedelta | None = None
+) -> tuple[datetime, bool]:
+    """Compute the next ``next_check_at`` and whether the feed must be disabled.
+
+    - If ``retry_after`` is provided (HTTP 429 with a parseable ``Retry-After``),
+      it overrides the normal/backoff schedule.
+    - Otherwise success → 15min, error → exponential backoff capped at 24h.
+    - ``should_disable`` is ``True`` when the (already-incremented) error count
+      has reached ``POLLING_PARSING_ERROR_LIMIT``.
+    """
+    now = datetime.now(timezone.utc)
+    if retry_after is not None:
+        next_check = now + retry_after
+    elif feed.parsing_error_count > 0:
+        backoff_seconds = min(
+            300 * (2 ** feed.parsing_error_count), int(MAX_BACKOFF.total_seconds())
+        )
+        next_check = now + timedelta(seconds=backoff_seconds)
+    else:
+        next_check = now + DEFAULT_CHECK_INTERVAL
+    should_disable = (
+        feed.parsing_error_count >= settings.POLLING_PARSING_ERROR_LIMIT
+    )
+    return next_check, should_disable
 
 
 def _parse_feed(content: bytes) -> feedparser.FeedParserDict:
@@ -95,26 +157,16 @@ def _extract_content_html(html: str, url: str) -> str | None:
 
 async def _fetch_and_extract_content(url: str) -> str | None:
     try:
-        async with httpx.AsyncClient(
-            timeout=HTTP_TIMEOUT, follow_redirects=True, headers={"User-Agent": USER_AGENT}
-        ) as client:
-            resp = await client.get(url)
-            resp.raise_for_status()
-            html = resp.text
+        client = get_http_client()
+        resp = await client.get(url)
+        resp.raise_for_status()
+        html = resp.text
 
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _extract_content_html, html, url)
     except Exception:
         logger.warning("Failed to fetch/extract content for %s", url)
         return None
-
-
-def _compute_next_check(feed: Feed) -> datetime:
-    now = datetime.now(timezone.utc)
-    if feed.parsing_error_count > 0:
-        backoff_seconds = min(300 * (2 ** feed.parsing_error_count), int(MAX_BACKOFF.total_seconds()))
-        return now + timedelta(seconds=backoff_seconds)
-    return now + DEFAULT_CHECK_INTERVAL
 
 
 def _html_to_text(html: str, max_len: int = 500) -> str:
@@ -206,30 +258,25 @@ async def _discover_favicon(site_url: str) -> str | None:
 
     Tries /favicon.ico first, then parses HTML for <link rel="icon">.
     """
+    client = get_http_client()
     try:
         favicon_url = urljoin(site_url, "/favicon.ico")
-        async with httpx.AsyncClient(
-            timeout=10, follow_redirects=True, headers={"User-Agent": USER_AGENT}
-        ) as client:
-            resp = await client.head(favicon_url)
-            if resp.status_code < 400:
-                return str(resp.url)
+        resp = await client.head(favicon_url)
+        if resp.status_code < 400:
+            return str(resp.url)
     except Exception:
         logger.warning("Favicon HEAD request failed for %s", site_url)
 
     try:
-        async with httpx.AsyncClient(
-            timeout=10, follow_redirects=True, headers={"User-Agent": USER_AGENT}
-        ) as client:
-            resp = await client.get(site_url)
-            if resp.status_code >= 400:
-                return None
-            soup = BeautifulSoup(resp.text, "lxml")
-            link = soup.find("link", rel=lambda r: r and "icon" in r)
-            if link and link.get("href"):
-                href = link["href"]
-                if isinstance(href, str):
-                    return urljoin(site_url, href)
+        resp = await client.get(site_url)
+        if resp.status_code >= 400:
+            return None
+        soup = BeautifulSoup(resp.text, "lxml")
+        link = soup.find("link", rel=lambda r: r and "icon" in r)
+        if link and link.get("href"):
+            href = link["href"]
+            if isinstance(href, str):
+                return urljoin(site_url, href)
     except Exception:
         logger.warning("Favicon HTML discovery failed for %s", site_url)
 
@@ -239,13 +286,26 @@ async def _discover_favicon(site_url: str) -> str | None:
 async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
     now = datetime.now(timezone.utc)
     is_initial_fetch = feed.checked_at is None
-    status_code, content, etag, last_modified = await _fetch_feed_content(
+    status_code, content, etag, last_modified, resp_headers = await _fetch_feed_content(
         feed.url, feed.etag_header, feed.last_modified_header
     )
 
     if status_code == 304:
         feed.checked_at = now
-        feed.next_check_at = _compute_next_check(feed)
+        next_check, _should_disable = _compute_next_check(feed)
+        feed.next_check_at = next_check
+        await db.commit()
+        return
+
+    if status_code == 429:
+        feed.parsing_error_count += 1
+        feed.parsing_error_message = "HTTP 429"
+        feed.checked_at = now
+        retry_after = _parse_retry_after(resp_headers.get("retry-after"))
+        next_check, should_disable = _compute_next_check(feed, retry_after=retry_after)
+        if should_disable:
+            feed.disabled = True
+        feed.next_check_at = next_check
         await db.commit()
         return
 
@@ -253,7 +313,10 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
         feed.parsing_error_count += 1
         feed.parsing_error_message = f"HTTP {status_code}"
         feed.checked_at = now
-        feed.next_check_at = _compute_next_check(feed)
+        next_check, should_disable = _compute_next_check(feed)
+        if should_disable:
+            feed.disabled = True
+        feed.next_check_at = next_check
         await db.commit()
         return
 
@@ -272,7 +335,10 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
 
     if not parsed.entries:
         feed.checked_at = now
-        feed.next_check_at = _compute_next_check(feed)
+        next_check, should_disable = _compute_next_check(feed)
+        if should_disable:
+            feed.disabled = True
+        feed.next_check_at = next_check
         if etag:
             feed.etag_header = etag
         if last_modified:
@@ -371,43 +437,63 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
             article.created_at = ingested_at
 
     feed.checked_at = now
-    feed.next_check_at = _compute_next_check(feed)
+    next_check, should_disable = _compute_next_check(feed)
+    if should_disable:
+        feed.disabled = True
+    feed.next_check_at = next_check
     await db.commit()
 
 
 async def refresh_all_feeds(db: AsyncSession, user_id: UUID) -> dict[str, int]:
-    result = await db.execute(select(Feed).where(Feed.user_id == user_id))
+    """Enqueue a manual refresh of all non-disabled feeds for a user.
+
+    The request-scoped ``db`` is used only to mark the target feeds due
+    (``next_check_at = now() + DEFAULT_CHECK_INTERVAL``) and commit — the
+    actual fetching happens in the worker pool's own sessions. The future
+    ``next_check_at`` keeps the periodic due-tick from selecting these feeds
+    while the manual batch is in flight (the worker's ``fetch_and_store_feed``
+    overwrites it on completion). Returns ``{"total": N}``; HTTP semantics
+    (202 Accepted) are finalized in the router (Step 8).
+    """
+    from app.services.feed_worker import Job, WorkerPool, get_tracker
+
+    # Local import to avoid a module-level circular dependency: feed_worker
+    # imports fetch_and_store_feed from this module.
+    from app.services.feed_worker import get_worker_pool
+
+    result = await db.execute(
+        select(Feed).where(Feed.user_id == user_id, Feed.disabled.is_not(True))
+    )
     feeds = result.scalars().all()
-
-    refreshed = 0
-    failed = 0
+    due_at = datetime.now(timezone.utc) + DEFAULT_CHECK_INTERVAL
     for feed in feeds:
-        try:
-            await fetch_and_store_feed(feed, db)
-            refreshed += 1
-        except Exception:
-            failed += 1
-            logger.exception("Failed to refresh feed %s", feed.id)
+        feed.next_check_at = due_at
+    await db.commit()
 
-    return {"refreshed": refreshed, "failed": failed}
+    total = len(feeds)
+    tracker = get_tracker()
+    tracker.reset(total=total)
+    pool: WorkerPool = get_worker_pool()
+    for feed in feeds:
+        pool.push(
+            Job(feed_id=feed.id, user_id=user_id, kind="manual"),
+            track=True,
+        )
+    return {"total": total}
 
 
 async def refresh_all_due_feeds(db: AsyncSession) -> None:
-    now = datetime.now(timezone.utc)
-    result = await db.execute(
-        select(Feed).where((Feed.next_check_at.is_(None)) | (Feed.next_check_at <= now))
-    )
-    feeds = result.scalars().all()
+    """Trigger an immediate due-feed batch via the scheduler.
 
-    for feed in feeds:
-        try:
-            await fetch_and_store_feed(feed, db)
-        except Exception:
-            feed.parsing_error_count += 1
-            feed.parsing_error_message = "Unexpected fetch error"
-            feed.checked_at = now
-            feed.next_check_at = _compute_next_check(feed)
-            await db.commit()
+    Retained for external/CLI callers. The actual batching + worker enqueueing
+    lives in :class:`FeedScheduler.tick`; this just wakes the scheduler so the
+    batch runs without waiting for the next interval.
+    """
+    # db is unused by the scheduler tick (it opens its own session); kept in
+    # the signature for backward compatibility.
+    from app.services.feed_worker import get_scheduler
+
+    get_scheduler().wake_now()
 
 
 def generate_opml(feeds_with_category: list[tuple[Feed, str | None]]) -> str:

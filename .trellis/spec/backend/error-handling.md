@@ -24,7 +24,7 @@ FastAPI's default `{"detail": "message"}` JSON shape. No custom error envelope o
 
 | Code | Usage |
 |------|-------|
-| `202` | Accepted — resource created but async processing incomplete (e.g. feed added but initial fetch failed) |
+| `202` | Accepted — resource created but async processing incomplete (e.g. `POST /api/feeds/refresh-all` enqueues a tracked manual batch into the worker pool; fetch happens asynchronously) |
 | `400` | Bad Request — invalid OPML, missing AI config, connection test failure |
 | `401` | Unauthorized — invalid credentials/tokens |
 | `403` | Forbidden — batch operation contains resources not owned by user |
@@ -256,41 +256,20 @@ async def update_email(body: UserEmailUpdate, user: User = Depends(get_current_u
 
 ---
 
-## Design Decision: Partial Success with 202 Accepted
+## Design Decision: Feed Creation Decoupled from Fetch (Miniflux model)
 
-**Context**: `POST /api/feeds` creates a feed and immediately fetches its content. When the initial fetch fails (network error, invalid URL, parse error), the resource is still created but incomplete.
+**Context** (updated by task 06-29-align-import-miniflux-model): `POST /api/feeds` and `POST /api/feeds/import/opml` previously created the feed row **and** immediately kicked off a background fetch (`asyncio.create_task(_bg_fetch)`). Importing N feeds spawned N concurrent fetches with no bound, no per-host limit, no lifecycle management, and no progress visibility. The fetch result (title / site_url / icon / description) only appeared after the async task finished, but the response returned an empty shell immediately.
 
-**Options Considered**:
-1. Return 502 and reject the feed — prevents broken entries but rejects valid URLs with transient failures
-2. Return 201 silently — hides the failure from the user (the old bug)
-3. Return 202 Accepted — feed is created, client knows content is pending
+**Decision**: Creation is now **decoupled** from fetch. The create endpoints only write the DB row, mark it due (`next_check_at = now()` for single `add_feed`, or `now() + DEFAULT_CHECK_INTERVAL` for manual batches like import / refresh-all so the 60s due-tick does not double-select feeds a manual worker is already processing), commit, and return `201` with the pending shell. Fetching is owned by the background `FeedScheduler` + `WorkerPool` (see `services/feed_worker.py`), which picks up due feeds on the next 60s tick with bounded concurrency, per-host limiting, and error-limit disabling. The previous `202 + parsing_error_message` override on `add_feed` is removed — it was dead code once the synchronous fetch path was deleted (the feed is always a pending shell at creation time).
 
-**Decision**: Return HTTP 202 with `parsing_error_message` set on the response body. The route decorator still declares `status_code=201`; the handler uses FastAPI's `Response.status_code` to override to 202 when `feed.parsing_error_message` is truthy. Frontend checks `parsing_error_message` on the returned feed object to show a warning toast.
+**Why not 202 anymore**: The 202 pattern indicated "resource created but async fetch ran and failed". Under the decoupled model the create endpoint no longer fetches at all, so there is no fetch outcome to surface at creation time. The feed's eventual fetch status is observable via `checked_at` (null = pending), `parsing_error_message` (error), and `disabled` (error-limit reached) on the feed list / `FeedResponse`, and via the import/refresh-all batch progress endpoint `GET /api/feeds/jobs/status`.
 
-**Why 202 over 502**: RSS URLs are often temporarily unreachable. Rejecting the subscription would force users to retry manually. The 202 pattern preserves the feed entry for automatic retry on the next refresh cycle.
+**Status code usage** (still authoritative):
+- `201` — feed created (pending shell; fetch happens later). Both `add_feed` and `import_opml`.
+- `202 Accepted` — used by `POST /api/feeds/refresh-all`: marks the user's feeds due + enqueues a tracked manual batch into the worker pool, returns `{"total": N}` immediately.
+- `502` — `POST /api/feeds/{feed_id}/refresh` when the synchronous single-feed refresh (via `WorkerPool.run_single`) raises.
 
-**Key insight**: `fetch_and_store_feed` handles some error types internally (HTTP >= 400, parse errors) without throwing — it sets `parsing_error_message` and returns normally. Only network/timeout errors throw. The 202 trigger must check `feed.parsing_error_message` (not a boolean flag) to cover both paths.
+The earlier `202 Accepted` rationale ("resource created but async processing incomplete") is now realized by the refresh-all batch endpoint, not by the create endpoint.
 
-```python
-@router.post("", response_model=FeedResponse, status_code=status.HTTP_201_CREATED)
-async def add_feed(body: FeedCreate, response: Response, ...):
-    feed = Feed(...)
-    db.add(feed)
-    await db.commit()
-    await db.refresh(feed)
+**Key insight**: `fetch_and_store_feed` handles some error types internally (HTTP >= 400 incl. 429, parse errors) without throwing — it sets `parsing_error_message` and returns normally. `POST /api/feeds/{feed_id}/refresh` therefore only resets `disabled` / `parsing_error_count` when the refreshed feed has **no** `parsing_error_message` (a genuine success), not merely when `run_single` did not raise — otherwise soft failures (429 / 4xx / parse error) would have their error state wiped while still showing an error badge.
 
-    try:
-        await fetch_and_store_feed(feed, db)
-        await db.refresh(feed)
-    except Exception as e:
-        feed.parsing_error_count += 1
-        feed.parsing_error_message = str(e)[:500]
-        await db.commit()
-        await db.refresh(feed)
-        logger.warning("Initial fetch failed for new feed %s: %s", feed.id, e)
-
-    if feed.parsing_error_message:
-        response.status_code = status.HTTP_202_ACCEPTED
-
-    return feed
-```
