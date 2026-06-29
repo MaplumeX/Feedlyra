@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.1] - 2026-06-29
+
+### Fixed
+
+- **OPML parsing**: use an XML parser to correctly parse OPML outlines that
+  were silently dropped by the previous regex-based parser.
+- **AI summarize / fetch**: set a browser-like `User-Agent` on outgoing LLM /
+  feed requests to bypass Cloudflare WAF blocks that returned 403 to the
+  default Python client.
+- **Reader UI**: close P2/P3 consistency gaps flagged by the impeccable
+  critique re-run and polish the Home screen typography / spacing.
+
+### Changed
+
+- **CI**: only build and publish Docker images on `v*` version tags instead of
+  every push to `main`.
+
 ## [v1.0.0] - 2026-06-28
 
 First stable release.
