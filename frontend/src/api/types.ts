@@ -152,6 +152,16 @@ export interface OPMLExportResponse {
   xml: string;
 }
 
+export interface BulkMoveResult {
+  updated: string[];
+  not_found: string[];
+}
+
+export interface BulkDeleteResult {
+  deleted: string[];
+  not_found: string[];
+}
+
 export interface ChatHistory {
   chat_id: string;
   messages: ChatMessage[];

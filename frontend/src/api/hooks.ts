@@ -16,6 +16,8 @@ import type {
   AIConfig,
   Article,
   ArticleListResponse,
+  BulkMoveResult,
+  BulkDeleteResult,
   NewArticleCountResponse,
   ArticleSummarySource,
   AutomationRule,
@@ -145,6 +147,35 @@ export function useDeleteFeed() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (feedId: string) => api.delete(`/api/feeds/${feedId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+      qc.invalidateQueries({ queryKey: queryKeys.categories.list() });
+    },
+  });
+}
+
+export function useBulkMoveFeeds() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ feedIds, categoryId }: { feedIds: string[]; categoryId: string | null }) =>
+      api.post<BulkMoveResult>("/api/feeds/bulk/move", {
+        feed_ids: feedIds,
+        category_id: categoryId,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
+      qc.invalidateQueries({ queryKey: queryKeys.articles.all });
+      qc.invalidateQueries({ queryKey: queryKeys.categories.list() });
+    },
+  });
+}
+
+export function useBulkDeleteFeeds() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (feedIds: string[]) =>
+      api.post<BulkDeleteResult>("/api/feeds/bulk/delete", { feed_ids: feedIds }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.feeds.list() });
       qc.invalidateQueries({ queryKey: queryKeys.articles.all });
