@@ -457,13 +457,13 @@ export function ArticleList() {
         {hasUnread && (
           <Button
             variant="ghost"
-            size="sm"
-            className="h-7 text-xs"
+            size="icon"
+            className="h-7 w-7"
             disabled={markAllRead.isPending}
             onClick={() => markAllRead.mutate({ feedId: selectedFeedId ?? undefined })}
+            title={t("markAllRead")}
           >
-            <CheckCheck className="mr-1 h-3.5 w-3.5" />
-            {t("markAllRead")}
+            <CheckCheck className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>
