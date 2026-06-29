@@ -18,6 +18,14 @@ from app.services.article_summary import extract_content_for_summary
 
 logger = logging.getLogger(__name__)
 
+# Some AI gateway providers sit behind Cloudflare WAF, which blocks requests
+# whose User-Agent looks like a default SDK/bot (e.g. python-httpx/...),
+# returning "Your request was blocked." Use a browser-like UA to bypass it.
+_BROWSER_USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+)
+
 MAX_CONTENT_CHARS = 20000
 
 Feature = Literal["translate", "summary", "chat"]
@@ -83,7 +91,11 @@ def get_user_llm_client(user: User, feature: Feature | None = None) -> AsyncOpen
     else:
         raise ValueError("No API key configured. Please set up AI configuration in settings.")
 
-    return AsyncOpenAI(base_url=base_url, api_key=api_key)
+    return AsyncOpenAI(
+        base_url=base_url,
+        api_key=api_key,
+        default_headers={"User-Agent": _BROWSER_USER_AGENT},
+    )
 
 
 def get_user_model(user: User, feature: Feature | None = None) -> str:
