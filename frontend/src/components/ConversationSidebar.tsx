@@ -103,7 +103,7 @@ function ConversationRow({
 
   if (renaming) {
     return (
-      <div className="flex w-full items-center gap-1 rounded-r-md border-l-2 border-primary bg-conversation-selected px-2 py-1.5">
+      <div className="flex w-full items-center gap-1 rounded-md bg-conversation-selected px-2 py-1.5">
         <input
           ref={renameInputRef}
           className="h-6 min-w-0 flex-1 rounded border bg-background px-2 text-sm text-foreground"
@@ -129,8 +129,8 @@ function ConversationRow({
       <ContextMenuTrigger asChild>
         <div
           className={cn(
-            "group flex w-full min-w-0 cursor-pointer items-center gap-2 overflow-hidden rounded-r-md px-2 py-1.5 text-sm transition-colors duration-100 hover:bg-conversation-hover",
-            isActive && "bg-conversation-selected font-medium border-l-2 border-primary"
+            "group flex w-full min-w-0 cursor-pointer items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm transition-colors duration-100 hover:bg-conversation-hover",
+            isActive && "bg-conversation-selected font-medium"
           )}
           onClick={onSelect}
         >
@@ -259,7 +259,7 @@ export function ConversationListPopover({ onSelect }: { onSelect?: () => void })
   return (
     <div className="flex flex-col overflow-hidden">
       <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-heading">
+        <span className="text-xs font-semibold text-muted-foreground font-heading">
           {t("conversations")}
         </span>
         <Button

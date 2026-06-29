@@ -93,6 +93,7 @@ export function Sidebar() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newCategoryTitle, setNewCategoryTitle] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteFeedConfirmId, setDeleteFeedConfirmId] = useState<string | null>(null);
   const [editUsernameOpen, setEditUsernameOpen] = useState(false);
   const [editEmailOpen, setEditEmailOpen] = useState(false);
   const [editPasswordOpen, setEditPasswordOpen] = useState(false);
@@ -185,6 +186,15 @@ export function Sidebar() {
     });
   }
 
+  function handleDeleteFeed(feedId: string) {
+    deleteFeed.mutate(feedId, {
+      onSuccess: () => {
+        setDeleteFeedConfirmId(null);
+        toast.success(t("feedDeleted"));
+      },
+    });
+  }
+
   function startRename(category: Category) {
     setRenamingCategoryId(category.id);
     setRenameValue(category.title);
@@ -207,8 +217,8 @@ export function Sidebar() {
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              "group flex w-full min-w-0 cursor-pointer items-center gap-2 overflow-hidden rounded-r-md px-2 py-1.5 text-sm transition-colors duration-100 hover:bg-sidebar-hover",
-              selectedFeedId === feed.id && "bg-sidebar-selected font-medium border-l-2 border-primary"
+              "group flex w-full min-w-0 cursor-pointer items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm transition-colors duration-100 hover:bg-sidebar-hover",
+              selectedFeedId === feed.id && "bg-sidebar-selected font-medium"
             )}
             onClick={() => selectFeed(feed.id)}
           >
@@ -273,7 +283,7 @@ export function Sidebar() {
             className="text-destructive"
             onClick={(e) => {
               e.stopPropagation();
-              deleteFeed.mutate(feed.id);
+              setDeleteFeedConfirmId(feed.id);
             }}
           >
             <Trash2 className="mr-2 h-4 w-4" />
@@ -290,7 +300,7 @@ export function Sidebar() {
 
     return (
       <Collapsible key={category.id} defaultOpen>
-        <div className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-sidebar-hover group/cat">
+        <div className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-sidebar-hover group/cat">
           <CollapsibleTrigger asChild>
             <button className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
               <ChevronDown className="h-3 w-3 shrink-0 transition-transform duration-200 [[data-state=closed]>&]:-rotate-90" />
@@ -364,9 +374,9 @@ export function Sidebar() {
   return (
     <div className="flex h-full min-w-0 flex-col overflow-hidden bg-sidebar-bg">
       <div className="flex h-11 min-w-0 items-center justify-between gap-2 border-b px-3">
-        <span className="min-w-0 truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground font-heading">{t("feeds")}</span>
+        <span className="min-w-0 truncate text-xs font-semibold text-muted-foreground font-heading">{t("feeds")}</span>
         <div className="flex shrink-0 items-center gap-0.5">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setReader({ sidebarCollapsed: true })} title="Collapse sidebar (Shift+S)">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setReader({ sidebarCollapsed: true })} title={t("collapseSidebar")} aria-label={t("collapseSidebar")}>
             <PanelLeftClose className="h-4 w-4" />
           </Button>
           <FeedSortMenu
@@ -413,7 +423,7 @@ export function Sidebar() {
           {/* Uncategorized group */}
           <Collapsible defaultOpen>
             <CollapsibleTrigger asChild>
-              <button className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-sidebar-hover">
+              <button className="flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-sidebar-hover">
                 <ChevronDown className="h-3 w-3 shrink-0 transition-transform duration-200 [[data-state=closed]>&]:-rotate-90" />
                 <span className="min-w-0 truncate">{t("uncategorized")}</span>
               </button>
@@ -436,7 +446,7 @@ export function Sidebar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors duration-100 hover:bg-sidebar-hover hover:text-foreground">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
                 {user?.username?.charAt(0).toUpperCase() ?? <User className="h-3.5 w-3.5" />}
               </div>
               <span className="min-w-0 truncate">{user?.username ?? ""}</span>
@@ -541,6 +551,28 @@ export function Sidebar() {
               variant="destructive"
               onClick={() => deleteConfirmId && handleDeleteCategory(deleteConfirmId)}
               disabled={deleteCategory.isPending}
+            >
+              {t("delete", { ns: "common" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Feed Confirm Dialog */}
+      <Dialog open={deleteFeedConfirmId !== null} onOpenChange={(open) => { if (!open) setDeleteFeedConfirmId(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("deleteFeed")}</DialogTitle>
+            <DialogDescription>{t("deleteFeedConfirm")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteFeedConfirmId(null)}>
+              {t("cancel", { ns: "common" })}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteFeedConfirmId && handleDeleteFeed(deleteFeedConfirmId)}
+              disabled={deleteFeed.isPending}
             >
               {t("delete", { ns: "common" })}
             </Button>

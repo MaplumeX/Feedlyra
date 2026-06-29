@@ -39,6 +39,12 @@
     --font-ui: 'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
     --font-heading: 'Space Grotesk', 'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
+    /* === Layout metrics === */
+    /* Article-list header height. Used both by the header (h-11 equivalent)
+       and the Virtuoso footer spacer so the last items can scroll past the
+       viewport. Keep them in sync via this one token. */
+    --reader-header-height: 44px;
+
     /* === Semantic variables (for future theme switching) === */
     --sidebar-bg: 220 18% 96%;
     --sidebar-hover: 220 14% 93%;
@@ -156,7 +162,11 @@
     @apply bg-background text-foreground;
     font-family: var(--font-ui);
   }
-  /* Smooth color-scheme transitions */
+  /* Smooth color-scheme transitions.
+     SCOPE: color/background/border/fill/stroke ONLY — never animate layout
+     properties. This keeps virtualized-list rows cheap during scroll
+     (color transitions don't trigger reflow). Reduced-motion users get the
+     0.01ms fallback defined in the @media block below. */
   *,
   *::before,
   *::after {
@@ -243,5 +253,21 @@
   }
   .chat-typing-dot {
     animation: chat-bounce 1.4s ease-in-out infinite;
+  }
+}
+
+/* === Reduced motion: honor the OS-level preference. ===
+   DESIGN.md lists this as a first-class a11y requirement, not a patch.
+   The global 150ms color transition and the chat typing dots both fall
+   back to instant / static under prefers-reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+  .chat-typing-dot {
+    animation: none !important;
+    opacity: 0.6;
   }
 }

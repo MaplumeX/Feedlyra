@@ -108,7 +108,7 @@ export function AutomationTab() {
     if (groupRules.length === 0) return null;
     return (
       <div className="space-y-2">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h4>
+        <h4 className="text-xs font-semibold text-muted-foreground">{title}</h4>
         {groupRules.map((rule) => (
           <div
             key={rule.id}

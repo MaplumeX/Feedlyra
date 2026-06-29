@@ -52,7 +52,7 @@ export function ReadingSettingsPopover() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8" title={t("readingSettings")}>
+        <Button variant="ghost" size="icon" className="h-8 w-8" title={t("readingSettings")} aria-label={t("readingSettings")}>
           <Type className="h-4 w-4" />
         </Button>
       </PopoverTrigger>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, X, Bot, Copy, Check, RefreshCw, MessageSquareText, Square, Pencil, Paperclip, XCircle, History, Pin, PinOff } from "lucide-react";
+import { Send, X, Bot, Copy, Check, RefreshCw, Square, Pencil, Paperclip, XCircle, History, Pin, PinOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,7 +71,7 @@ function ChatEmptyState({ onSuggestionClick }: { onSuggestionClick: (text: strin
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-5 px-4 py-8">
       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-        <MessageSquareText className="h-8 w-8 text-primary" />
+        <Bot className="h-8 w-8 text-primary" />
       </div>
       <div className="text-center">
         <p className="text-base font-medium">{t("chatEmptyTitle")}</p>
@@ -82,7 +82,7 @@ function ChatEmptyState({ onSuggestionClick }: { onSuggestionClick: (text: strin
           <button
             key={key}
             type="button"
-            className="rounded-lg border bg-background px-3 py-2.5 text-left text-xs text-foreground transition-all hover:shadow-sm hover:-translate-y-0.5 hover:bg-accent hover:text-accent-foreground"
+            className="rounded-lg border bg-background px-3 py-2.5 text-left text-xs text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             onClick={() => onSuggestionClick(t(key))}
           >
             {t(key)}
@@ -261,7 +261,7 @@ function ChatMessageBubble({
               onChange={(e) => setEditText(e.target.value)}
               onKeyDown={handleEditKeyDown}
               rows={1}
-              className="w-full resize-none rounded-xl border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className="w-full resize-none rounded-xl border bg-background px-2 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             />
           </div>
           <div className="mt-1 flex gap-1 justify-end">
@@ -502,7 +502,7 @@ function ChatInput({
           placeholder={t("chatPlaceholder")}
           disabled={isStreaming}
           rows={1}
-          className="flex-1 resize-none rounded-xl border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground transition-shadow focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 resize-none rounded-xl border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
         />
         <Button
           variant="ghost"
@@ -684,10 +684,14 @@ export function AIChatPanel({
         onError: (error) => {
           if (!mountedRef.current) return;
           setIsStreaming(false);
+          // Don't leak raw backend error.message into the chat (it may expose
+          // internal detail). Surface a localized message; the existing
+          // Regenerate button on the assistant bubble serves as the retry CTA.
+          console.error("[chat] stream error:", error);
           setMessages((prev) => {
             const last = prev.length > 0 ? prev[prev.length - 1] : undefined;
             if (last && last.role === "assistant") {
-              return updateLastAssistant(prev, `Error: ${error.message}`);
+              return updateLastAssistant(prev, t("chatStreamError"));
             }
             return prev;
           });
@@ -695,7 +699,7 @@ export function AIChatPanel({
       });
       abortRef.current = controller;
     },
-    [conversationId],
+    [conversationId, t],
   );
 
   const handleSend = useCallback(

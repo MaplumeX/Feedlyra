@@ -177,7 +177,7 @@ export function Home() {
         </Panel>
 
         <Separator
-          className="relative w-px bg-border transition-colors hover:bg-primary/50 data-[separator=active]:bg-primary"
+          className="relative w-px bg-border transition-colors hover:bg-muted-foreground/40 data-[separator=active]:bg-primary"
         >
           <div className="absolute inset-y-0 -left-2 -right-2" />
         </Separator>
@@ -192,7 +192,7 @@ export function Home() {
         </Panel>
 
         <Separator
-          className="relative w-px bg-border transition-colors hover:bg-primary/50 data-[separator=active]:bg-primary"
+          className="relative w-px bg-border transition-colors hover:bg-muted-foreground/40 data-[separator=active]:bg-primary"
         >
           <div className="absolute inset-y-0 -left-2 -right-2" />
         </Separator>
@@ -204,7 +204,7 @@ export function Home() {
         {showChatPanel && isSidebarMode && (
           <>
             <Separator
-              className="relative w-px bg-border transition-colors hover:bg-primary/50 data-[separator=active]:bg-primary"
+              className="relative w-px bg-border transition-colors hover:bg-muted-foreground/40 data-[separator=active]:bg-primary"
             >
               <div className="absolute inset-y-0 -left-2 -right-2" />
             </Separator>

@@ -29,3 +29,7 @@ Thumbs.db
 .trellis/.template-hashes.json
 .trellis/.runtime/
 .trellis/.cache/
+
+
+# Impeccable critique snapshots (per-run artifacts, tracked locally only)
+.impeccable/critique/

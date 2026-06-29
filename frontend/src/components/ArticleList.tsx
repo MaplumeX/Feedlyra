@@ -122,7 +122,7 @@ function ArticleListFooter({ isLoadingMore }: { isLoadingMore: boolean }) {
           ))}
         </div>
       )}
-      <div style={{ height: 'calc(100vh - 44px)' }} />
+      <div style={{ height: 'calc(100vh - var(--reader-header-height, 44px))' }} />
     </>
   );
 }

@@ -257,6 +257,23 @@ export function ArticleDetail() {
   const tocItems = articleContent.tocItems;
   const readToggleLabel = article.is_read ? t("markAsUnread") : t("markAsRead");
 
+  // Accessible labels for icon-only toolbar buttons. Existing `title` props
+  // are kept (tooltip); `aria-label` is added so screen readers announce the
+  // action name reliably (title is touch-invisible and SR-inconsistent).
+  const starLabel = article.is_starred ? t("unstarArticle") : t("starArticle");
+  const summarizeLabel = t("aiSummarize");
+  const translateLabel = hasTranslation
+    ? showTranslation ? t("showOriginal") : t("showTranslation")
+    : t("aiTranslate");
+  const chatLabel = t("aiChat");
+  const extractLabel = extractContent.isPending
+    ? t("extractingContent")
+    : showFullContent
+      ? t("showFeedContent")
+      : hasFullContent
+        ? t("showFullContent")
+        : t("extractFullContent");
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-11 items-center gap-2 border-b px-4">
@@ -265,6 +282,9 @@ export function ArticleDetail() {
           size="icon"
           className="h-8 w-8"
           onClick={() => toggleStar.mutate({ articleId: article.id, starred: !article.is_starred })}
+          title={starLabel}
+          aria-label={starLabel}
+          aria-pressed={article.is_starred}
         >
           <Star
             className={cn("h-4 w-4", article.is_starred && "fill-primary text-primary")}
@@ -293,6 +313,7 @@ export function ArticleDetail() {
           disabled={summarize.isPending}
           onClick={() => summarize.mutate({ articleId: article.id, source: summarySource })}
           title={t("aiSummarize")}
+          aria-label={summarizeLabel}
         >
           <Sparkles className={cn("h-4 w-4", summarize.isPending && "animate-spin")} />
         </Button>
@@ -314,6 +335,7 @@ export function ArticleDetail() {
             }
           }}
           title={hasTranslation ? (showTranslation ? t("showOriginal") : t("showTranslation")) : t("aiTranslate")}
+          aria-label={translateLabel}
         >
           <Languages className={cn("h-4 w-4", translateMut.isPending && "animate-spin")} />
         </Button>
@@ -329,6 +351,7 @@ export function ArticleDetail() {
             }
           }}
           title={t("aiChat")}
+          aria-label={chatLabel}
         >
           <MessageSquare className={cn("h-4 w-4", (chatPanelOpen || conversationPanelOpen) && "text-primary")} />
         </Button>
@@ -368,6 +391,7 @@ export function ArticleDetail() {
               ? t("showFullContent")
               : t("extractFullContent")
           }
+          aria-label={extractLabel}
           aria-pressed={showFullContent}
         >
           <FileText
@@ -382,7 +406,7 @@ export function ArticleDetail() {
         <ReadingSettingsPopover />
         <div className="flex-1" />
         <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-          <a href={article.url} target="_blank" rel="noopener noreferrer">
+          <a href={article.url} target="_blank" rel="noopener noreferrer" title={t("openOriginalArticle")} aria-label={t("openOriginalArticle")}>
             <ExternalLink className="h-4 w-4" />
           </a>
         </Button>
@@ -466,7 +490,7 @@ export function ArticleDetail() {
 
             {sanitizedContent ? (
               <div
-                className="prose prose-slate max-w-none dark:prose-invert [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_img]:cursor-zoom-in [&_p]:mb-[var(--prose-p-spacing,1.25em)] [&_h1]:font-heading [&_h2]:font-heading [&_h3]:font-heading [&_h4]:font-heading"
+                className="prose max-w-none dark:prose-invert [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_img]:cursor-zoom-in [&_p]:mb-[var(--prose-p-spacing,1.25em)] [&_h1]:font-heading [&_h2]:font-heading [&_h3]:font-heading [&_h4]:font-heading"
                 style={proseStyle}
                 onClick={handleProseClick}
                 dangerouslySetInnerHTML={{ __html: sanitizedContent }}

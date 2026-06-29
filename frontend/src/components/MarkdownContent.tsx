@@ -19,7 +19,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
 
   return (
     <div
-      className={cn("prose prose-sm prose-slate max-w-none dark:prose-invert [&_h1]:font-heading [&_h2]:font-heading [&_h3]:font-heading [&_h4]:font-heading", className)}
+      className={cn("prose prose-sm max-w-none dark:prose-invert [&_h1]:font-heading [&_h2]:font-heading [&_h3]:font-heading [&_h4]:font-heading", className)}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

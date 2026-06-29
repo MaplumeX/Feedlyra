@@ -177,19 +177,21 @@ When adding or changing Google Fonts:
 
 **Gotcha**: If a reader font option references a Google Font, that font MUST be in the Google Fonts link. Removing the font link breaks the option silently (falls back to system font). When replacing a font option, keep the old Google Fonts entry and add the new one.
 
-### Sidebar Selected State with Left Border
+### Sidebar Selected State
 
-When using a left-border indicator for selected items in the sidebar:
+Selected items in the sidebar (and the conversation list) use **tonal layering only — never a colored side-stripe**. `border-l-2 border-primary` (or any `border-left`/`border-right` > 1px used as an accent) is forbidden by DESIGN.md's Flat-By-Default and Tonal-Layering rules; a left color stripe also makes the reader look like an enterprise admin panel.
 
 ```tsx
-// Wrong: rounded-md creates left-side rounding that conflicts with border-l-2
-<div className="rounded-md border-l-2 border-primary bg-sidebar-selected">
+// Correct: denser background tint + medium weight, no stripe
+<div className="rounded-md bg-sidebar-selected font-medium ...">
 
-// Correct: use rounded-r-md to only round the right side
-<div className="rounded-r-md border-l-2 border-primary bg-sidebar-selected">
+// Wrong: colored side-stripe as selection indicator
+<div className="rounded-r-md border-l-2 border-primary bg-sidebar-selected ...">
 ```
 
-**Why**: `border-l-2` + `rounded-md` creates a visible gap between the left border and the container edge. The left side should be flush against the container edge for the indicator to feel "attached". Use `rounded-r-md` (or `rounded-l-md`/`rounded-t-md`/etc.) when combining border indicators with rounding.
+**Why**: `bg-sidebar-selected` already differs from `hover:bg-sidebar-hover`; pairing it with `font-medium` is enough affordance. If selection needs to feel stronger, deepen the `--sidebar-selected` token by a half-step — do **not** introduce a stripe. Use `rounded-md` (not `rounded-r-md`) since there is no left border to keep flush against the container edge.
+
+**Applies everywhere a selected state lives**: sidebar feed rows, conversation list rows, and any future list with a selected state. Same rule, same vocabulary.
 
 ### Prose Content Typography Override
 
@@ -205,7 +207,7 @@ const proseStyle: Record<string, string> = {
 };
 
 <article
-  className="prose prose-slate max-w-none dark:prose-invert [&_p]:mb-[var(--prose-p-spacing,1.25em)]"
+  className="prose max-w-none dark:prose-invert [&_p]:mb-[var(--prose-p-spacing,1.25em)]"
   style={proseStyle}
 >
 ```
@@ -214,7 +216,7 @@ const proseStyle: Record<string, string> = {
 
 **Key details**:
 - Use `Record<string, string>` type (not `React.CSSProperties`) to avoid type errors on CSS custom properties
-- Keep the `prose prose-slate max-w-none dark:prose-invert` classes — they provide base spacing, color, and link styles
+- Keep the `prose max-w-none dark:prose-invert` classes — they provide base spacing, color, and link styles. Do NOT add `prose-slate`: the `--tw-prose-*` tokens are fully overridden in `index.css` (see DESIGN.md's Blue-Undertone Rule), so `prose-slate` is dead weight and re-tints toward enterprise slate, which the palette refuses
 - Content width (`max-width`) is set separately from the prose container, typically on a parent wrapper
 
 ### Layout Convention: Three-Panel Resizable Layout
@@ -961,7 +963,7 @@ The conversation list is rendered inside a Radix Popover (anchored to a History 
 - `side="left"` anchors the popover towards the article detail area
 - `w-80` (320px) matches the old sidebar default width
 - `ConversationListPopover` component contains search input + ScrollArea list, no standalone wrapper div
-- `border-l-2 border-primary` + `bg-conversation-selected` for active conversation (same as before)
+- `bg-conversation-selected` + `font-medium` for active conversation (tonal layering; no side-stripe — see "Sidebar Selected State")
 - `truncate` + `min-w-0 flex-1` for long titles
 - Group hover pattern for action buttons (`opacity-0 group-hover:opacity-100`)
 - Semantic CSS variables: `--conversation-bg`, `--conversation-hover`, `--conversation-selected` (light + dark variants)
@@ -1186,7 +1188,7 @@ const [translateLang, setTranslateLang] = useState("zh");
 
 `ConversationSidebar.tsx` exports `ConversationListPopover`, rendered inside a controlled Radix Popover (see "Conversation Popover" above). Row pattern details:
 
-- Inline rename: replace the title `<span>` with an `<input>`, focus+select on mount, save on Enter/blur, cancel on Escape. The active/renaming row keeps the same `border-l-2 border-primary bg-conversation-selected` treatment.
+- Inline rename: replace the title `<span>` with an `<input>`, focus+select on mount, save on Enter/blur, cancel on Escape. The active/renaming row keeps the same `bg-conversation-selected` tonal treatment (no side-stripe).
 - Dual-trigger menu (right-click `ContextMenu` + hover `DropdownMenu` with identical items) — same pattern as the feed sidebar row.
 - Delete confirmation uses a local `Dialog` (not `window.confirm`) so it matches the app's dialog styling. `deleteConversation.mutate(id, { onSuccess })` closes both the confirm dialog.
 - `formatRelativeTime()` renders `last_message_at` as `now`/`Nm`/`Nh`/`Nd`/locale date.
