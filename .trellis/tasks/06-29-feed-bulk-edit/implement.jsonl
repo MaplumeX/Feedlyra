@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend conventions: file header, async, schema patterns, no-repo-pattern; required for writing new bulk endpoints correctly"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "HTTPException/404 patterns for category validation and bulk endpoints"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "ORM query patterns, transaction boundaries for SELECT+UPDATE/DELETE on user_id-scoped IN() batches"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend stack conventions (React 19, Tailwind v3, shadcn/ui) for new checkbox/alert-dialog components"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "shadcn component patterns, styling, composition conventions for new ui components"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "React Query mutation + queryKey invalidation conventions for useBulkMoveFeeds/useBulkDeleteFeeds"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Local useState vs Zustand boundary — selectedIds/selectMode are UI state, confirms not in store"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Type/interface conventions for new BulkMoveResult/BulkDeleteResult types"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Backend+frontend cross-layer change (API contract field-name snake_case alignment, action ordering)"}

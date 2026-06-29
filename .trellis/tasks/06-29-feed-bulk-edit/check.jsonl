@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend quality check conventions (no lint/CI; pytest on pure logic) for verifying new endpoints"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify HTTPException status codes (422/404) and category validation match existing patterns"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend quality bar (lint, build, forbidden patterns) for verifying components and hooks"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify new ui/checkbox.tsx, ui/alert-dialog.tsx follow shadcn conventions"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Verify useBulkMoveFeeds/useBulkDeleteFeeds mutation + invalidation patterns"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify new Bulk*Result types align with backend response shape"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer consistency check: snake_case body fields, response schema alignment"}
