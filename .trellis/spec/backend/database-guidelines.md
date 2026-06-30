@@ -15,12 +15,44 @@ SQLAlchemy 2.0 async with asyncpg driver for PostgreSQL. Alembic for migrations.
 Configured in `app/database.py`:
 
 ```python
-engine = create_async_engine(settings.DATABASE_URL, echo=False)
+_DATABASE_POOL_SIZE = 10
+_DATABASE_MAX_OVERFLOW = 5
+_DATABASE_POOL_RECYCLE = 1800
+
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,
+    pool_size=_DATABASE_POOL_SIZE,
+    max_overflow=_DATABASE_MAX_OVERFLOW,
+    pool_recycle=_DATABASE_POOL_RECYCLE,
+)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 ```
 
 - `expire_on_commit=False` — allows post-commit attribute access without re-querying
 - Dependency injection via `get_db()` in `app/dependencies.py` yields an `AsyncSession`
+
+### Don't: omit `pool_pre_ping` / `pool_recycle` on the async engine
+
+Without `pool_pre_ping`, SQLAlchemy hands out connections the DB side has already
+closed (PG restart, machine sleep/wake, `idle_in_transaction_session_timeout`,
+cloud PG idle reaping). The first operation on such a connection is
+`_start_transaction`, which raises `asyncpg.InterfaceError: connection is closed`
+in `get_current_user` / every route. Restarting the backend temporarily "fixes"
+it by rebuilding the pool, which is the tell-tale symptom.
+
+Required pool parameters:
+
+- `pool_pre_ping=True` — CHECK before reuse; bad connections are discarded and
+  replaced. This is the primary fix.
+- `pool_recycle` — recycle connections before the DB side reaps idle ones. Must be
+  less than the shortest server-side idle timeout (PG `idle_in_transaction_session_timeout`,
+  cloud PG idle reaper). Dev default `1800` (30 min) is conservative; tune down
+  for managed PGs that reap faster.
+- `pool_size` / `max_overflow` — `pool_size` must be `>= settings.WORKER_POOL_SIZE`
+  (default 8) so the feed worker cannot exhaust the pool; `max_overflow` leaves
+  headroom for concurrent request handlers sharing the same engine.
 
 ---
 
