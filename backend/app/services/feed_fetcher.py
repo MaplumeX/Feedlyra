@@ -322,8 +322,17 @@ async def fetch_and_store_feed(feed: Feed, db: AsyncSession) -> None:
 
     parsed = _parse_feed(content)
 
-    is_real_error = parsed.bozo and not isinstance(
-        parsed.get("bozo_exception", None), feedparser.CharacterEncodingOverride
+    # feedparser sets ``bozo=1`` for any XML-well-formedness issue but still
+    # returns usable entries when the feed is merely non-conformant (common for
+    # real-world feeds like https://feed.iplaysoft.com/). Only treat it as a
+    # real error when no entries could be recovered; otherwise the feed works
+    # fine and flagging it would accumulate error_count toward auto-disable.
+    is_real_error = (
+        parsed.bozo
+        and not isinstance(
+            parsed.get("bozo_exception", None), feedparser.CharacterEncodingOverride
+        )
+        and not parsed.entries
     )
 
     if is_real_error:
