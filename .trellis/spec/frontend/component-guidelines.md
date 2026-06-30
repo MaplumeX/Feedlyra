@@ -564,6 +564,46 @@ When list items need a context menu, provide both right-click (`ContextMenu`) an
 
 **Why**: `ContextMenuTrigger asChild` makes the existing `<div>` the trigger without adding extra DOM nodes. React `onClick` only fires on left-click, so right-click opens the context menu without also selecting the item. The `key` prop must be on the outermost `<ContextMenu>` (the list root element), not on inner children.
 
+### Opening a Dialog/AlertDialog from a ContextMenu/DropdownMenu Item
+
+When a `ContextMenuItem` or `DropdownMenuItem` needs to open another portal/`DismissableLayer`-based overlay (`Dialog` / `AlertDialog`), do NOT use `onClick` + `stopPropagation`. Use Radix's standard `onSelect` callback and defer the target overlay's mount by one frame:
+
+```tsx
+<ContextMenuItem
+  className="text-destructive"
+  onSelect={() => setTimeout(() => setConfirmId(feed.id), 0)}
+>
+  <Trash2 className="mr-2 h-4 w-4" />
+  {t("delete", { ns: "common" })}
+</ContextMenuItem>
+```
+
+Then render a controlled overlay at the bottom of the component:
+
+```tsx
+<Dialog open={confirmId !== null} onOpenChange={(open) => { if (!open) setConfirmId(null); }}>
+  <DialogContent>...</DialogContent>
+</Dialog>
+```
+
+**Why**: `ContextMenu` / `DropdownMenu` / `Dialog` / `AlertDialog` all build on `@radix-ui/react-dismissable-layer`, which records the body's `pointer-events` original value on open and restores it on close (module-level `originalBodyPointerEvents`). When one overlay opens from inside another's item:
+
+- `onClick` fires as a native DOM event and flips Dialog state *before* the menu's own dismiss schedule runs. If two `react-dismissable-layer` instances exist in the tree (a known Radix #3317 hazard), the two DismissableLayer layers clobber each other's saved original value, restore `pointer-events: none`, and the whole page becomes visible but unclickable until reload.
+- `onSelect` is the Radix-coordinated callback; `setTimeout(0)` defers the target overlay's mount until *after* the menu's DismissableLayer unmounts, so the new overlay reads a clean body value.
+
+`stopPropagation` does NOT help — the conflict is in DismissableLayer lifecycle ordering, not event bubbling.
+
+**Key rules**:
+- This applies symmetrically to `DropdownMenuItem` → `AlertDialog` (e.g. per-row delete in settings) and `ContextMenuItem` → `Dialog` (e.g. sidebar right-click delete).
+- `AlertDialogAction` (destructive) should `e.preventDefault()` and call the mutation in the handler; close the dialog manually in the mutation's `onSuccess` — mirrors the bulk-delete pattern on the same page.
+- Target overlay must be controlled (`open` + `onOpenChange`), not triggered inline.
+
+**Pre-requisite — single `react-dismissable-layer` instance**: the code-level `onSelect + setTimeout` workaround is necessary but not always sufficient. Even with correct `onSelect`, duplicate `react-dismissable-layer` versions in `node_modules` (one hoisted, one nested under `react-dialog`) can still leave `pointer-events: none` stuck. `frontend/package.json` pins it via npm `overrides`:
+```jsonc
+"overrides": { "@radix-ui/react-dismissable-layer": "1.1.13" }
+```
+Verify with `npm explain @radix-ui/react-dismissable-layer` — there must be exactly one instance. If a future Radix bump re-introduces duplicates, re-align via `overrides` before chasing code-level causes.
+
 ### Line-Through Label (Section Separator)
 
 For section headers in scrollable lists (e.g., date group headers in article lists), use the Slack-style line-through label: centered text flanked by two horizontal lines.
