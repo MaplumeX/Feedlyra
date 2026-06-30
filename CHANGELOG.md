@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.3] - 2026-07-01
+
+### Added
+
+- **Summary**: AI summary output language now follows the UI language setting.
+
+### Changed
+
+- **Settings**: replace `window.confirm` with a Radix `AlertDialog` for category
+  deletion.
+
+### Fixed
+
+- **Reader**: stop the UI from freezing after deleting a feed from the sidebar.
+- **Feeds**: keep the article-list filter tabs at a fixed width so they no
+  longer wrap or shift in narrow layouts.
+- **Feeds**: don't flag non-conformant feeds when their entries are recovered
+  (`#98`).
+
 ## [v1.0.2] - 2026-06-30
 
 ### Added
