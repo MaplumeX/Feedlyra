@@ -726,3 +726,38 @@ ArticleList header Tabs used flex-1 + TabsList w-full grid-cols-3, so 全部/未
 ### Next Steps
 
 - None - task complete
+
+
+## Session 76: AI summary language follows UI language
+
+**Date**: 2026-07-01
+**Task**: AI summary language follows UI language
+**Branch**: `main`
+
+### Summary
+
+Made AI article summary output language follow the UI (i18n) language instead of the article body language. Added ArticleSummary.lang column + migration 019 (server_default en for legacy rows); unique constraint now (article_id, source, model, lang). generate_summary accepts target_lang and instructs LLM via _summary_lang_name mapping (zh-CN->Chinese (Simplified), en->English); old article-body rule removed. Summarize endpoint takes lang query param (400 on unknown); articles list/detail/toggle_read/toggle_star/extract all filter summaries by lang to avoid dict overwrite. Frontend hooks thread i18n.language into query string + queryKey so switching UI language refetches. Codified contract in backend database-guidelines.md: every ArticleResponse path must filter by lang incl. mutations.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5dbba121` | (see git log) |
+| `a05c713d` | (see git log) |
+| `9eef2ee2` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
