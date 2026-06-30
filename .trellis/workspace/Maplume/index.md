@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 73
+- **Total Sessions**: 74
 - **Last Active**: 2026-06-30
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~658 | Active |
+| `journal-2.md` | ~693 | Active |
 | `journal-1.md` | ~1990 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 74 | 2026-06-30 | Fix sidebar delete-feed UI freeze (Radix overlay→overlay) | `05976ba6`, `df0f536b`, `44186045` | `main` |
 | 73 | 2026-06-30 | 修复 asyncpg 连接池复用已失效连接问题 | `00bacdb7`, `e93117bc` | `main` |
 | 71 | 2026-06-29 | 订阅源批量编辑（bulk move/delete） | `c70efabf`, `ad7b7447`, `334d7408`, `220679e7` | `emdash/cold-mangos-cross-jueke` |
 | 72 | 2026-06-30 | 对齐 Miniflux 批量导入模型 | `7a37aeb6` | `emdash/mighty-moons-give-m7cc4` |

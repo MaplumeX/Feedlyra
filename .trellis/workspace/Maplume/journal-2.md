@@ -656,3 +656,38 @@ Branded AI retrieval from a single keyword-ILIKE path into a structured tool fam
 ### Next Steps
 
 - None - task complete
+
+
+## Session 74: Fix sidebar delete-feed UI freeze (Radix overlay→overlay)
+
+**Date**: 2026-06-30
+**Task**: Fix sidebar delete-feed UI freeze (Radix overlay→overlay)
+**Branch**: `main`
+
+### Summary
+
+Root-caused sidebar right-click feed-delete page freeze to a duplicate @radix-ui/react-dismissable-layer instance (1.1.11 hoisted for menus vs 1.1.13 nested under react-dialog) hitting Radix #3317, amplified by ContextMenuItem onClick+stopPropagation. Fixed via: R1 Sidebar delete item -> onSelect + setTimeout(0); R2 handleDeleteFeed onSuccess clears selectedFeedId/selectedArticleId + resets articleListFilter to 'all' when the deleted feed was selected; R3 SubscriptionsTab single delete window.confirm -> controlled AlertDialog (DropdownMenuItem also onSelect+setTimeout(0)), bulk-delete untouched; R4 npm overrides pin react-dismissable-layer to 1.1.13 so the tree resolves to a single instance. Codified the overlay→overlay transition pattern into frontend component-guidelines. lint 0 errors, tsc pass, npm explain confirms single instance. Manual UI acceptance (confirm/cancel/Esc/overlay paths + bulk-delete regression) pending in browser.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `05976ba6` | (see git log) |
+| `df0f536b` | (see git log) |
+| `44186045` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
