@@ -75,6 +75,7 @@ export function SubscriptionsTab() {
   // Feed editing state
   const [editingFeed, setEditingFeed] = useState<Feed | null>(null);
   const [feedDialogOpen, setFeedDialogOpen] = useState(false);
+  const [deleteFeedConfirmId, setDeleteFeedConfirmId] = useState<string | null>(null);
 
   // Bulk edit state
   const [selectMode, setSelectMode] = useState(false);
@@ -256,10 +257,12 @@ export function SubscriptionsTab() {
     setFeedDialogOpen(true);
   }
 
-  function handleDeleteFeed(feed: Feed) {
-    if (!window.confirm(t("deleteFeedConfirm"))) return;
-    deleteFeed.mutate(feed.id, {
-      onSuccess: () => toast.success(t("feedDeleted")),
+  function handleDeleteFeed(feedId: string) {
+    deleteFeed.mutate(feedId, {
+      onSuccess: () => {
+        setDeleteFeedConfirmId(null);
+        toast.success(t("feedDeleted"));
+      },
     });
   }
 
@@ -533,7 +536,7 @@ export function SubscriptionsTab() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive"
-                          onClick={() => handleDeleteFeed(feed)}
+                          onSelect={() => setTimeout(() => setDeleteFeedConfirmId(feed.id), 0)}
                         >
                           <Trash2 className="mr-2 h-3.5 w-3.5" />
                           {t("deleteFeed")}
@@ -621,6 +624,35 @@ export function SubscriptionsTab() {
             >
               {bulkDelete.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t("confirmDelete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Single feed delete confirmation */}
+      <AlertDialog
+        open={deleteFeedConfirmId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteFeedConfirmId(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("deleteFeed")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("deleteFeedConfirm")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteFeed.isPending}>
+              {t("cancel", { ns: "common" })}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteFeed.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteFeedConfirmId) handleDeleteFeed(deleteFeedConfirmId);
+              }}
+            >
+              {deleteFeed.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t("delete", { ns: "common" })}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

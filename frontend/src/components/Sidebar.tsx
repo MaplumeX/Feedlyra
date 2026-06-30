@@ -190,6 +190,13 @@ export function Sidebar() {
     deleteFeed.mutate(feedId, {
       onSuccess: () => {
         setDeleteFeedConfirmId(null);
+        if (selectedFeedId === feedId) {
+          setReader({
+            selectedFeedId: null,
+            articleListFilter: "all",
+            selectedArticleId: null,
+          });
+        }
         toast.success(t("feedDeleted"));
       },
     });
@@ -281,10 +288,7 @@ export function Sidebar() {
           <ContextMenuSeparator />
           <ContextMenuItem
             className="text-destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeleteFeedConfirmId(feed.id);
-            }}
+            onSelect={() => setTimeout(() => setDeleteFeedConfirmId(feed.id), 0)}
           >
             <Trash2 className="mr-2 h-4 w-4" />
             {t("delete", { ns: "common" })}
