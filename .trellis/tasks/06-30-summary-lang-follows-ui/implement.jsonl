@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend conventions: __future__ annotations, Mapped[] types, async-first, migration style, no repository pattern."}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "ORM model changes (ArticleSummary.lang) + new alembic migration 019 + UniqueConstraint alteration."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Forbidden patterns / code standards for router + service edits."}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend conventions: React Query + i18n (en/zh-CN) + hook patterns."}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "useSummarize / useArticle / useArticles mutation+query patterns and queryKey management for lang param."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "React Query queryKey design — must include lang to re-fetch on UI language switch."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Feature spans DB model + backend router/service + frontend hooks/components + i18n; cross-layer data flow review."}

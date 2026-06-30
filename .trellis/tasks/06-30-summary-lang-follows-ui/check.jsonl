@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Quality bar + forbidden patterns to verify backend edits against."}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Verify migration + model lang column + UniqueConstraint follow DB conventions."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend code standards to verify hook/component edits."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify TS types (useSummarize/useArticle param additions) are strict-mode safe."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer data flow check: lang flows UI -> query -> router -> service -> model -> back to UI consistently."}
