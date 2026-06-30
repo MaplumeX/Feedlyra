@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.2] - 2026-06-30
+
+### Added
+
+- **Feeds**: batch edit subscriptions — bulk move to category and bulk delete
+  (`#96`).
+- **Import**: align batch import with the Miniflux decoupled model (`#97`).
+
+### Fixed
+
+- **Import**: flush newly created categories before assigning them to imported
+  feeds so associations are not lost.
+- **DB**: enable connection-pool pre-ping / recycling to stop reusing stale
+  asyncpg connections.
+- **Reader**: make the mark-all-read button icon-only to prevent overflow /
+  clipping in narrow lists.
+- **Settings**: make the subscriptions feed list scrollable when there are many
+  feeds.
+
+### Docs
+
+- Provide copy-pastable quick-deploy commands; mark `AI_DEFAULT_API_KEY` as
+  optional.
+
 ## [v1.0.1] - 2026-06-29
 
 ### Fixed
