@@ -310,15 +310,17 @@ client = get_user_llm_client(user, "summary")
 - DB: `article_summaries.content_hash: String(64)` stores the hash of the exact source content summarized.
 - DB: `article_summaries.summary: Text` stores generated markdown/plain text.
 - DB: `article_summaries.model: String(100)` stores the AI model.
-- DB: unique constraint on `(article_id, source, model)`.
-- API: `POST /api/ai/articles/{article_id}/summarize?source=feed|full -> SummarizeResponse`.
+- DB: `article_summaries.lang: String(10)` NOT NULL stores the UI language code (`"en"` / `"zh-CN"`) the summary was generated for. Legacy rows backfilled to `"en"` via `server_default`.
+- DB: unique constraint on `(article_id, source, model, lang)` — name `uq_article_summaries_article_source_model_lang`. Language is part of the cache key, NOT an override.
+- API: `POST /api/ai/articles/{article_id}/summarize?source=feed|full&lang=<ui_lang> -> SummarizeResponse`.
 - API: `ArticleResponse.summaries: dict[str, ArticleSummaryResponse]`.
 
 ### 3. Contracts
 - `source=feed` summarizes `article.content`, falling back to `article.content_snippet`.
 - `source=full` summarizes `article.full_content` only.
-- Cache reuse requires matching `article_id`, `source`, `model`, and `content_hash`.
-- Article list/detail responses should include summaries only for the current user's configured model.
+- Cache reuse requires matching `article_id`, `source`, `model`, `content_hash`, AND `lang`.
+- Summary OUTPUT language follows the requesting UI language, NOT the article body language; `generate_summary` is instructed via `_summary_lang_name(lang)` (e.g. `zh-CN`→`Chinese (Simplified)`).
+- Article list/detail responses should include summaries only for the current user's configured model AND the requested `lang`. Any endpoint returning `ArticleResponse` with summaries MUST filter `ArticleSummary.lang == lang`; see "Scenario: Summary Language Isolation by UI Language".
 - `ArticleResponse.summary` and `ArticleResponse.summary_model` remain compatibility aliases for the current-model feed summary only.
 - Legacy `article_ai_data.summary` rows are migrated into `article_summaries` with `source='feed'`; old summary columns are not used for new summary writes.
 
@@ -349,7 +351,76 @@ summary = await generate_summary(client, model, article.title, article.readable_
 #### Correct
 ```python
 content = get_summary_content(article, summary_source)
-summary = await generate_summary(client, model, article.title, content)
+summary = await generate_summary(client, model, article.title, content, target_lang=lang)
+```
+
+---
+
+## Scenario: Summary Language Isolation by UI Language
+
+### 1. Scope / Trigger
+- Trigger: `ArticleSummary` caches summaries per language. Any endpoint that returns `ArticleResponse` (which embeds `summaries: dict[source, ArticleSummaryResponse]`) MUST filter cached summaries by the requested UI `lang`; otherwise multi-language rows for the same source overwrite each other in the dict and the wrong-language summary leaks to the UI.
+
+### 2. Signatures
+- DB: `article_summaries.lang: String(10) NOT NULL` (legacy rows backfilled `"en"` via migration `server_default`).
+- DB: unique constraint `(article_id, source, model, lang)`.
+- Service: `generate_summary(client, model, title, content, target_lang="en")` — `target_lang` is an i18n code; mapped to an English language name via `_summary_lang_name()` before formatting the system prompt.
+- Service: `SUMMARY_LANG_NAMES = {"zh-CN": "Chinese (Simplified)", "en": "English"}`; unknown codes fall back to `"English"`.
+- API: `POST /api/ai/articles/{article_id}/summarize?source=...&lang=<code>` — validates `lang in SUMMARY_LANG_NAMES`, else `400`.
+- API: `GET /api/articles?...&lang=<code>` and `GET /api/articles/{id}?lang=<code>` — accept `lang` (default `"en"`), do NOT validate (fall back to en, must never crash the list page).
+- Frontend: `useSummarize` / `useArticle` / `useArticles` / `useInfiniteArticles` thread `i18n.language` (normalized to `zh-CN`/`en`) into the query string AND into the React Query `queryKey` (so switching UI language re-fetches instead of returning the cached other-language detail).
+
+### 3. Contracts
+- The summary output language is the requesting UI language, full stop. The article body's language is NOT considered.
+- Language caching is isolation, not override: switching UI language does NOT reuse or overwrite the other language's row — each `(article, source, model, lang)` row is independent. Switching back to the original language hits the original cache (no repeat token spend).
+- `summaries[source]` is a dict keyed by `source`; the backend MUST pre-filter by `lang` so at most one row per source survives into the dict. Filtering after dict assembly is too late (already overwritten).
+- **Every** endpoint returning `ArticleResponse` with `summaries` must apply the lang filter — not only `get_article` / `list_articles`. Mutations that return the full article (`toggle_read`, `toggle_star`, `extract_article_content`) MUST also filter by `lang`, because `applyArticleTransitionsToCache` replaces the entire cached article with the mutation response; an unfiltered response would swap a Chinese-UI user's summary for an English one until the next refetch.
+- Migration backfill: old rows get `lang='en'` via `server_default="en"`. A Chinese-UI user's first request therefore misses the cache (en row) and generates a fresh `zh-CN` row — a one-time token cost, intended.
+
+### 4. Validation & Error Matrix
+- `summarize?lang=<unknown>` -> `400` (reject silent fallback; never generate a summary in a guessed language).
+- `articles?lang=<unknown>` / `articles/{id}?lang=<unknown>` -> no validation; behaves as `en` (list/detail must never 500 due to a bad lang).
+- `articles?lang` omitted entirely -> defaults to `en` (backward-compat for old clients).
+- Old cached rows after migration -> visible only to `en` UI; other-UI requests generate new rows.
+
+### 5. Good/Base/Bad Cases
+- Good: en-UI user generates an en summary; switches to zh-CN UI, generates a zh-CN summary; the en row is untouched; switches back to en UI, the en summary is served from cache with no LLM call.
+- Base: legacy rows exist only as `lang='en'`; a zh-CN-UI user's first open triggers a one-time zh-CN generation.
+- Bad: `toggle_read` returns the article without a `lang` filter; `applyArticleTransitionsToCache` writes the (unfiltered, default-en) summaries into a zh-CN-UI user's detail cache, briefly showing the English summary until the (stale) query refetches.
+- Bad: queryKey omits `lang`; switching UI language keeps the old-language article detail in cache and never re-fetches.
+
+### 6. Tests Required
+- Unit (`test_article_summary.py`): `generate_summary(target_lang=...)` selects the right system-prompt language name and the old article-body-language rule is gone.
+- API integration: `summarize?lang=zh-CN` writes a `lang='zh-CN'` row and does NOT modify the `lang='en'` row for the same `(article, source, model)`.
+- API integration: `GET /api/articles/{id}?lang=en` returns only `summaries` whose `lang=='en'`, even when a `zh-CN` row exists for the same source.
+- API integration: `summarize?lang=xx` returns `400`.
+- Frontend regression: switching UI language triggers a refetch of the article detail/list queries (queryKey includes lang), not a silent return of the cached other-language article.
+
+### 7. Wrong vs Correct
+#### Wrong — mutation returns article unfiltered by lang
+```python
+@router.put("/{article_id}/read")
+async def toggle_read(article_id: UUID, body: ReadUpdate, db, user):
+    article = await _build_article_response(db, article_id, user)  # no lang
+    return article  # en summaries overwrite a zh-CN-UI user's cache via setQueryData
+```
+
+#### Correct — every ArticleResponse path receives lang
+```python
+@router.put("/{article_id}/read")
+async def toggle_read(article_id: UUID, body: ReadUpdate, lang: str = Query(default="en"), db, user):
+    article = await _build_article_response(db, article_id, user, lang=lang)
+    return article
+```
+
+#### Wrong — queryKey without lang
+```tsx
+queryKeys.articles.detail = (id) => ["articles", "detail", id] as const;
+```
+
+#### Correct — lang in queryKey forces refetch on UI language switch
+```tsx
+queryKeys.articles.detail = (id, lang) => ["articles", "detail", id, lang] as const;
 ```
 
 ---
