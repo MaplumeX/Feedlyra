@@ -76,6 +76,7 @@ export function SubscriptionsTab() {
   const [editingFeed, setEditingFeed] = useState<Feed | null>(null);
   const [feedDialogOpen, setFeedDialogOpen] = useState(false);
   const [deleteFeedConfirmId, setDeleteFeedConfirmId] = useState<string | null>(null);
+  const [deleteCategoryConfirmId, setDeleteCategoryConfirmId] = useState<string | null>(null);
 
   // Bulk edit state
   const [selectMode, setSelectMode] = useState(false);
@@ -245,9 +246,15 @@ export function SubscriptionsTab() {
   }
 
   function handleDeleteCategory(cat: Category) {
-    if (!window.confirm(t("deleteCategoryConfirm"))) return;
-    deleteCategory.mutate(cat.id, {
+    setDeleteCategoryConfirmId(cat.id);
+  }
+
+  function confirmDeleteCategory() {
+    const id = deleteCategoryConfirmId;
+    if (!id) return;
+    deleteCategory.mutate(id, {
       onSuccess: () => toast.success(t("categoryDeleted")),
+      onSettled: () => setDeleteCategoryConfirmId(null),
     });
   }
 
@@ -623,6 +630,35 @@ export function SubscriptionsTab() {
               }}
             >
               {bulkDelete.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t("confirmDelete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Category delete confirmation */}
+      <AlertDialog
+        open={deleteCategoryConfirmId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteCategoryConfirmId(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("deleteCategory")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("deleteCategoryConfirm")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteCategory.isPending}>
+              {t("cancelBulk")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteCategory.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDeleteCategory();
+              }}
+            >
+              {deleteCategory.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t("confirmDelete")}
             </AlertDialogAction>
           </AlertDialogFooter>
