@@ -433,19 +433,19 @@ export function ArticleList() {
     <div className="flex h-full flex-col">
       <div className="flex h-11 items-center gap-1 border-b px-2">
         <Tabs
-          className="min-w-0 flex-1"
+          className="min-w-0"
           value={articleListFilter}
           onValueChange={(v) =>
             setReader({ articleListFilter: v as "all" | "unread" | "starred", selectedArticleId: null })
           }
         >
-          <TabsList className="grid h-7 w-full grid-cols-3">
+          <TabsList className="grid h-7 grid-cols-3">
             <TabsTrigger value="all" className="truncate text-xs px-1">{t("all")}</TabsTrigger>
             <TabsTrigger value="unread" className="truncate text-xs px-1">{t("unread")}</TabsTrigger>
             <TabsTrigger value="starred" className="truncate text-xs px-1">{t("starred")}</TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
