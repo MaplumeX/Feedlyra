@@ -384,6 +384,23 @@ const [scrollViewport, setScrollViewport] = useState<HTMLDivElement | null>(null
 - **Stale persisted layout entries for conditionally rendered Panels** — `onLayoutChanged` saves layouts without IDs of unmounted Panels. On remount, stale persisted pixel values may violate `minSize`/`maxSize` constraints and make the Panel undraggable. Always strip stale panel IDs in `loadLayout()` so the Panel initializes from its `defaultSize` prop. NOTE: this is the **mount-time/localStorage guard only**; an *in-session* unmount can still trip the Group `ResizeObserver` on a stale runtime key — that requires the `key={groupKey}` remount convention (see "Runtime layout-key race on conditional Panel unmount").
 - **Async callbacks updating state after unmount** — Components with async operations (SSE streams, fetch, `setTimeout`) that call `setState` after the component unmounts will cause React errors. Without an ErrorBoundary, this crashes the entire app. Use a `mountedRef` guard in callbacks, and set it `false` before aborting in close handlers.
 - **Including derived identity values (e.g., `articlesIdentity`) in cleanup effect deps** — When optimistic updates change item state (e.g., `is_read` toggle), any derived identity value changes too, triggering cleanup effects that clear dedup refs (`submittedIdsRef`) and pending queues. This breaks error rollback (the `onError` callback can no longer remove IDs from a cleared set) and loses pending IDs that haven't been flushed yet. Only include deps that represent true context switches (feed/filter changes), not data mutations within the same context.
+- **Tabs / segmented control whose width should NOT track the flex container** — a `<Tabs>` placed in a flex header with `flex-1` plus a `<TabsList>` with `w-full grid-cols-3` makes the triggers expand/contract with the panel width (visible when the panel is drag-resized). To keep the tabs at their content width, drop `flex-1` from `Tabs` AND `w-full` from `TabsList`; `grid-cols-3` alone still equalizes the triggers at `max-content`. Critically, removing `flex-1` also kills the left-to-right push that previously squeezed the right-side action group to the edge — `shrink-0` on the right group only prevents shrinking, it does NOT auto-right-align. Always pair the change with `ml-auto` on the right-side sibling so it sticks to the right edge:
+
+```tsx
+// Wrong: tabs track panel width, and right actions float mid-row after fix
+<Tabs className="min-w-0 flex-1">
+  <TabsList className="grid h-7 w-full grid-cols-3">{/* ... */}</TabsList>
+</Tabs>
+<div className="flex shrink-0 items-center gap-1">{/* right actions */}</div>
+
+// Correct: tabs fixed width, right actions pinned right via ml-auto
+<Tabs className="min-w-0">
+  <TabsList className="grid h-7 grid-cols-3">{/* ... */}</TabsList>
+</Tabs>
+<div className="ml-auto flex shrink-0 items-center gap-1">{/* right actions */}</div>
+```
+
+  **Why**: `flex-1` was doing double duty — sizing the tabs to remaining space AND acting as the left-side filler that pushes the right group to the edge. Removing it fixes the width symptom but reintroduces a layout gap on the right unless `ml-auto` (or an equivalent spacer) takes over the push job.
 
 ---
 
