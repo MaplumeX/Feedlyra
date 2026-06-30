@@ -691,3 +691,38 @@ Root-caused sidebar right-click feed-delete page freeze to a duplicate @radix-ui
 ### Next Steps
 
 - None - task complete
+
+
+## Session 75: Fix article list filter tabs width resizing with panel
+
+**Date**: 2026-06-30
+**Task**: Fix article list filter tabs width resizing with panel
+**Branch**: `main`
+
+### Summary
+
+ArticleList header Tabs used flex-1 + TabsList w-full grid-cols-3, so 全部/未读/星标 triggers stretched with panel width. Dropped flex-1 and w-full so tabs size to content; added ml-auto to right action group (shrink-0 alone does not auto-right-align after removing flex-1). Codified the pattern in frontend component-guidelines.md.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `614ac68f` | (see git log) |
+| `08345b6e` | (see git log) |
+| `d36254c4` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
