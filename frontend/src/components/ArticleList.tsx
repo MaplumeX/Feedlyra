@@ -431,41 +431,44 @@ export function ArticleList() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-11 items-center gap-2 border-b px-3">
+      <div className="flex h-11 items-center gap-1 border-b px-2">
         <Tabs
+          className="min-w-0 flex-1"
           value={articleListFilter}
           onValueChange={(v) =>
             setReader({ articleListFilter: v as "all" | "unread" | "starred", selectedArticleId: null })
           }
         >
-          <TabsList className="h-7">
-            <TabsTrigger value="all" className="text-xs px-2">{t("all")}</TabsTrigger>
-            <TabsTrigger value="unread" className="text-xs px-2">{t("unread")}</TabsTrigger>
-            <TabsTrigger value="starred" className="text-xs px-2">{t("starred")}</TabsTrigger>
+          <TabsList className="grid h-7 w-full grid-cols-3">
+            <TabsTrigger value="all" className="truncate text-xs px-1">{t("all")}</TabsTrigger>
+            <TabsTrigger value="unread" className="truncate text-xs px-1">{t("unread")}</TabsTrigger>
+            <TabsTrigger value="starred" className="truncate text-xs px-1">{t("starred")}</TabsTrigger>
           </TabsList>
         </Tabs>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 ml-auto"
-          disabled={isFeedRefreshPending}
-          onClick={() => refreshAll.mutate()}
-          title={t("refreshAll")}
-        >
-          <RefreshCw className={cn("h-3.5 w-3.5", isFeedRefreshPending && "animate-spin")} />
-        </Button>
-        {hasUnread && (
+        <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            disabled={markAllRead.isPending}
-            onClick={() => markAllRead.mutate({ feedId: selectedFeedId ?? undefined })}
-            title={t("markAllRead")}
+            disabled={isFeedRefreshPending}
+            onClick={() => refreshAll.mutate()}
+            title={t("refreshAll")}
           >
-            <CheckCheck className="h-3.5 w-3.5" />
+            <RefreshCw className={cn("h-3.5 w-3.5", isFeedRefreshPending && "animate-spin")} />
           </Button>
-        )}
+          {hasUnread && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              disabled={markAllRead.isPending}
+              onClick={() => markAllRead.mutate({ feedId: selectedFeedId ?? undefined })}
+              title={t("markAllRead")}
+            >
+              <CheckCheck className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
