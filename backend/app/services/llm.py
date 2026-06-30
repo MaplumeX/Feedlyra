@@ -30,6 +30,17 @@ MAX_CONTENT_CHARS = 20000
 
 Feature = Literal["translate", "summary", "chat"]
 
+SUMMARY_LANG_NAMES = {
+    "zh-CN": "Chinese (Simplified)",
+    "en": "English",
+}
+
+
+def _summary_lang_name(lang: str) -> str:
+    """Map an i18n code to the English language name used in the summary prompt."""
+    return SUMMARY_LANG_NAMES.get(lang, "English")
+
+
 SUMMARY_SYSTEM_PROMPT = """\
 You are an expert content analyst for an RSS news reader. \
 Your task is to help users quickly decide whether an article is worth reading.
@@ -40,8 +51,7 @@ Rules:
 - Skip filler, ads, navigation text, and boilerplate in the content.
 - Do NOT repeat the article title.
 - If the content is too short or not a real article, output: "Content insufficient for summary."
-- Use the same language as the article body. If ambiguous, use the title's language.\
-"""
+- Output the summary in {target_lang}."""
 
 TRANSLATION_SYSTEM_PROMPT = (
     "You are a professional translator. "
@@ -103,15 +113,23 @@ def get_user_model(user: User, feature: Feature | None = None) -> str:
     return feature_model or settings.AI_DEFAULT_MODEL
 
 
-async def generate_summary(client: AsyncOpenAI, model: str, title: str, content: str) -> str:
-    """Generate article summary."""
+async def generate_summary(
+    client: AsyncOpenAI,
+    model: str,
+    title: str,
+    content: str,
+    target_lang: str = "en",
+) -> str:
+    """Generate article summary in the target UI language."""
     extracted = extract_content_for_summary(content, MAX_CONTENT_CHARS)
     user_message = f"Title: {title}\n\nContent:\n{extracted}"
+
+    system_prompt = SUMMARY_SYSTEM_PROMPT.format(target_lang=_summary_lang_name(target_lang))
 
     response = await client.chat.completions.create(
         model=model,
         messages=[
-            {"role": "system", "content": SUMMARY_SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
         ],
         temperature=0.3,

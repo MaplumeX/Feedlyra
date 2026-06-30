@@ -235,7 +235,7 @@ def _apply_summaries(item: ArticleResponse, summaries: list[ArticleSummary]) -> 
 
 
 async def _build_article_response(
-    article: Article, user: User, db: AsyncSession, feed_title: str | None = None
+    article: Article, user: User, db: AsyncSession, feed_title: str | None = None, lang: str = "en"
 ) -> ArticleResponse:
     """Build a full ArticleResponse with read/starred/ai_data enriched."""
     if feed_title is None:
@@ -270,6 +270,7 @@ async def _build_article_response(
         select(ArticleSummary).where(
             ArticleSummary.article_id == article.id,
             ArticleSummary.model == model,
+            ArticleSummary.lang == lang,
         )
     )
     summaries = list(summaries_result.scalars().all())
@@ -287,6 +288,7 @@ async def list_articles(
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=200),
     cursor: str | None = Query(None),
+    lang: str = Query(default="en"),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
@@ -360,6 +362,7 @@ async def list_articles(
             select(ArticleSummary).where(
                 ArticleSummary.article_id.in_(article_ids),
                 ArticleSummary.model == model,
+                ArticleSummary.lang == lang,
             )
         )
         for summary in summary_result.scalars().all():
@@ -502,6 +505,7 @@ async def batch_read(
 @router.get("/{article_id}", response_model=ArticleResponse)
 async def get_article(
     article_id: UUID,
+    lang: str = Query(default="en"),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ArticleResponse:
@@ -515,13 +519,14 @@ async def get_article(
         raise HTTPException(status_code=404, detail="Article not found")
 
     article, feed_title = row
-    return await _build_article_response(article, user, db, feed_title=feed_title)
+    return await _build_article_response(article, user, db, feed_title=feed_title, lang=lang)
 
 
 @router.put("/{article_id}/read", response_model=ArticleResponse)
 async def toggle_read(
     article_id: UUID,
     body: ReadToggle,
+    lang: str = Query(default="en"),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ArticleResponse:
@@ -548,13 +553,14 @@ async def toggle_read(
 
     await db.commit()
 
-    return await _build_article_response(article, user, db)
+    return await _build_article_response(article, user, db, lang=lang)
 
 
 @router.put("/{article_id}/star", response_model=ArticleResponse)
 async def toggle_star(
     article_id: UUID,
     body: StarToggle,
+    lang: str = Query(default="en"),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ArticleResponse:
@@ -583,12 +589,13 @@ async def toggle_star(
 
     await db.commit()
 
-    return await _build_article_response(article, user, db)
+    return await _build_article_response(article, user, db, lang=lang)
 
 
 @router.post("/{article_id}/extract", response_model=ArticleResponse)
 async def extract_article_content(
     article_id: UUID,
+    lang: str = Query(default="en"),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ArticleResponse:
@@ -602,7 +609,7 @@ async def extract_article_content(
         raise HTTPException(status_code=404, detail="Article not found")
 
     if article.full_content:
-        return await _build_article_response(article, user, db)
+        return await _build_article_response(article, user, db, lang=lang)
 
     extracted = await _fetch_and_extract_content(article.url)
     if extracted is None:
@@ -614,4 +621,4 @@ async def extract_article_content(
     await db.commit()
     await db.refresh(article)
 
-    return await _build_article_response(article, user, db)
+    return await _build_article_response(article, user, db, lang=lang)

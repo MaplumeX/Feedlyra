@@ -102,3 +102,75 @@ def test_output_never_exceeds_max_chars():
     content = first + "\n\n" + "\n\n".join(middle_parts) + "\n\n" + last
     result = extract_content_for_summary(content, 8000)
     assert len(result) <= 8000
+
+
+def test_generate_summary_uses_target_lang_name():
+    """generate_summary should instruct the LLM to output in the target UI language."""
+    from app.services.llm import generate_summary
+
+    captured: dict[str, object] = {}
+
+    class _Choice:
+        class _Message:
+            content = " summarized text"
+        message = _Message()
+
+    class _Resp:
+        choices = [_Choice()]
+
+    class _Completions:
+        @staticmethod
+        async def create(**kwargs):
+            captured.update(kwargs)
+            return _Resp()
+
+    class _Chat:
+        completions = _Completions()
+
+    class _FakeClient:
+        chat = _Chat()
+
+    import asyncio
+
+    result = asyncio.run(
+        generate_summary(_FakeClient(), "model-x", "Title", "body text", target_lang="zh-CN")
+    )
+
+    assert result == " summarized text"
+    messages = captured["messages"]
+    system_content = next(m["content"] for m in messages if m["role"] == "system")
+    assert "Output the summary in Chinese (Simplified)." in system_content
+    # The old "same language as the article body" rule must be gone.
+    assert "same language as the article body" not in system_content
+
+
+def test_generate_summary_defaults_to_english():
+    from app.services.llm import generate_summary
+
+    captured: dict[str, object] = {}
+
+    class _Choice:
+        class _Message:
+            content = "x"
+        message = _Message()
+
+    class _Resp:
+        choices = [_Choice()]
+
+    class _Completions:
+        @staticmethod
+        async def create(**kwargs):
+            captured.update(kwargs)
+            return _Resp()
+
+    class _Chat:
+        completions = _Completions()
+
+    class _FakeClient:
+        chat = _Chat()
+
+    import asyncio
+
+    asyncio.run(generate_summary(_FakeClient(), "m", "t", "b"))
+    system_content = next(m["content"] for m in captured["messages"] if m["role"] == "system")
+    assert "Output the summary in English." in system_content

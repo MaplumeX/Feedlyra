@@ -31,7 +31,10 @@ class ArticleAIData(Base):
 class ArticleSummary(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "article_summaries"
     __table_args__ = (
-        UniqueConstraint("article_id", "source", "model", name="uq_article_summaries_article_source_model"),
+        UniqueConstraint(
+            "article_id", "source", "model", "lang",
+            name="uq_article_summaries_article_source_model_lang",
+        ),
     )
 
     article_id: Mapped[PyUUID] = mapped_column(
@@ -41,6 +44,9 @@ class ArticleSummary(UUIDMixin, TimestampMixin, Base):
     content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     model: Mapped[str] = mapped_column(String(100), nullable=False)
+    # UI language the summary was generated in (i18n code, e.g. "en"/"zh-CN").
+    # Cache is isolated by lang so switching UI language re-fetches a fresh summary.
+    lang: Mapped[str] = mapped_column(String(10), nullable=False)
 
     article: Mapped["Article"] = relationship("Article", back_populates="summary_rows")
 

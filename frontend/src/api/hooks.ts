@@ -6,6 +6,7 @@ import {
   useQueryClient,
   type InfiniteData,
 } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { api } from "./client";
 import {
   applyArticleTransitions,
@@ -48,13 +49,15 @@ const queryKeys = {
   },
   articles: {
     all: ["articles"] as const,
-    list: (params: ArticleListParams) => [...queryKeys.articles.all, params] as const,
-    infiniteList: (params: ArticleListParams) =>
-      [...queryKeys.articles.all, "infinite", params] as const,
+    list: (params: ArticleListParams, lang: string) =>
+      [...queryKeys.articles.all, params, lang] as const,
+    infiniteList: (params: ArticleListParams, lang: string) =>
+      [...queryKeys.articles.all, "infinite", params, lang] as const,
     newCounts: () => [...queryKeys.articles.all, "new-count"] as const,
     newCount: (params: ArticleListParams, since: string) =>
       [...queryKeys.articles.newCounts(), params, since] as const,
-    detail: (id: string) => [...queryKeys.articles.all, "detail", id] as const,
+    detail: (id: string, lang: string) =>
+      [...queryKeys.articles.all, "detail", id, lang] as const,
   },
   ai: {
     config: ["ai", "config"] as const,
@@ -76,6 +79,14 @@ const queryKeys = {
 } as const;
 
 export { queryKeys };
+
+/** The summary language follows the UI (i18n) language.
+ * Normalized to a backend-supported code ("zh-CN" / "en"); any unknown value
+ * falls back to "en" to match the backend default + i18next fallbackLng. */
+function useUiLang(): string {
+  const { i18n } = useTranslation();
+  return i18n.resolvedLanguage === "zh-CN" || i18n.language === "zh-CN" ? "zh-CN" : "en";
+}
 
 const mutationKeys = {
   feeds: {
@@ -460,7 +471,7 @@ export interface ArticleListParams {
   cursor?: string;
 }
 
-function articleListSearchParams(params: ArticleListParams): URLSearchParams {
+function articleListSearchParams(params: ArticleListParams, lang?: string): URLSearchParams {
   const searchParams = new URLSearchParams();
   if (params.feed_id) searchParams.set("feed_id", params.feed_id);
   if (params.read_status) searchParams.set("read_status", params.read_status);
@@ -468,11 +479,12 @@ function articleListSearchParams(params: ArticleListParams): URLSearchParams {
   if (params.page) searchParams.set("page", String(params.page));
   if (params.limit) searchParams.set("limit", String(params.limit));
   if (params.cursor) searchParams.set("cursor", params.cursor);
+  if (lang) searchParams.set("lang", lang);
   return searchParams;
 }
 
-function articleListPath(params: ArticleListParams = {}) {
-  const searchParams = articleListSearchParams(params);
+function articleListPath(params: ArticleListParams = {}, lang?: string) {
+  const searchParams = articleListSearchParams(params, lang);
   const qs = searchParams.toString();
   return `/api/articles${qs ? `?${qs}` : ""}`;
 }
@@ -488,23 +500,28 @@ function newArticleCountPath(params: ArticleListParams, since: string) {
 }
 
 export function useArticles(params: ArticleListParams = {}) {
+  const lang = useUiLang();
   return useQuery({
-    queryKey: queryKeys.articles.list(params),
-    queryFn: () => api.get<ArticleListResponse>(articleListPath(params)),
+    queryKey: queryKeys.articles.list(params, lang),
+    queryFn: () => api.get<ArticleListResponse>(articleListPath(params, lang)),
     staleTime: 2 * 60 * 1000,
   });
 }
 
 export function useInfiniteArticles(params: ArticleListParams = {}) {
+  const lang = useUiLang();
   return useInfiniteQuery({
-    queryKey: queryKeys.articles.infiniteList(params),
+    queryKey: queryKeys.articles.infiniteList(params, lang),
     queryFn: ({ pageParam }) =>
       api.get<ArticleListResponse>(
-        articleListPath({
-          ...params,
-          page: pageParam ? undefined : 1,
-          cursor: pageParam ?? undefined,
-        }),
+        articleListPath(
+          {
+            ...params,
+            page: pageParam ? undefined : 1,
+            cursor: pageParam ?? undefined,
+          },
+          lang,
+        ),
       ),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
@@ -538,16 +555,20 @@ export function useNewArticleCount(
 
 export function useRefreshInfiniteArticles(params: ArticleListParams) {
   const qc = useQueryClient();
-  const queryKey = queryKeys.articles.infiniteList(params);
+  const lang = useUiLang();
+  const queryKey = queryKeys.articles.infiniteList(params, lang);
 
   return useMutation({
     mutationFn: () =>
       api.get<ArticleListResponse>(
-        articleListPath({
-          ...params,
-          page: 1,
-          cursor: undefined,
-        }),
+        articleListPath(
+          {
+            ...params,
+            page: 1,
+            cursor: undefined,
+          },
+          lang,
+        ),
       ),
     onSuccess: (firstPage) => {
       qc.setQueryData<InfiniteData<ArticleListResponse, string | null>>(
@@ -559,18 +580,21 @@ export function useRefreshInfiniteArticles(params: ArticleListParams) {
 }
 
 export function useArticle(articleId: string | null) {
+  const lang = useUiLang();
   return useQuery({
-    queryKey: queryKeys.articles.detail(articleId ?? ""),
-    queryFn: () => api.get<Article>(`/api/articles/${articleId}`),
+    queryKey: queryKeys.articles.detail(articleId ?? "", lang),
+    queryFn: () =>
+      api.get<Article>(`/api/articles/${articleId}?lang=${encodeURIComponent(lang)}`),
     enabled: !!articleId,
   });
 }
 
 export function useToggleRead() {
   const qc = useQueryClient();
+  const lang = useUiLang();
   return useMutation({
     mutationFn: ({ articleId, read }: { articleId: string; read: boolean }) =>
-      api.put<Article>(`/api/articles/${articleId}/read`, { read }),
+      api.put<Article>(`/api/articles/${articleId}/read?lang=${encodeURIComponent(lang)}`, { read }),
     onSuccess: (after: Article, { articleId }: { articleId: string; read: boolean }) => {
       const before = findCachedArticle(qc, articleId);
       const transitions = before ? [{ before, after }] : [];
@@ -583,9 +607,10 @@ export function useToggleRead() {
 
 export function useToggleStar() {
   const qc = useQueryClient();
+  const lang = useUiLang();
   return useMutation({
     mutationFn: ({ articleId, starred }: { articleId: string; starred: boolean }) =>
-      api.put<Article>(`/api/articles/${articleId}/star`, { starred }),
+      api.put<Article>(`/api/articles/${articleId}/star?lang=${encodeURIComponent(lang)}`, { starred }),
     onSuccess: (after: Article, { articleId }: { articleId: string; starred: boolean }) => {
       const before = findCachedArticle(qc, articleId);
       applyArticleTransitionsToCache(qc, before ? [{ before, after }] : []);
@@ -684,9 +709,10 @@ interface SummarizeResponse {
 
 export function useSummarize() {
   const qc = useQueryClient();
+  const lang = useUiLang();
   return useMutation({
     mutationFn: ({ articleId, source }: { articleId: string; source: ArticleSummarySource }) =>
-      api.post<SummarizeResponse>(`/api/ai/articles/${articleId}/summarize?source=${source}`, {}),
+      api.post<SummarizeResponse>(`/api/ai/articles/${articleId}/summarize?source=${source}&lang=${encodeURIComponent(lang)}`, {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.articles.all });
     },
@@ -723,12 +749,13 @@ export function useChatHistory(conversationId: string | null) {
 
 export function useExtractContent() {
   const qc = useQueryClient();
+  const lang = useUiLang();
   return useMutation({
     mutationFn: (articleId: string) =>
-      api.post<Article>(`/api/articles/${articleId}/extract`, {}),
+      api.post<Article>(`/api/articles/${articleId}/extract?lang=${encodeURIComponent(lang)}`, {}),
     onSuccess: (data, articleId) => {
-      qc.setQueryData(queryKeys.articles.detail(articleId), data);
-      qc.invalidateQueries({ queryKey: queryKeys.articles.detail(articleId) });
+      qc.setQueryData(queryKeys.articles.detail(articleId, lang), data);
+      qc.invalidateQueries({ queryKey: queryKeys.articles.detail(articleId, lang) });
       qc.invalidateQueries({ queryKey: queryKeys.articles.all });
     },
   });

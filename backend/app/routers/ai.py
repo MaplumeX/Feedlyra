@@ -46,6 +46,7 @@ from app.schemas.ai import (
 )
 from app.services.llm import (
     Feature,
+    SUMMARY_LANG_NAMES,
     encrypt_api_key,
     generate_summary,
     get_user_llm_client,
@@ -65,6 +66,12 @@ def _validate_summary_source(source: str) -> SummarySource:
     if source in (SUMMARY_SOURCE_FEED, SUMMARY_SOURCE_FULL):
         return source
     raise HTTPException(status_code=400, detail="Invalid summary source")
+
+
+def _validate_summary_lang(lang: str) -> str:
+    if lang in SUMMARY_LANG_NAMES:
+        return lang
+    raise HTTPException(status_code=400, detail="Invalid summary language")
 
 
 def _build_feature_response(user: User, feature: Feature) -> FeatureAIConfigResponse:
@@ -202,6 +209,7 @@ async def test_ai_connection(
 async def summarize_article(
     article_id: UUID,
     source: str = Query(default=SUMMARY_SOURCE_FEED),
+    lang: str = Query(default="en"),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
@@ -216,6 +224,7 @@ async def summarize_article(
         raise HTTPException(status_code=404, detail="Article not found")
 
     summary_source = _validate_summary_source(source)
+    summary_lang = _validate_summary_lang(lang)
     content = get_summary_content(article, summary_source)
     if summary_source == SUMMARY_SOURCE_FULL and not content:
         raise HTTPException(status_code=422, detail="Full content is not available")
@@ -232,6 +241,7 @@ async def summarize_article(
             ArticleSummary.article_id == article_id,
             ArticleSummary.source == summary_source,
             ArticleSummary.model == model,
+            ArticleSummary.lang == summary_lang,
         )
     )
     article_summary = summary_result.scalar_one_or_none()
@@ -250,7 +260,7 @@ async def summarize_article(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    summary = await generate_summary(client, model, article.title, content)
+    summary = await generate_summary(client, model, article.title, content, target_lang=summary_lang)
 
     now = datetime.now(timezone.utc)
 
@@ -261,6 +271,7 @@ async def summarize_article(
             content_hash=content_hash,
             summary=summary,
             model=model,
+            lang=summary_lang,
             created_at=now,
             updated_at=now,
         )
