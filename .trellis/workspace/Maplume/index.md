@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 72
+- **Total Sessions**: 73
 - **Last Active**: 2026-06-30
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~624 | Active |
+| `journal-2.md` | ~658 | Active |
 | `journal-1.md` | ~1990 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 73 | 2026-06-30 | 修复 asyncpg 连接池复用已失效连接问题 | `00bacdb7`, `e93117bc` | `main` |
 | 71 | 2026-06-29 | 订阅源批量编辑（bulk move/delete） | `c70efabf`, `ad7b7447`, `334d7408`, `220679e7` | `emdash/cold-mangos-cross-jueke` |
 | 72 | 2026-06-30 | 对齐 Miniflux 批量导入模型 | `7a37aeb6` | `emdash/mighty-moons-give-m7cc4` |
 | 70 | 2026-06-28 | Support docker compose deployment | `590f7a8` | `main` |

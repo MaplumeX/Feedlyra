@@ -622,3 +622,37 @@ Branded AI retrieval from a single keyword-ILIKE path into a structured tool fam
 ### Next Steps
 
 - None - task complete
+
+
+## Session 73: 修复 asyncpg 连接池复用已失效连接问题
+
+**Date**: 2026-06-30
+**Task**: 修复 asyncpg 连接池复用已失效连接问题
+**Branch**: `main`
+
+### Summary
+
+为 create_async_engine 增加 pool_pre_ping/pool_recycle/pool_size/max_overflow，修复连接池复用 DB 端已关闭连接导致 'connection is closed' 的问题；同步更新 database-guidelines spec。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `00bacdb7` | (see git log) |
+| `e93117bc` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
