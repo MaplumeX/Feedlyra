@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend conventions + verification commands (npm run lint / npm run build) for quality gate"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Code standards and forbidden patterns to check R1/R2/R3 edits against"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify Dialog/AlertDialog/ContextMenu/DropdownMenu usage follows project component patterns"}
+{"file": ".trellis/tasks/06-30-fix-sidebar-delete-feed-freeze/research/radix-overlay-to-overlay-transition.md", "reason": "Verify R1/R3 use the canonical onSelect+setTimeout pattern and R4 aligns to single dismissable-layer instance per #3317"}

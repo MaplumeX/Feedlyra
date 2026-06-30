@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend conventions entry: shadcn/Radix + Tailwind, state split (Zustand UI / React Query server), i18n key reuse — applies to R1/R2/R3 edits"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns/composition for Dialog/AlertDialog/ContextMenu/DropdownMenu edits in Sidebar.tsx and SubscriptionsTab.tsx"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "R2 cleanup of selectedFeedId/selectedArticleId/articleListFilter via reader Zustand store; useDeleteFeed mutation onSuccess stays at call site"}
+{"file": ".trellis/tasks/06-30-fix-sidebar-delete-feed-freeze/research/radix-overlay-to-overlay-transition.md", "reason": "Root cause (dual react-dismissable-layer instances #3317) + canonical onSelect+setTimeout workaround + R4 version alignment rationale"}
