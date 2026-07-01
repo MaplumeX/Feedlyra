@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality gate: forbidden patterns + standards to verify against"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend quality-check section + key conventions for verification"}
+{"file": "DESIGN.md", "reason": "Verify every change aligns with Reading Room system: warning rule, rounded/shadow ceiling, chat-bubble-ai policy"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify component/styling conventions (token usage, shadcn composition, color presets) are respected"}

@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend dev entry: pre-dev checklist, key conventions (Tailwind v3, color scheme presets, shadcn/ui)"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component/styling patterns: token usage, shadcn composition, color scheme preset rules — directly governs token+className changes"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Forbidden patterns + code standards — governs amber removal, gradient ban, dead-code cleanup"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "TS strict mode — governs RuleEditorDialog disabled-state typing and i18n TFunction signature"}
+{"file": "DESIGN.md", "reason": "Source of truth for warning token, rounded/shadow discipline, chat-bubble-ai policy — every fix aligns here"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse destructive token/disabled-save precedent instead of inventing new patterns"}
