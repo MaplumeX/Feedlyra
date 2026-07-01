@@ -42,23 +42,73 @@ export function SettingsDialog() {
           orientation="vertical"
           className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-4 flex-1 min-h-0"
         >
-          {/* Desktop vertical tab list */}
+          {/* Desktop vertical tab list — minimal text style */}
           <TabsList
-            className="hidden h-auto w-40 flex-col justify-start gap-1 sm:flex"
+            className="hidden h-auto w-48 flex-col justify-start gap-0.5 bg-transparent p-0 sm:flex"
           >
-            <TabsTrigger value="general" className="justify-start">{t("general")}</TabsTrigger>
-            <TabsTrigger value="ai" className="justify-start">{t("aiSettings")}</TabsTrigger>
-            <TabsTrigger value="subscriptions" className="justify-start">{t("subscriptions")}</TabsTrigger>
-            <TabsTrigger value="automation" className="justify-start">{t("automation.tabLabel")}</TabsTrigger>
-            <TabsTrigger value="about" className="justify-start">{t("about.tabLabel")}</TabsTrigger>
+            <TabsTrigger
+              value="general"
+              className="relative w-full justify-start rounded-md px-3 py-2 text-sm font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:before:absolute data-[state=active]:before:bottom-1.5 data-[state=active]:before:left-0 data-[state=active]:before:top-1.5 data-[state=active]:before:w-0.5 data-[state=active]:before:rounded-full data-[state=active]:before:bg-primary"
+            >
+              {t("general")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="ai"
+              className="relative w-full justify-start rounded-md px-3 py-2 text-sm font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:before:absolute data-[state=active]:before:bottom-1.5 data-[state=active]:before:left-0 data-[state=active]:before:top-1.5 data-[state=active]:before:w-0.5 data-[state=active]:before:rounded-full data-[state=active]:before:bg-primary"
+            >
+              {t("aiSettings")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="subscriptions"
+              className="relative w-full justify-start rounded-md px-3 py-2 text-sm font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:before:absolute data-[state=active]:before:bottom-1.5 data-[state=active]:before:left-0 data-[state=active]:before:top-1.5 data-[state=active]:before:w-0.5 data-[state=active]:before:rounded-full data-[state=active]:before:bg-primary"
+            >
+              {t("subscriptions")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="automation"
+              className="relative w-full justify-start rounded-md px-3 py-2 text-sm font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:before:absolute data-[state=active]:before:bottom-1.5 data-[state=active]:before:left-0 data-[state=active]:before:top-1.5 data-[state=active]:before:w-0.5 data-[state=active]:before:rounded-full data-[state=active]:before:bg-primary"
+            >
+              {t("automation.tabLabel")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="about"
+              className="relative w-full justify-start rounded-md px-3 py-2 text-sm font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:before:absolute data-[state=active]:before:bottom-1.5 data-[state=active]:before:left-0 data-[state=active]:before:top-1.5 data-[state=active]:before:w-0.5 data-[state=active]:before:rounded-full data-[state=active]:before:bg-primary"
+            >
+              {t("about.tabLabel")}
+            </TabsTrigger>
           </TabsList>
-          {/* Mobile horizontal tab list */}
-          <TabsList className="flex w-full sm:hidden">
-            <TabsTrigger value="general" className="flex-1">{t("general")}</TabsTrigger>
-            <TabsTrigger value="ai" className="flex-1">{t("aiSettings")}</TabsTrigger>
-            <TabsTrigger value="subscriptions" className="flex-1">{t("subscriptions")}</TabsTrigger>
-            <TabsTrigger value="automation" className="flex-1">{t("automation.tabLabel")}</TabsTrigger>
-            <TabsTrigger value="about" className="flex-1">{t("about.tabLabel")}</TabsTrigger>
+          {/* Mobile horizontal tab list — underline style */}
+          <TabsList className="flex w-full justify-start gap-0 border-b border-border bg-transparent p-0 sm:hidden">
+            <TabsTrigger
+              value="general"
+              className="flex-1 rounded-none border-b-2 border-transparent px-2 py-2.5 text-xs font-medium text-muted-foreground transition-colors data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              {t("general")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="ai"
+              className="flex-1 rounded-none border-b-2 border-transparent px-2 py-2.5 text-xs font-medium text-muted-foreground transition-colors data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              {t("aiSettings")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="subscriptions"
+              className="flex-1 rounded-none border-b-2 border-transparent px-2 py-2.5 text-xs font-medium text-muted-foreground transition-colors data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              {t("subscriptions")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="automation"
+              className="flex-1 rounded-none border-b-2 border-transparent px-2 py-2.5 text-xs font-medium text-muted-foreground transition-colors data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              {t("automation.tabLabel")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="about"
+              className="flex-1 rounded-none border-b-2 border-transparent px-2 py-2.5 text-xs font-medium text-muted-foreground transition-colors data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              {t("about.tabLabel")}
+            </TabsTrigger>
           </TabsList>
           <div className="mt-4 sm:mt-0 sm:ml-6 sm:min-w-0 flex-1 min-h-0 overflow-y-auto">
             <TabsContent value="general" className="mt-0">
