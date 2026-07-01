@@ -828,3 +828,37 @@ Made AI article summary output language follow the UI (i18n) language instead of
 ### Next Steps
 
 - None - task complete
+
+
+## Session 79: Redesign settings dialog for stable sizing across tabs
+
+**Date**: 2026-07-01
+**Task**: Redesign settings dialog for stable sizing across tabs
+**Branch**: `main`
+
+### Summary
+
+Redesigned SettingsDialog as a split-pane layout (left vertical tab list + right fixed-height inner scroll region) so the dialog frame no longer jumps in width/height on tab switch. Desktop uses sm:max-w-3xl with sm:max-h-[60vh] content scroll; < sm falls back to a top horizontal TabsList. Removed per-tab max-w and transition-[max-width]. Added spec pattern for multi-tab dialog stable sizing and a Radix Tabs orientation gotcha (orientation belongs to Tabs.Root, not TabsList).
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `23ccb32b` | (see git log) |
+| `b369df64` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
