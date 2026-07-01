@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 76
+- **Total Sessions**: 77
 - **Last Active**: 2026-07-01
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~763 | Active |
+| `journal-2.md` | ~797 | Active |
 | `journal-1.md` | ~1990 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 77 | 2026-07-01 | 前端全局 UI polish 全维度收口 | `cba5b49d`, `2d35b529` | `main` |
 | 76 | 2026-07-01 | AI summary language follows UI language | `5dbba121`, `a05c713d`, `9eef2ee2` | `main` |
 | 75 | 2026-06-30 | Fix article list filter tabs width resizing with panel | `614ac68f`, `08345b6e`, `d36254c4` | `main` |
 | 74 | 2026-06-30 | Fix sidebar delete-feed UI freeze (Radix overlay→overlay) | `05976ba6`, `df0f536b`, `44186045` | `main` |

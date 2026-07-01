@@ -761,3 +761,37 @@ Made AI article summary output language follow the UI (i18n) language instead of
 ### Next Steps
 
 - None - task complete
+
+
+## Session 77: 前端全局 UI polish 全维度收口
+
+**Date**: 2026-07-01
+**Task**: 前端全局 UI polish 全维度收口
+**Branch**: `main`
+
+### Summary
+
+全局 polish pass 沿 impeccable polish 清单收口 DESIGN.md Reading Room 体系残留 drift。新增 --warning semantic token（38 90% 32% light，4.72:1 AA 达标）+ Tailwind 映射 + DESIGN.md Warning Rule；消除两处 amber 硬编码（AutomationTab/RuleEditorDialog）并加入 hasConflict 禁用 Save 的错误预防；auth 页渐变→bg-accent、logo rounded-md；chat 用户气泡 rounded-2xl→lg、AIChatPanel input rounded-xl→md；FloatingChatPanel 降重至 shadow-lg 并移除 focus-within:shadow-2xl；ConversationSidebar formatRelativeTime 改 t() i18n（zh+en 4 key）；--chat-bubble-ai token 加注释防误用。4 phase 各跑 trellis-check 全绿，AC1-11 达成。spec 同步 component-guidelines 漂移 3 处。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cba5b49d` | (see git log) |
+| `2d35b529` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
