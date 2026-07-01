@@ -795,3 +795,36 @@ Made AI article summary output language follow the UI (i18n) language instead of
 ### Next Steps
 
 - None - task complete
+
+
+## Session 78: 设置页添加关于 Tab 显示版本号
+
+**Date**: 2026-07-01
+**Task**: 设置页添加关于 Tab 显示版本号
+**Branch**: `main`
+
+### Summary
+
+在 SettingsDialog 新增第 5 个「关于」Tab，通过 Vite define 注入 __APP_VERSION__（来自 package.json），展示版本号、项目名、简介、仓库链接。中英文 i18n 齐全，tsc/eslint 0 新增 warning。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `eb20a8aa` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
