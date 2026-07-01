@@ -105,6 +105,11 @@
   "themeIndigo": "Indigo",
   "themeAmber": "Amber",
   "themeForest": "Forest",
+  "about": {
+    "tabLabel": "About",
+    "description": "A self-hosted RSS feed reader with integrated AI capabilities — summarize, translate, and chat with your articles using any OpenAI-compatible LLM.",
+    "repository": "Repository"
+  },
   "automation": {
     "tabLabel": "Automation",
     "tooltip": "Automation",

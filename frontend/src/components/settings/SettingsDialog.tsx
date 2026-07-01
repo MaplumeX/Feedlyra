@@ -13,6 +13,7 @@ import { GeneralSettingsTab } from "./GeneralSettingsTab";
 import { AISettingsTab } from "./AISettingsTab";
 import { SubscriptionsTab } from "./SubscriptionsTab";
 import { AutomationTab } from "./AutomationTab";
+import { AboutTab } from "./AboutTab";
 
 export function SettingsDialog() {
   const { t } = useTranslation("settings");
@@ -45,6 +46,7 @@ export function SettingsDialog() {
             <TabsTrigger value="ai" className="flex-1">{t("aiSettings")}</TabsTrigger>
             <TabsTrigger value="subscriptions" className="flex-1">{t("subscriptions")}</TabsTrigger>
             <TabsTrigger value="automation" className="flex-1">{t("automation.tabLabel")}</TabsTrigger>
+            <TabsTrigger value="about" className="flex-1">{t("about.tabLabel")}</TabsTrigger>
           </TabsList>
           <TabsContent value="general" className="mt-4">
             <GeneralSettingsTab />
@@ -57,6 +59,9 @@ export function SettingsDialog() {
           </TabsContent>
           <TabsContent value="automation" className="mt-4">
             <AutomationTab />
+          </TabsContent>
+          <TabsContent value="about" className="mt-4">
+            <AboutTab />
           </TabsContent>
         </Tabs>
       </DialogContent>

@@ -105,6 +105,11 @@
   "themeIndigo": "蓝紫",
   "themeAmber": "暖橙",
   "themeForest": "墨绿",
+  "about": {
+    "tabLabel": "关于",
+    "description": "一个自带 AI 能力的自托管 RSS 阅读器 —— 使用任意 OpenAI 兼容的大语言模型来摘要、翻译和对话你的文章。",
+    "repository": "仓库"
+  },
   "automation": {
     "tabLabel": "自动化",
     "tooltip": "自动化",
