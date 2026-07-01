@@ -143,6 +143,7 @@
     "addCondition": "Add Condition",
     "actions": "Actions",
     "conflictWarning": "Delete takes precedence — other actions won't have effect",
+    "conflictBlockingHint": "Delete cannot combine with other actions. Uncheck one.",
     "conflictHint": "Delete takes precedence over other actions",
     "targetLanguage": "Target Language",
     "selectAction": "Select at least one action",

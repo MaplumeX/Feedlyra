@@ -336,8 +336,8 @@ export function FloatingChatPanel({ children }: FloatingChatPanelProps) {
     <div
       ref={containerRef}
       className={cn(
-        "fixed z-50 flex flex-col overflow-hidden rounded-xl border bg-background shadow-xl select-none transition-shadow",
-        "focus-within:shadow-2xl focus-within:ring-1 focus-within:ring-primary/10",
+        "fixed z-50 flex flex-col overflow-hidden rounded-lg border bg-background shadow-lg select-none transition-shadow",
+        "focus-within:ring-1 focus-within:ring-primary/10",
       )}
       style={{
         left: `${position.x}px`,

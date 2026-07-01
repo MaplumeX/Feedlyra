@@ -143,6 +143,7 @@
     "addCondition": "添加条件",
     "actions": "操作",
     "conflictWarning": "删除优先级最高 — 其他操作不会生效",
+    "conflictBlockingHint": "删除与其他动作不可同时启用，请取消其中一项",
     "conflictHint": "删除优先于其他操作",
     "targetLanguage": "目标语言",
     "selectAction": "请至少选择一个操作",

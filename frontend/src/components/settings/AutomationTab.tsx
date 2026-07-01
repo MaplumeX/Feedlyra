@@ -149,7 +149,7 @@ export function AutomationTab() {
                 </Badge>
               </div>
               {hasDeleteAction(rule) && rule.actions.length > 1 && (
-                <div className="mt-1 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                <div className="mt-1 flex items-center gap-1 text-xs text-warning">
                   <AlertTriangle className="h-3 w-3" />
                   <span>{t("automation.conflictHint")}</span>
                 </div>

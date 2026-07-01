@@ -356,7 +356,7 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
           <div className="space-y-3">
             <Label>{t("automation.actions")}</Label>
             {hasConflict && (
-              <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+              <div className="flex items-center gap-2 rounded-md border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 <span>{t("automation.conflictWarning")}</span>
               </div>
@@ -407,12 +407,18 @@ export function RuleEditorDialog({ rule, open, onOpenChange, defaultScope, defau
         )}
 
         <DialogFooter>
+          {hasConflict && (
+            <p className="flex items-center gap-1 text-xs text-warning">
+              <AlertTriangle className="h-3 w-3" />
+              {t("automation.conflictBlockingHint")}
+            </p>
+          )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("automation.cancel")}
           </Button>
           <Button
             onClick={handleSave}
-            disabled={isPending || !name.trim() || noActionsSelected}
+            disabled={isPending || !name.trim() || noActionsSelected || hasConflict}
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isEditing ? t("automation.save") : t("automation.create")}

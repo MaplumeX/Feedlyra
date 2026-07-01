@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Plus, MessageSquareText, Trash2, Pencil, MoreHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
@@ -121,7 +122,7 @@ function ConversationRow({
   }
 
   const timeLabel = conversation.last_message_at
-    ? formatRelativeTime(conversation.last_message_at)
+    ? formatRelativeTime(conversation.last_message_at, t)
     : null;
 
   return (
@@ -214,17 +215,17 @@ function ConversationRow({
   );
 }
 
-function formatRelativeTime(iso: string): string {
+function formatRelativeTime(iso: string, t: TFunction): string {
   const now = Date.now();
   const then = new Date(iso).getTime();
   const diffMs = now - then;
   const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return "now";
-  if (diffMin < 60) return `${diffMin}m`;
+  if (diffMin < 1) return t("relativeNow");
+  if (diffMin < 60) return t("relativeMinutes", { count: diffMin });
   const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h`;
+  if (diffHr < 24) return t("relativeHours", { count: diffHr });
   const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 7) return `${diffDay}d`;
+  if (diffDay < 7) return t("relativeDays", { count: diffDay });
   return new Date(iso).toLocaleDateString();
 }
 

@@ -168,11 +168,14 @@ A single accent does all the work; the rest is a cool, near-neutral ramp that le
 - **Sidebar background** (`#f3f4f7` / `#0e1016`): slightly cooler and (in dark) deeper than the content surface, marking it as chrome. Selected feed items use **sidebar-selected** (`#e2e4e9` / `#2b2f3b`); hover uses **sidebar-hover** (`#ebecf0`).
 - **Article hover** (`#eeeff2` / `#1e2129`): the row's hover and selected state in the article list — denser than sidebar hover, so the reader's eye tracks the focused row.
 - **Destructive** (`#dc2828` / `#cf5a5a`): delete and destructive confirmations only. Never decorative.
+- **Warning** (`#9b6508` light / `#fac938` dark): independent semantic color for non-destructive conflict/warning surfaces only (e.g. automation rule conflict hints, rule-editor conflict banners). 仅用于非破坏性冲突/警示，不含删除；与 Three Hues 互斥，不随主题切换。 Never used for delete confirmations — those stay `destructive`.
 
 ### Named Rules
 **The One Accent Rule.** The primary hue appears on no more than ~10% of any given screen — primary buttons, the unread dot, current selection, prose links. If the accent starts filling backgrounds or large surfaces, the reading room has become a dashboard.
 
 **The Three Hues Rule.** Indigo, Amber, and Forest are the only accents that exist. They are mutually exclusive per session, set once via the theme toggle. Never combine two hues on one screen, and never introduce a fourth.
+
+**The Warning Rule.** `warning` is an independent semantic color, NOT part of One Accent / Three Hues. It never switches with the primary hue and never combines with it. It is used only for non-destructive conflict/warning states (e.g. "delete cannot combine with other actions"); destructive/delete states always use `destructive` instead.
 
 **The Blue-Undertone Rule.** All neutrals carry a faint blue undertone (hue ≈ 220–225°, chroma < 0.06) to keep the surface cohesive with the cool reading-room identity. Do not drift toward cream, sand, or warm parchment — that is the saturated AI default this product refuses.
 
@@ -259,7 +262,7 @@ Every component ships with default / hover / focus-visible / active / disabled /
 ### AI Chat Panel (signature component)
 - **Assistant avatar:** 28px circle, `bg-primary/10`, Bot icon at `text-primary`. Deliberately understated — the assistant is a quiet presence, not a glowing orb.
 - **User bubble:** `bg-chat-bubble-user` (primary at 12% alpha). Same hue family as the reader's prose links, so the user's voice is visibly part of the article's color world.
-- **AI content (no bubble):** the assistant's markdown renders directly (no `bg-chat-bubble-ai` background), deliberately quieter than the user bubble's accent-alpha pill. The reader's eye stays with their own input and the article; the assistant is a voice, not a surface. The `--chat-bubble-ai` token is retained for future use but is intentionally not applied as a background.
+- **AI content (no bubble):** the assistant's markdown renders directly (no `bg-chat-bubble-ai` background), deliberately quieter than the user bubble's accent-alpha pill. The reader's eye stays with their own input and the article; the assistant is a voice, not a surface. The `--chat-bubble-ai` token is retained for future use but is intentionally not applied as a background — 勿作背景，保留供未来浮层 (reserved for future floating AI surfaces; do not use as a background).
 - **Typing indicator:** three 6px dots, `bg-foreground/50`, staggered bounce (150ms offsets). No colored halo, no blinking cursor. State feedback only.
 - **Input:** same field vocabulary as the rest of the app — one input language across reading and chat.
 

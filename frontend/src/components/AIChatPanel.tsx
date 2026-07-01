@@ -254,14 +254,14 @@ function ChatMessageBubble({
     return (
       <div className="flex justify-end">
         <div className="max-w-[85%]">
-          <div className="rounded-2xl bg-chat-user px-3 py-2">
+          <div className="rounded-lg bg-chat-user px-3 py-2">
             <textarea
               ref={textareaRef}
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               onKeyDown={handleEditKeyDown}
               rows={1}
-              className="w-full resize-none rounded-xl border bg-background px-2 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="w-full resize-none rounded-md border bg-background px-2 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             />
           </div>
           <div className="mt-1 flex gap-1 justify-end">
@@ -301,7 +301,7 @@ function ChatMessageBubble({
         <div
           className={cn(
             "text-sm",
-            isAssistant ? "" : "rounded-2xl bg-chat-user px-3 py-2"
+            isAssistant ? "" : "rounded-lg bg-chat-user px-3 py-2"
           )}
         >
           {isAssistant ? (
@@ -502,7 +502,7 @@ function ChatInput({
           placeholder={t("chatPlaceholder")}
           disabled={isStreaming}
           rows={1}
-          className="flex-1 resize-none rounded-xl border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
         />
         <Button
           variant="ghost"

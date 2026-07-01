@@ -29,6 +29,13 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 220 20% 98%;
 
+    /* Independent semantic color: non-destructive conflict/warning only.
+       Not part of One Accent / Three Hues; does not switch with theme.
+       Light value deepened from 38 92% 50% (#f59e0b) to pass WCAG AA text
+       contrast (4.72:1 on background). Do NOT lighten back without
+       rechecking contrast — see DESIGN.md Warning rule. */
+    --warning: 38 90% 32%;
+
     --border: 220 13% 91%;
     --input: 220 13% 91%;
     --ring: 239 84% 58%;
@@ -51,6 +58,8 @@
     --sidebar-selected: 220 14% 90%;
     --article-hover: 220 14% 94%;
     --chat-bubble-user: 239 84% 58% / 0.12;
+    /* Reserved for future floating AI surfaces. Assistant renders as plain
+       markdown (no bubble). DO NOT apply as background. See DESIGN.md §5. */
     --chat-bubble-ai: 220 14% 96%;
     --conversation-bg: 222 18% 97%;
     --conversation-hover: 220 14% 93%;
@@ -86,6 +95,10 @@
     --destructive: 0 60% 55%;
     --destructive-foreground: 220 14% 93%;
 
+    /* Independent semantic color: non-destructive conflict/warning only.
+       Not part of One Accent / Three Hues; does not switch with theme. */
+    --warning: 45 95% 60%;
+
     --border: 225 16% 20%;
     --input: 225 16% 20%;
     --ring: 240 68% 65%;
@@ -96,6 +109,8 @@
     --sidebar-selected: 225 16% 20%;
     --article-hover: 225 16% 14%;
     --chat-bubble-user: 240 68% 65% / 0.18;
+    /* Reserved for future floating AI surfaces. Assistant renders as plain
+       markdown (no bubble). DO NOT apply as background. See DESIGN.md §5. */
     --chat-bubble-ai: 225 16% 14%;
     --conversation-bg: 225 20% 8%;
     --conversation-hover: 225 16% 14%;

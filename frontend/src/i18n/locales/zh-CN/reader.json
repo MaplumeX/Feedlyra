@@ -147,5 +147,9 @@
   "switchToFloating": "切换为浮动模式",
   "switchToSidebar": "切换为侧边栏模式",
   "closeChat": "关闭对话",
-  "chatPanel": "AI 对话"
+  "chatPanel": "AI 对话",
+  "relativeNow": "刚刚",
+  "relativeMinutes": "{{count}}分钟前",
+  "relativeHours": "{{count}}小时前",
+  "relativeDays": "{{count}}天前"
 }

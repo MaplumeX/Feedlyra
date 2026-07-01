@@ -147,5 +147,9 @@
   "switchToFloating": "Switch to floating mode",
   "switchToSidebar": "Switch to sidebar mode",
   "closeChat": "Close chat",
-  "chatPanel": "AI Chat"
+  "chatPanel": "AI Chat",
+  "relativeNow": "now",
+  "relativeMinutes": "{{count}}m",
+  "relativeHours": "{{count}}h",
+  "relativeDays": "{{count}}d"
 }
