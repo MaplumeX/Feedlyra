@@ -31,8 +31,9 @@ Use `useInfiniteQuery` for APIs that return `{ items, total, page, limit, next_c
 
 ```tsx
 export function useInfiniteArticles(params: ArticleListParams = {}) {
+  const lang = useUiLang(); // "zh-CN" | "en" — in queryKey so a UI language switch refetches (see Summary Language Isolation)
   return useInfiniteQuery({
-    queryKey: queryKeys.articles.infiniteList(params),
+    queryKey: queryKeys.articles.infiniteList(params, lang),
     queryFn: ({ pageParam }) =>
       api.get<ArticleListResponse>(
         articleListPath({
@@ -152,15 +153,19 @@ Co-located in `src/api/hooks.ts`:
 
 ```tsx
 const queryKeys = {
-  feeds:       { all: ["feeds"] as const, list: () => [...queryKeys.feeds.all, "list"] as const },
+  feeds: {
+    all: ["feeds"] as const,
+    list: () => [...queryKeys.feeds.all, "list"] as const,
+    jobs: { status: ["feeds", "jobs", "status"] as const }, // import / refresh-all batch progress
+  },
   categories:  { all: ["categories"] as const, list: () => [...queryKeys.categories.all, "list"] as const },
   articles: {
     all: ["articles"] as const,
-    list: (params) => [...queryKeys.articles.all, params] as const,
-    infiniteList: (params) => [...queryKeys.articles.all, "infinite", params] as const,
+    list: (params, lang) => [...queryKeys.articles.all, params, lang] as const,
+    infiniteList: (params, lang) => [...queryKeys.articles.all, "infinite", params, lang] as const,
     newCounts: () => [...queryKeys.articles.all, "new-count"] as const,
     newCount: (params, since) => [...queryKeys.articles.newCounts(), params, since] as const,
-    detail: (id) => [...queryKeys.articles.all, "detail", id] as const,
+    detail: (id, lang) => [...queryKeys.articles.all, "detail", id, lang] as const,
   },
   ai:           { config: ["ai", "config"] as const },
   conversations: {
@@ -181,7 +186,10 @@ All query keys use `as const` for type safety and are used in both `useQuery` an
 
 ## UI Hooks
 
-Located in `src/hooks/`. Currently only `useKeyboardShortcuts.ts`.
+Located in `src/hooks/`:
+
+- `useKeyboardShortcuts.ts` — scoped `react-hotkeys-hook` bindings (composition of API hooks + store access + `useCallback`-memoized handlers).
+- `useColorScheme.ts` — **side-effect only, not a data hook**: reads `localStorage["feedlyra-color-scheme"]` and toggles a `.theme-*` class on `<html>`. See [[component-guidelines]] "Color Scheme Presets".
 
 Pattern: composition of API hooks + store access + `useCallback` for handler memoization:
 
@@ -252,7 +260,7 @@ const handleSend = async () => {
 `src/api/hooks.ts` exports (naming: `use` + entity + verb). Verify with `grep -nE "^export (async )?function use" src/api/hooks.ts` — this list is a snapshot, not authoritative:
 
 - **Auth/User**: `useCurrentUser`, `useUpdateProfile`, `useUpdateEmail`, `useUpdatePassword`.
-- **Feeds**: `useFeeds`, `useDiscoverFeeds`, `useAddFeed`, `useUpdateFeed`, `useDeleteFeed`, `useRefreshFeed`, `useRefreshAllFeeds`, `useIsFeedRefreshPending`, `useImportOPML`, `useExportOPML`.
+- **Feeds**: `useFeeds`, `useDiscoverFeeds`, `useAddFeed`, `useUpdateFeed`, `useDeleteFeed`, `useBulkMoveFeeds`, `useBulkDeleteFeeds`, `useRefreshFeed`, `useRefreshAllFeeds`, `useIsFeedRefreshPending`, `useFeedJobStatus`, `useImportOPML`, `useExportOPML`.
 - **Categories**: `useCategories`, `useCreateCategory`, `useUpdateCategory`, `useDeleteCategory`.
 - **Articles**: `useArticles`, `useInfiniteArticles`, `useArticle`, `useToggleRead`, `useToggleStar`, `useMarkAllRead`, `useBatchRead`, `useStarredCount`, `useNewArticleCount`, `useRefreshInfiniteArticles`, `useExtractContent`.
 - **AI**: `useAIConfig`, `useUpdateAIConfig`, `useSummarize`, `useTranslate`, `useChatHistory`, `useUploadConversationImage`. (The SSE chat stream is NOT a hook — `streamChat` is a plain async function in `src/api/sse.ts`.)

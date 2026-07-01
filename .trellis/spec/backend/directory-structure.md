@@ -34,7 +34,23 @@ backend/
 │       ├── 011_auto_translate_fields.py
 │       ├── 012_conversations_and_references.py
 │       ├── 013_automation_rules.py
-│       └── 014_article_initial_fetch.py
+│       ├── 014_article_initial_fetch.py
+│       ├── 015_cross_article_search.py
+│       ├── 016_chatmsg_tool_fields.py
+│       ├── 017_drop_ai_cross_article_search.py
+│       ├── 018_feed_disabled.py
+│       └── 019_article_summary_lang.py
+├── tests/                       # pytest unit tests — pure logic only (no DB/HTTP coupling)
+│   ├── test_agent_loop.py
+│   ├── test_agent_tools.py
+│   ├── test_article_pagination.py
+│   ├── test_article_summary.py
+│   ├── test_automation.py
+│   ├── test_feed_batch.py
+│   ├── test_feed_fetcher_next_check.py
+│   ├── test_feed_worker.py
+│   ├── test_history_filter.py
+│   └── test_retrieval.py
 └── app/
     ├── __init__.py
     ├── main.py             # FastAPI app factory, lifespan, CORS, router includes
@@ -70,10 +86,16 @@ backend/
     └── services/
         ├── __init__.py
         ├── auth.py              # JWT + bcrypt password handling
-        ├── feed_fetcher.py      # RSS fetch, parse, OPML, periodic refresh, automation integration
+        ├── http_client.py      # Shared httpx.AsyncClient singleton (connection pooling, proxy)
+        ├── feed_fetcher.py      # RSS fetch, parse, full-text extraction, OPML import, automation integration
+        ├── feed_batch.py        # Due-feed projection (FeedRow) + per-host bucketing for the scheduler
+        ├── feed_worker.py       # FeedScheduler (60s due-tick) + WorkerPool (bounded concurrency, per-host limit, error-limit disabling)
         ├── article_summary.py   # Summary content selection, content hash, extract_content_for_summary
         ├── automation.py        # Rule engine: condition matching, scope resolution, action application
-        └── llm.py               # OpenAI client, summary, translation, chat streaming, conversation references
+        ├── llm.py               # OpenAI client, summary, translation, chat streaming, conversation references
+        ├── agent_loop.py        # AI chat agent loop — run_agent_chat SSE, tool-call rounds, MAX_TOOL_ROUNDS guard
+        ├── agent_tools.py       # Agent tool schemas + in-process execution (search_articles / list_articles / read_article)
+        └── retrieval.py         # Cross-article keyword retrieval — jieba tokenization + scoring (retrieval service)
 ```
 
 ---

@@ -79,7 +79,9 @@ frontend/
     │   ├── colorScheme.ts     # ColorScheme presets + storage key (indigo/amber/forest)
     │   ├── articleList.ts     # Infinite-list helpers: transitions + first-page replace
     │   ├── i18n-zod.ts        # Zod error map with i18n integration
-    │   └── articleList.test.ts # Vitest unit tests for articleList helpers
+    │   ├── auth-errors.ts     # Backend detail string -> auth i18n key resolver
+    │   ├── articleList.test.ts # Vitest unit tests for articleList helpers
+    │   └── auth-errors.test.ts # Vitest unit tests for auth-errors resolver
     ├── pages/
     │   ├── Home.tsx           # Main reader page (3-panel layout + floating chat)
     │   └── auth/
