@@ -839,7 +839,7 @@ Chat messages use asymmetric alignment: user messages right-aligned with colored
 ```tsx
 // User message — right-aligned pill, no avatar
 <div className="flex justify-end">
-  <div className="max-w-[85%] rounded-2xl bg-chat-user px-3 py-2 text-sm">
+  <div className="max-w-[85%] rounded-lg bg-chat-user px-3 py-2 text-sm">
     <p className="whitespace-pre-wrap break-words">{msg.content}</p>
   </div>
 </div>
@@ -854,7 +854,7 @@ Chat messages use asymmetric alignment: user messages right-aligned with colored
 ```
 
 **Key details**:
-- User messages: `justify-end` + `max-w-[85%]` + `rounded-2xl bg-chat-user` pill
+- User messages: `justify-end` + `max-w-[85%]` + `rounded-lg bg-chat-user` pill (DESIGN.md `chat-bubble-user: rounded: {lg}` = 6px)
 - AI messages: `AssistantAvatar` on left + `flex-1`, no background bubble — `MarkdownContent` renders directly with `prose` styling
 - `--chat-bubble-user` opacity is higher than typical panel backgrounds (0.12 light, 0.18 dark) because the rounded pill has less visual area than a full-width bubble
 - `--chat-bubble-ai` is unused as background (AI has no bubble); it may be repurposed or removed later
@@ -1060,7 +1060,7 @@ const isSidebarMode = chatPanelMode === "sidebar";
 - Header's internal buttons (History `PopoverTrigger`, Pin, Close) must add `onPointerDown={(e) => e.stopPropagation()}` so clicking them does not start a drag. `stopPropagation` on `pointerdown` only blocks the drag; `click` still fires normally.
 - **Drag-vs-resize conflict on the header-overlapping top edge**: the header occupies the top ~44px, which covers the entire top 6px resize zone. Two guards make header always drag and never resize there: (1) `handleDragPointerDown` calls `e.stopPropagation()` so the container's resize `pointerdown` (attached via bubbling) never fires; (2) `getResizeEdge()` returns `null` when `e.target.closest("[data-floating-drag-handle]")`, so no resize highlight/cursor appears over the header. The header is marked `data-floating-drag-handle` only when `draggable`.
 - Resize from all 4 edges and 4 corners via edge detection in `pointerdown` — 6px edge zone triggers resize instead of drag. A `ResizeEdgeOverlay` renders a 1px `bg-primary/30` highlight (→ `opacity-50` while actively resizing) on the hovered edge/corner; `pointer-events-none` so it never blocks edge detection.
-- Shadow/border: `rounded-xl border bg-background shadow-xl` base, `transition-shadow focus-within:shadow-2xl focus-within:ring-1 focus-within:ring-primary/10` to lift the panel on focus. Note the global `* { transition-property: color, background-color, border-color, fill, stroke }` in `index.css` does NOT include `box-shadow`/`ring` — add `transition-shadow` explicitly when relying on these transitions.
+- Shadow/border: `rounded-lg border bg-background shadow-lg` base, `focus-within:ring-1 focus-within:ring-primary/10` for focus feedback. Resting ceiling is `shadow-lg` (floating layer); `focus-within:shadow-2xl` is NOT used — the ring alone lifts the panel on focus. Note the global `* { transition-property: color, background-color, border-color, fill, stroke }` in `index.css` does NOT include `box-shadow`/`ring` — add `transition-shadow` explicitly when relying on these transitions.
 - Min size: 320×420 (2-col suggestion grid + ≥260px message area after header+reference+input ≈160px). Default size `DEFAULT_FLOATING_SIZE = { width: 420, height: 560 }` (stored in `stores/reader.ts`, not the component). The min-size constants live inside `FloatingChatPanel.tsx` (`MIN_WIDTH`/`MIN_HEIGHT`).
 - Position/size persisted via Zustand store (`floatingPanelPosition`, `floatingPanelSize`), included in `partialize`. Changing `DEFAULT_FLOATING_SIZE` only affects users who never customized — persist reads their stored value back; do NOT add a migrate unless forcing an upgrade.
 - Window resize listener clamps position back into visible viewport
@@ -1228,10 +1228,10 @@ const [translateLang, setTranslateLang] = useState("zh");
 
 **Key details**:
 - Actions are modeled as a **toggle map** (`actionToggles: Record<string, boolean>`) keyed by action type, built up to `AutomationAction[]` only on save. `auto_translate` carries `params: { translate_target_lang }`.
-- A rule with `delete` plus any other action raises a conflict warning (`AlertTriangle` banner) — the backend treats any rule with a `delete` action as a delete-only rule and ignores its other actions (see backend `database-guidelines.md` "Scenario: Automation Rules Engine"). Surface this in the UI rather than silently discarding.
+- A rule with `delete` plus any other action raises a conflict (`hasConflict = hasDelete && otherActionsCount > 0`). The backend treats any rule with a `delete` action as a delete-only rule and ignores its other actions (see backend `database-guidelines.md` "Scenario: Automation Rules Engine"). The UI **blocks Save** when `hasConflict` is true (mirrors the `noActionsSelected` disabled-save precedent) and shows a `text-warning` helper text + `AlertTriangle`; the list-row variant shows a `text-warning` hint. This is error prevention, not just a warning — surface the conflict but don't let the user save an ambiguous rule.
 - Conditions render as a dynamic list; the first row's logic selector is hidden (backend ignores the first condition's `logic`). `LOGIC_OPTIONS` render as `AND`/`OR` via `opt.toUpperCase()` — these are universal tokens, kept literal, not i18n keys.
 - On open, an `useEffect` hydrates local state from `rule` (edit) or resets to defaults (create, honoring `defaultScope`/`defaultScopeId` props).
-- Save validates `name.trim()` and `!noActionsSelected` before `mutate`; `onSuccess` closes the dialog.
+- Save is disabled when `isPending || !name.trim() || noActionsSelected || hasConflict`; `onSuccess` closes the dialog. The conflict/violation color is the `--warning` semantic token (non-destructive conflict), NOT `destructive` (which is reserved for delete confirmations) or hardcoded amber (which collides with the Amber theme hue). See DESIGN.md "The Warning Rule".
 
 ### Automation Rule List
 
