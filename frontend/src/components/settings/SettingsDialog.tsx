@@ -31,7 +31,7 @@ export function SettingsDialog() {
       open={settingsDialogOpen}
       onOpenChange={(open) => setReader({ settingsDialogOpen: open, settingsDialogTab: undefined })}
     >
-      <DialogContent className={`transition-[max-width] duration-150 max-h-[calc(100vh-4rem)] overflow-y-auto ${activeTab === "subscriptions" ? "sm:max-w-2xl" : activeTab === "automation" ? "sm:max-w-xl" : "sm:max-w-[480px]"}`}>
+      <DialogContent className="sm:max-w-3xl max-h-[calc(100vh-4rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("settings")}</DialogTitle>
           <DialogDescription>{t("settingsDescription")}</DialogDescription>
@@ -39,30 +39,44 @@ export function SettingsDialog() {
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="mt-2"
+          orientation="vertical"
+          className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-4"
         >
-          <TabsList className="w-full">
+          {/* Desktop vertical tab list */}
+          <TabsList
+            className="hidden h-auto w-40 flex-col justify-start gap-1 sm:flex"
+          >
+            <TabsTrigger value="general" className="justify-start">{t("general")}</TabsTrigger>
+            <TabsTrigger value="ai" className="justify-start">{t("aiSettings")}</TabsTrigger>
+            <TabsTrigger value="subscriptions" className="justify-start">{t("subscriptions")}</TabsTrigger>
+            <TabsTrigger value="automation" className="justify-start">{t("automation.tabLabel")}</TabsTrigger>
+            <TabsTrigger value="about" className="justify-start">{t("about.tabLabel")}</TabsTrigger>
+          </TabsList>
+          {/* Mobile horizontal tab list */}
+          <TabsList className="flex w-full sm:hidden">
             <TabsTrigger value="general" className="flex-1">{t("general")}</TabsTrigger>
             <TabsTrigger value="ai" className="flex-1">{t("aiSettings")}</TabsTrigger>
             <TabsTrigger value="subscriptions" className="flex-1">{t("subscriptions")}</TabsTrigger>
             <TabsTrigger value="automation" className="flex-1">{t("automation.tabLabel")}</TabsTrigger>
             <TabsTrigger value="about" className="flex-1">{t("about.tabLabel")}</TabsTrigger>
           </TabsList>
-          <TabsContent value="general" className="mt-4">
-            <GeneralSettingsTab />
-          </TabsContent>
-          <TabsContent value="ai" className="mt-4">
-            <AISettingsTab />
-          </TabsContent>
-          <TabsContent value="subscriptions" className="mt-4">
-            <SubscriptionsTab />
-          </TabsContent>
-          <TabsContent value="automation" className="mt-4">
-            <AutomationTab />
-          </TabsContent>
-          <TabsContent value="about" className="mt-4">
-            <AboutTab />
-          </TabsContent>
+          <div className="mt-4 sm:mt-0 sm:ml-6 sm:min-w-0 sm:flex-1 sm:max-h-[60vh] sm:overflow-y-auto">
+            <TabsContent value="general" className="mt-0">
+              <GeneralSettingsTab />
+            </TabsContent>
+            <TabsContent value="ai" className="mt-0">
+              <AISettingsTab />
+            </TabsContent>
+            <TabsContent value="subscriptions" className="mt-0">
+              <SubscriptionsTab />
+            </TabsContent>
+            <TabsContent value="automation" className="mt-0">
+              <AutomationTab />
+            </TabsContent>
+            <TabsContent value="about" className="mt-0">
+              <AboutTab />
+            </TabsContent>
+          </div>
         </Tabs>
       </DialogContent>
     </Dialog>

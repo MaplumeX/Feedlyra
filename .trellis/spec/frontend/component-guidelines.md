@@ -402,9 +402,42 @@ const [scrollViewport, setScrollViewport] = useState<HTMLDivElement | null>(null
 
   **Why**: `flex-1` was doing double duty — sizing the tabs to remaining space AND acting as the left-side filler that pushes the right group to the edge. Removing it fixes the width symptom but reintroduces a layout gap on the right unless `ml-auto` (or an equivalent spacer) takes over the push job.
 
+- **Putting `orientation` on `TabsList` instead of `Tabs`** — Radix's `orientation` prop ("horizontal" | "vertical") belongs to `Tabs.Root`, which sets arrow-key navigation direction for the whole tab group. shadcn's `TabsList` type does **not** accept `orientation` (only `loop`); passing it there is silently dropped or type-errors. Put `orientation="vertical"` on `<Tabs>` when the active tab list renders as a vertical column, so Up/Down arrows move focus instead of Left/Right. A single `Tabs.Root` has one `orientation` for all its lists; when the same `<Tabs>` renders both a desktop vertical list and a mobile horizontal list (responsive split-pane), the single orientation cannot be correct for both — accept the trade-off (mobile is touch-primary; shadcn's default list sets no orientation anyway, so behavior is unchanged from default).
+
 ---
 
 ## Patterns
+
+### Multi-Tab Dialog with Stable Sizing (Split-Pane)
+
+When a `Dialog` hosts multiple tabs whose content widths/heights differ (e.g. `SettingsDialog`), giving `DialogContent` a per-tab `max-w` and `overflow-y-auto` makes the dialog visibly jump in both width and height on every tab switch. Use a split-pane layout so the dialog frame is fixed and only the content area scrolls.
+
+```tsx
+<DialogContent className="sm:max-w-3xl max-h-[calc(100vh-4rem)] overflow-y-auto">
+  <DialogHeader>...</DialogHeader>
+  <Tabs orientation="vertical" className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-4">
+    {/* Desktop vertical list */}
+    <TabsList className="hidden h-auto w-40 flex-col justify-start gap-1 sm:flex">
+      <TabsTrigger value="general" className="justify-start">...</TabsTrigger>
+    </TabsList>
+    {/* Mobile horizontal fallback */}
+    <TabsList className="flex w-full sm:hidden">
+      <TabsTrigger value="general" className="flex-1">...</TabsTrigger>
+    </TabsList>
+    {/* Fixed-height scroll region — NOT the whole DialogContent */}
+    <div className="mt-4 sm:mt-0 sm:ml-6 sm:min-w-0 sm:flex-1 sm:max-h-[60vh] sm:overflow-y-auto">
+      <TabsContent value="general" className="mt-0">...</TabsContent>
+    </div>
+  </Tabs>
+</DialogContent>
+```
+
+**Key rules**:
+- `DialogContent` keeps a single fixed `max-w` (`sm:max-w-3xl`) for ALL tabs — never switch `max-w` per active tab. Keep `max-h-[calc(100vh-4rem)] overflow-y-auto` on `DialogContent` as a last-resort viewport guard (mobile body-scroll is locked by Radix Dialog, so the dialog itself must be the fold for very tall content).
+- The scrollable region is a wrapper div around `TabsContent`s with `sm:max-h-[60vh] sm:overflow-y-auto`, NOT `DialogContent`. Header stays fixed above it. On mobile (`< sm`), drop `max-h`/`overflow` so the dialog grows naturally and `DialogContent` handles viewport overflow.
+- Render two `TabsList`s (desktop `hidden sm:flex flex-col` + mobile `flex w-full sm:hidden`) for correct responsive layout. Radix supports multiple `TabsList` under one `Tabs`; triggers share the active value. `orientation` lives on `Tabs.Root` (see the "orientation on TabsList" gotcha above) and cannot differ per list — accept the single-orientation trade-off.
+- Existing per-tab inner scroll containers (e.g. `max-h-[280px]` lists, `ScrollArea max-h-[400px]`) can coexist with the outer `60vh` region: inner = "list fits", outer = "tab content fits dialog". Double scroll is acceptable when they have distinct jobs; don't strip inner `max-h` unless testing shows a bad UX.
+- Remove any `transition-[max-width]` — there is no width change to animate.
 
 ### External Image with onerror Fallback
 
