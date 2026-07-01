@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Dialog/Tabs 契约与 Tabs 宽度反模式 — check 时核对未引入 flex-1 挤压、open/onOpenChange 受控未破坏"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "lint/type-check 与质量基准"}
+{"file": ".trellis/tasks/07-01-settings-dialog-stable-sizing/prd.md", "reason": "验收标准：5 tab 切换宽度不变、内容区滚动、小屏回退、About 居中"}
+{"file": ".trellis/tasks/07-01-settings-dialog-stable-sizing/design.md", "reason": "对照分栏结构、双 TabsList 渲染、内层滚动调和是否按设计落地"}
