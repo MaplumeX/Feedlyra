@@ -31,8 +31,8 @@ export function SettingsDialog() {
       open={settingsDialogOpen}
       onOpenChange={(open) => setReader({ settingsDialogOpen: open, settingsDialogTab: undefined })}
     >
-      <DialogContent className="sm:max-w-3xl max-h-[calc(100vh-4rem)] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-3xl h-[80vh] max-h-[calc(100vh-4rem)] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{t("settings")}</DialogTitle>
           <DialogDescription>{t("settingsDescription")}</DialogDescription>
         </DialogHeader>
@@ -40,7 +40,7 @@ export function SettingsDialog() {
           value={activeTab}
           onValueChange={setActiveTab}
           orientation="vertical"
-          className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-4"
+          className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-4 flex-1 min-h-0"
         >
           {/* Desktop vertical tab list */}
           <TabsList
@@ -60,7 +60,7 @@ export function SettingsDialog() {
             <TabsTrigger value="automation" className="flex-1">{t("automation.tabLabel")}</TabsTrigger>
             <TabsTrigger value="about" className="flex-1">{t("about.tabLabel")}</TabsTrigger>
           </TabsList>
-          <div className="mt-4 sm:mt-0 sm:ml-6 sm:min-w-0 sm:flex-1 sm:max-h-[60vh] sm:overflow-y-auto">
+          <div className="mt-4 sm:mt-0 sm:ml-6 sm:min-w-0 flex-1 min-h-0 overflow-y-auto">
             <TabsContent value="general" className="mt-0">
               <GeneralSettingsTab />
             </TabsContent>
